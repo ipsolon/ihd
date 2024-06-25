@@ -1,8 +1,12 @@
-//
-// Created by jmeyers on 6/25/24.
-//
+/*
+* Copyright 2024 Ipsolon Research
+*
+* SPDX-License-Identifier: GPL-3.0-or-later
+*/
 
 #ifndef IHD_H
 #define IHD_H
+#include "version.h"
+#include "multi_isrp.hpp"
 
 #endif //IHD_H
