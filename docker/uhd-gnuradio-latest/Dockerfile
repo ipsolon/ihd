@@ -31,6 +31,13 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y wireshark wireshark-dev
 # Dev libraries needed by UHD (found when compiling wireshark disector)
 RUN apt-get install -y libgcrypt-dev zlib1g-dev libgnutls28-dev
 
+RUN git clone https://github.com/EttusResearch/uhd.git && \
+    cd uhd/tools/dissectors && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make && make install
+
 # Install debugger
 RUN apt-get install -y gdb
 
