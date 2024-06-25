@@ -31,18 +31,20 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y wireshark wireshark-dev
 # Dev libraries needed by UHD (found when compiling wireshark disector)
 RUN apt-get install -y libgcrypt-dev zlib1g-dev libgnutls28-dev
 
-RUN git clone https://github.com/EttusResearch/uhd.git && \
-    cd uhd/tools/dissectors && \
-    mkdir build && \
-    cd build && \
-    cmake .. && \
-    make && make install
-
 # Install debugger
 RUN apt-get install -y gdb
 
 #install ifconfig
 RUN apt-get install -y net-tools
+
+#install the wireshark dissector for CHDR/RFnoc headers
+RUN git clone https://github.com/EttusResearch/uhd.git && \
+    cd uhd/tools/dissectors && \
+    git checkout v4.1.0.5 && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make && make install
 
 # Setup entry point script to take care of USERID, GROUPID, and whatever else needs to happen on startup
 RUN apt-get -y install gosu
