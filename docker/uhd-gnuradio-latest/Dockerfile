@@ -13,7 +13,7 @@ RUN apt-get install -y software-properties-common
 RUN apt-get install -y sudo
 
 # installing other packages needed for downloading and installing OOT modules
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y gnuradio gnuradio-dev cmake git libboost-all-dev libcppunit-dev liblog4cpp5-dev python3-pygccxml pybind11-dev liborc-dev
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y gnuradio gnuradio-dev cmake git libboost-all-dev libcppunit-dev liblog4cpp5-dev python3-pygccxml pybind11-dev liborc-dev python3-setuptools
 
 # Install ettus uhd usrp drivers
 RUN apt-get install -y libuhd-dev uhd-host
