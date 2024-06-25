@@ -6,6 +6,11 @@
 #define EXCEPTION_HPP
 #include <stdexcept>
 
+#define THROW_NOT_IMPLEMENTED_ERROR()                \
+    throw ihd::exception::runtime_error(             \
+    (boost::format("function not implemented: %s\n") \
+    % __FUNCTION__ ).str());
+
 namespace ihd
 {
 

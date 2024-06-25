@@ -17,6 +17,7 @@ set(BOOST_REQUIRED_COMPONENTS
 )
 find_package(Boost "1.74.0" REQUIRED ${BOOST_REQUIRED_COMPONENTS})
 
+find_package(UHD "4.1.0.5" EXACT REQUIRED )
 
 file(GLOB INCLUDE_FILES include/*.h include/*.hpp)
 file(GLOB LIB_FILES lib/*.c lib/*.cpp)

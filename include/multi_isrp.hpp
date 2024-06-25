@@ -18,7 +18,6 @@ namespace ihd {
 
 class multi_isrp : public uhd::usrp::multi_usrp
 {
-
 public:
     ~multi_isrp() override;
     multi_isrp();
