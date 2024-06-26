@@ -16,12 +16,12 @@
 
 namespace ihd {
 
-class multi_isrp : public uhd::usrp::multi_usrp
+class chameleon_isrp : public uhd::usrp::multi_usrp
 {
 public:
-    ~multi_isrp() override;
-    multi_isrp();
-    typedef std::shared_ptr<multi_isrp> sptr;
+    ~chameleon_isrp() override;
+    chameleon_isrp();
+    typedef std::shared_ptr<chameleon_isrp> sptr;
     /*!
      * Make a new multi usrp from the device address.
      * \param dev_addr the device address

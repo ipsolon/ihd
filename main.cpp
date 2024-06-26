@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
     std::cout << std::endl;
     std::cout << boost::format("Creating the ISRP device with: %s...") % args << std::endl;
 
-    ihd::multi_isrp::sptr isrp = ihd::multi_isrp::make(args);
+    ihd::chameleon_isrp::sptr isrp = ihd::chameleon_isrp::make(args);
     isrp->get_rx_rate(0);
 
     return 0;
