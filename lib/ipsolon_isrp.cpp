@@ -5,7 +5,7 @@
 */
 #include <uhd/transport/udp_simple.hpp>
 
-#include "chameleon_isrp.hpp"
+#include "ipsolon_isrp.hpp"
 #include "exception.hpp"
 #include "chameleon_device.hpp"
 #include "chameleon_fw_common.h"
@@ -19,15 +19,15 @@ typedef struct {
 
 using namespace ihd;
 
-chameleon_isrp::~chameleon_isrp()
+ipsolon_isrp::~ipsolon_isrp()
 {
 }
 
-chameleon_isrp::chameleon_isrp()
+ipsolon_isrp::ipsolon_isrp()
 {
 }
 
-class chameleon_isrp_impl : public chameleon_isrp
+class chameleon_isrp_impl : public ipsolon_isrp
 {
 
 public:
@@ -215,7 +215,7 @@ private:
  * The Make Function
  **********************************************************************/
 
-chameleon_isrp::sptr chameleon_isrp::make(const uhd::device_addr_t& dev_addr)
+ipsolon_isrp::sptr ipsolon_isrp::make(const uhd::device_addr_t& dev_addr)
 {
     UHD_LOGGER_TRACE("MULTI_USRP")
         << "multi_usrp::make with args " << dev_addr.to_pp_string();

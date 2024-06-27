@@ -7,6 +7,6 @@
 #ifndef IHD_H
 #define IHD_H
 #include "version.h"
-#include "chameleon_isrp.hpp"
+#include "ipsolon_isrp.hpp"
 
 #endif //IHD_H
