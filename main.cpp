@@ -49,8 +49,14 @@ int main(int argc, char *argv[])
     std::cout << std::endl;
     std::cout << boost::format("Creating the ISRP device with: %s...") % args << std::endl;
 
-    ihd::ipsolon_isrp::sptr isrp = ihd::ipsolon_isrp::make(args);
-    isrp->get_rx_rate(0);
+    try
+    {
+        ihd::ipsolon_isrp::sptr isrp = ihd::ipsolon_isrp::make(args);
+        isrp->get_rx_rate(0);
+    } catch (...)
+    {
+        std::cout << "Caught exception" << std::endl;
+    }
 
     return 0;
 }
