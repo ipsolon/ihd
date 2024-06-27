@@ -11,8 +11,9 @@
 namespace po = boost::program_options;
 
 #include "ihd.h"
+#include "safe_main.hpp"
 
-int main(int argc, char *argv[])
+int IHD_SAFE_MAIN(int argc, char *argv[])
 {
     std::cout << "Revision: " << ihd::get_version_string() << std::endl;
     std::string file, args;
@@ -49,14 +50,10 @@ int main(int argc, char *argv[])
     std::cout << std::endl;
     std::cout << boost::format("Creating the ISRP device with: %s...") % args << std::endl;
 
-    try
-    {
-        ihd::ipsolon_isrp::sptr isrp = ihd::ipsolon_isrp::make(args);
-        isrp->get_rx_rate(0);
-    } catch (...)
-    {
-        std::cout << "Caught exception" << std::endl;
-    }
-
+    ihd::ipsolon_isrp::sptr isrp = ihd::ipsolon_isrp::make(args);
+    uhd::tune_request_t tune_request{};
+    tune_request.rf_freq = 5123456789;
+    size_t chan = 1;
+    isrp->set_rx_freq(tune_request, chan);
     return 0;
 }
