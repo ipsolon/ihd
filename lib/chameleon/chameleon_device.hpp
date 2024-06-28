@@ -22,7 +22,7 @@ public:
     static uhd::device::sptr chameleon_make(const uhd::device_addr_t& device_addr);
 
 private:
-    uhd::device_addr_t device_addr;
+    uhd::device_addr_t _device_addr;
 };
 
 }

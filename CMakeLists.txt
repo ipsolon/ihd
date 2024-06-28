@@ -24,7 +24,7 @@ file(GLOB LIB_FILES lib/*.c
                     lib/chameleon/*.c
                     lib/chameleon/*.cpp)
 
-include_directories(include include/chameleon)
+include_directories(include lib/chameleon)
 link_directories(${Boost_LIBRARY_DIRS})
 
 add_executable(ihd host_main.cpp ${LIB_FILES})

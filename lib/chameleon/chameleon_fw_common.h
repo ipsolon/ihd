@@ -10,7 +10,7 @@
 
 #pragma pack(push, 1)
 typedef struct { // Controls the maximum union size -- see static assert below
-    uint8_t data[CHAMELEON_FW_CMD_MAX_DATA_SIZE];
+    uint8_t v[CHAMELEON_FW_CMD_MAX_DATA_SIZE];
 } chameleon_fw_cmd_data_t;
 
 typedef struct {
@@ -19,7 +19,7 @@ typedef struct {
 } chameleon_fw_cmd_tune_t;
 
 typedef struct {
-    size_t n;
+    size_t chans;
     bool enable;
 } chameleon_fw_cmd_stream_t;
 
@@ -48,15 +48,12 @@ typedef enum {
 typedef enum {
     CHAMELEON_FW_COMMS_CMD_NOOP,
     CHAMELEON_FW_COMMS_CMD_TUNE_FREQ,
-    CHAMELEON_FW_COMMS_CMD_STREAM_START,
-    CHAMELEON_FW_COMMS_CMD_STREAM_STOP,
+    CHAMELEON_FW_COMMS_CMD_STREAM_CMD,
 } chameleon_command_t;
 
 #define CHAMELEON_FW_COMMS_UDP_PORT  49152
 #define CHAMELEON_VITA_UDP_PORT      49153
 #define CHAMELEON_FPGA_PROG_UDP_PORT 49157
 #define CHAMELEON_FPGA_READ_UDP_PORT 49159
-
-#define CHAMELEON_FW_COMMS_IPADDR "10.75.42.15"
 
 #endif //CHAMELEON_FW_COMMON_H

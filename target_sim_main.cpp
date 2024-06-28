@@ -16,9 +16,29 @@
 
 #define RECV_TIMEOUT_SECS 20
 
+#define TCP_REPLY_COMMAND "tcpreplay -i enp0s31f6 -tK --loop 500000000 /opt/samples_only.pcapng"
+
+
 std::queue<chameleon_fw_comms_t> buffer;
 std::mutex mtx;
 std::condition_variable cv;
+
+void process_freq(const chameleon_fw_comms_t &request)
+{
+    std::cout << "Process set center freq(" << request.tune.freq <<  ") on chan:" << request.tune.chan << std::endl;
+}
+
+void process_stream(const chameleon_fw_comms_t &request)
+{
+    std::cout << "Process set stream command. chans:0x" << std::hex << request.stream.chans
+        << " enable:" << std::dec << request.stream.enable << std::endl;
+    if(request.stream.enable) {
+        std::cout << "Enable Stream" << std::endl;
+        system(TCP_REPLY_COMMAND);
+    } else {
+        std::cout << "Disable Stream" << std::endl;
+    }
+}
 
 void process_thread_func() {
     while (true) {
@@ -26,14 +46,22 @@ void process_thread_func() {
         cv.wait(lock, [] { return !buffer.empty(); });
         chameleon_fw_comms_t request = buffer.front();
         buffer.pop();
+        lock.unlock();
         std::cout << "Process Thread"
            << " flags:0x" << std::hex << request.flags
            << " sequence:0x" << std::hex << request.sequence
            << " addr:0x" << std::hex << request.addr
-           << " chan:"   << std::dec << request.tune.chan
-           << " Freq:"   << std::dec << request.tune.freq
-           << std::dec << std::endl;
-        lock.unlock();
+           << " data:0x";
+           for (int i = 0; i < sizeof(request.data); i++) {
+               std::cout << std::hex << (int)request.data.v[i] << ":";
+           }
+           std::cout << std::dec << std::endl;
+        switch (request.addr) {
+        case CHAMELEON_FW_COMMS_CMD_TUNE_FREQ : process_freq(request);   break;
+        case CHAMELEON_FW_COMMS_CMD_STREAM_CMD: process_stream(request); break;
+        default:
+            std::cout << "Unsupported command:" << request.addr << std::endl;
+        }
     }
 }
 
@@ -58,10 +86,11 @@ void recv_thread_func(int sockfd)
                 << " flags:0x" << std::hex << request.flags
                 << " bytes:" << std::dec << n
                 << " sequence:0x" << std::hex << request.sequence
-                << " addr:0x" << std::hex << request.addr
-                << " data:"   << std::dec << request.tune.chan
-                << " data:"   << std::dec << request.tune.freq
-                << std::dec << std::endl;
+                << " addr:0x" << std::hex << request.addr;
+                for (int i = 0; i < sizeof(request.data); i++) {
+                    std::cout << std::hex << (int)request.data.v[i] << ":";
+                }
+                std::cout << std::dec << std::endl;
             std::unique_lock<std::mutex> lock(mtx);
             buffer.push(request);
             cv.notify_one();

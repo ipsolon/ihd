@@ -7,22 +7,10 @@
 #include <stdexcept>
 
 #define THROW_NOT_IMPLEMENTED_ERROR()                \
-    throw ihd::exception::runtime_error(             \
+    throw std::runtime_error(                        \
     (boost::format("function not implemented: %s\n") \
     % __FUNCTION__ ).str());
 
-namespace ihd
-{
-
-    /*! Base class of all UHD-specific exceptions.
-     */
-    struct exception : std::runtime_error
-    {
-        exception(const std::string& what);
-        virtual unsigned code(void) const            = 0;
-        virtual exception* dynamic_clone(void) const = 0;
-        virtual void dynamic_throw(void) const       = 0;
-    };
-}
+#define THROW_VALUE_NOT_SUPPORTED_ERROR(v) throw std::runtime_error("Value not supported: " + v)
 
 #endif //EXCEPTION_HPP

@@ -4,13 +4,19 @@
 * SPDX-License-Identifier: GPL-3.0-or-later
 */
 #include "chameleon_device.hpp"
+
+#include <ipsolon_stream.hpp>
+
 #include "exception.hpp"
 
-ihd::chameleon_device::chameleon_device(const uhd::device_addr_t& _device_addr) : device_addr(_device_addr) {}
+ihd::chameleon_device::chameleon_device(const uhd::device_addr_t& _device_addr) : _device_addr(_device_addr) {}
 
 ihd::chameleon_device::~chameleon_device() = default;
 
-uhd::rx_streamer::sptr ihd::chameleon_device::get_rx_stream(const uhd::stream_args_t& args) { THROW_NOT_IMPLEMENTED_ERROR(); }
+uhd::rx_streamer::sptr ihd::chameleon_device::get_rx_stream(const uhd::stream_args_t& args)
+{
+    return ipsolon_stream::make(args, _device_addr);
+}
 
 uhd::tx_streamer::sptr ihd::chameleon_device::get_tx_stream(const uhd::stream_args_t& args) { THROW_NOT_IMPLEMENTED_ERROR(); }
 

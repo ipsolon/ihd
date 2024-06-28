@@ -6,8 +6,8 @@
 #ifndef CHAMELEON_ISRP_IMPL_HPP
 #define CHAMELEON_ISRP_IMPL_HPP
 
+#include "chameleon_fw_commander.hpp"
 #include "ipsolon_isrp.hpp"
-#include "exception.hpp"
 #include "chameleon_device.hpp"
 
 namespace ihd {
@@ -18,7 +18,7 @@ class chameleon_isrp_impl : public ipsolon_isrp
 public:
     ~chameleon_isrp_impl() override = default;
 
-    explicit chameleon_isrp_impl(uhd::device::sptr dev);
+    explicit chameleon_isrp_impl(uhd::device::sptr dev, const uhd::device_addr_t& dev_addr);
 
     uhd::device::sptr      get_device() override;
     uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t& args) override;
@@ -26,10 +26,8 @@ public:
     uhd::tune_result_t     set_rx_freq(const uhd::tune_request_t& tune_request, size_t chan) override;
 
 private:
-    size_t _seq;
     uhd::device::sptr _dev;
-    const uhd::stream_args_t _stream_args;
-    uhd::transport::udp_simple::sptr _udp_cmd_port{};
+    chameleon_fw_commander _commander;
 };
 
 }

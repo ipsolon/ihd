@@ -31,5 +31,5 @@ ipsolon_isrp::sptr ipsolon_isrp::make(const uhd::device_addr_t& dev_addr)
     // For now, there is only one type
     uhd::device::sptr dev = chameleon_device::chameleon_make(dev_addr);
 
-    return std::make_shared<chameleon_isrp_impl>(dev);
+    return std::make_shared<chameleon_isrp_impl>(dev, dev_addr);
 }
