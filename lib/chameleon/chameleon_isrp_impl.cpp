@@ -39,7 +39,7 @@ uhd::tune_result_t chameleon_isrp_impl::set_rx_freq(const uhd::tune_request_t& t
     request.flags =  CHAMELEON_FW_COMMS_FLAGS_WRITE;
     request.sequence = _seq++;
     request.addr     = CHAMELEON_FW_COMMS_CMD_TUNE_FREQ;
-    request.data     = chameleon_fw_cmd_tune_t{chan, tune_request.rf_freq};
+    request.tune     = chameleon_fw_cmd_tune_t{chan, tune_request.rf_freq};
 
     // send request
     _udp_cmd_port->send(boost::asio::buffer(&request, sizeof(request)));

@@ -30,7 +30,8 @@ void process_thread_func() {
            << " flags:0x" << std::hex << request.flags
            << " sequence:0x" << std::hex << request.sequence
            << " addr:0x" << std::hex << request.addr
-           << " data:0x" << std::hex << std::get<chameleon_fw_cmd_tune_t>(request.data).freq
+           << " chan:"   << std::dec << request.tune.chan
+           << " Freq:"   << std::dec << request.tune.freq
            << std::dec << std::endl;
         lock.unlock();
     }
@@ -58,7 +59,8 @@ void recv_thread_func(int sockfd)
                 << " bytes:" << std::dec << n
                 << " sequence:0x" << std::hex << request.sequence
                 << " addr:0x" << std::hex << request.addr
-                << " data:0x" << std::hex << std::get<chameleon_fw_cmd_tune_t>(request.data).chan
+                << " data:"   << std::dec << request.tune.chan
+                << " data:"   << std::dec << request.tune.freq
                 << std::dec << std::endl;
             std::unique_lock<std::mutex> lock(mtx);
             buffer.push(request);
