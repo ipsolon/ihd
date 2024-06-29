@@ -28,15 +28,21 @@ void process_freq(const chameleon_fw_comms_t &request)
     std::cout << "Process set center freq(" << request.tune.freq <<  ") on chan:" << request.tune.chan << std::endl;
 }
 
+void stream_thread_func()
+{
+    system(TCP_REPLY_COMMAND);
+}
+
 void process_stream(const chameleon_fw_comms_t &request)
 {
     std::cout << "Process set stream command. chans:0x" << std::hex << request.stream.chans
         << " enable:" << std::dec << request.stream.enable << std::endl;
     if(request.stream.enable) {
         std::cout << "Enable Stream" << std::endl;
-        system(TCP_REPLY_COMMAND);
+        new std::thread(&stream_thread_func);
     } else {
         std::cout << "Disable Stream" << std::endl;
+        system("kill -9 `pidof tcpreplay`");
     }
 }
 
