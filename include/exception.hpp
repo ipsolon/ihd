@@ -13,4 +13,6 @@
 
 #define THROW_VALUE_NOT_SUPPORTED_ERROR(v) throw std::runtime_error("Value not supported: " + v)
 
+#define THROW_NARROWING_ERROR() throw std::runtime_error("Narrrow error")
+
 #endif //EXCEPTION_HPP
