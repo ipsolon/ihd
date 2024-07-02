@@ -2,11 +2,12 @@
 
 The goal is minimize the number of changes necessary for a UHD user to implement an Ipsolon SDR.
 
-USRP - Universal Software Radio Protocol
-UHD - USRP Hardware Driver
+- USRP - Universal Software Radio Protocol
+- UHD - USRP Hardware Driver  
 
-ISRP - Ipsolon Software Radio Protocol
-IHD - ISRP Hardware Driver
+
+- ISRP - Ipsolon Software Radio Protocol
+- IHD - ISRP Hardware Driver
 
 ## Example UHD Implementation
 
