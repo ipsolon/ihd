@@ -16,7 +16,7 @@
 
 #define RECV_TIMEOUT_SECS 20
 
-#define TCP_REPLY_COMMAND "tcpreplay -i enp0s31f6 -tK --loop 500000000 /opt/samples_only.pcapng"
+#define TCP_REPLY_COMMAND "tcpreplay -i enp2s0f1 -tK --loop 500000000 /opt/samples_only.pcapng"
 
 
 std::queue<chameleon_fw_comms_t> buffer;
