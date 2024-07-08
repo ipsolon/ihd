@@ -93,7 +93,7 @@ int ihd_source_impl::work(int noutput_items,
                           gr_vector_const_void_star& input_items,
                           gr_vector_void_star& output_items)
 {
-     std::vector<uint8_t> buffs = std::vector<uint8_t>(samples);
+    std::vector<uint8_t> buffs = std::vector<uint8_t>(samples);
     output_items.push_back(&buffs);
 
     // Tell runtime system how many output items we produced.

@@ -22,7 +22,7 @@ if(NOT ihd_sources)
 endif(NOT ihd_sources)
 
 add_library(gnuradio-ihd SHARED ${ihd_sources})
-target_link_libraries(gnuradio-ihd gnuradio::gnuradio-runtime)
+target_link_libraries(gnuradio-ihd gnuradio::gnuradio-runtime uhd ihd)
 target_include_directories(gnuradio-ihd
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
     PUBLIC $<INSTALL_INTERFACE:include>
