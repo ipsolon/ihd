@@ -6,7 +6,6 @@
 #include <iostream>
 #include <bits/stdc++.h>
 #include <unistd.h>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -17,10 +16,13 @@
 
 #define RECV_TIMEOUT_SECS 20
 
-#define TCP_REPLY_COMMAND "tcpreplay -i lo -tK --loop 500000000 /mnt/c/Users/joshua.meyers/titan/samples/samples_localhost.pcap"
 #define HOST_IP_ADDR "127.0.0.1"  /* IP Adder to send the VITA packets */
-#define HOST_Port    49153  /* IP Adder to send the VITA packets */
+#define HOST_PORT    49153  /* IP Adder to send the VITA packets */
 
+#define USE_TCP_REPLAY 0
+#if USE_TCP_REPLAY
+#define TCP_REPLY_COMMAND "tcpreplay -i lo -tK --loop 500000000 /mnt/c/Users/joshua.meyers/titan/samples/samples_localhost.pcap"
+#endif
 
 std::queue<chameleon_fw_comms_t> buffer;
 std::mutex mtx;
@@ -42,7 +44,7 @@ void vita_thread_func(int sock_fd)
     std::cout << "the socket is = " << sock_fd << std::endl;
 
     std::string hostname{HOST_IP_ADDR};
-    uint16_t port = HOST_Port;
+    uint16_t port = HOST_PORT;
 
     sockaddr_in destination{};
     destination.sin_family = AF_INET;
@@ -161,10 +163,12 @@ void vita_thread_func(int sock_fd)
     }
 }
 
+#if USE_TCP_REPLAY
 void stream_thread_func()
 {
     system(TCP_REPLY_COMMAND);
 }
+#endif
 
 void process_stream(const chameleon_fw_comms_t &request)
 {
@@ -173,11 +177,15 @@ void process_stream(const chameleon_fw_comms_t &request)
     if(request.stream.enable) {
         std::cout << "Enable Stream" << std::endl;
         stream_run = true;
+#if USE_TCP_REPLAY
         new std::thread(&stream_thread_func);
+#endif // USE_TCP_REPLAY
     } else {
         std::cout << "Disable Stream" << std::endl;
         stream_run = false;
+#if USE_TCP_REPLAY
         system("kill -9 `pidof tcpreplay`");
+#endif
     }
 }
 

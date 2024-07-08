@@ -4,9 +4,12 @@
 * SPDX-License-Identifier: GPL-3.0-or-later
 */
 #include <iostream>
-#include <uhd/transport/udp_simple.hpp>
-#include "chameleon_fw_common.h"
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
+#include <uhd/transport/udp_simple.hpp>
+
+#include "chameleon_fw_common.h"
 #include "chameleon_stream.hpp"
 #include "exception.hpp"
 
@@ -39,7 +42,53 @@ size_t chameleon_stream::get_max_num_samps() const
 size_t chameleon_stream::recv(const buffs_type& buffs, const size_t nsamps_per_buff, uhd::rx_metadata_t& metadata,
     const double timeout, const bool one_packet)
 {
-    THROW_NOT_IMPLEMENTED_ERROR();
+    int err = 0;
+    int sock_fd = -1;
+
+    // Creating socket file descriptor
+    err = socket(AF_INET, SOCK_DGRAM, 0);
+    if (err < 0) {
+        perror("socket creation failed");
+    }
+    else {
+        sock_fd = err;
+
+        sockaddr_in servaddr{};
+        servaddr.sin_family = AF_INET;
+        servaddr.sin_port = htons(vita_port);
+        servaddr.sin_addr.s_addr = INADDR_ANY;
+        err = bind(sock_fd, (const struct sockaddr*)&servaddr, sizeof(servaddr));
+        if (err < 0) {
+            perror("bind failed");
+        }
+    }
+    if (!err) {
+        timeval tv;
+        tv.tv_sec = vita_port_timeout;
+        tv.tv_usec = 0;
+        err = setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+        if (err < 0) {
+            perror("Socket timeout set error");
+        }
+    }
+    if (err && sock_fd > -1) {
+        close(sock_fd);
+    }
+
+    uint8_t vita_buff[1472] = {0};
+    sockaddr_in server_addr{};
+    socklen_t len;
+    ssize_t n = 0;
+    n = recvfrom(sock_fd, &vita_buff, sizeof(vita_buff),
+                 0, (struct sockaddr*)&server_addr,
+                 &len);
+    if (n > 0) {
+        std::cout << "Received bytes:" << n << std::endl;
+    } else if (n < 0 && errno == ETIMEDOUT ) {
+        n = 0;
+        std::cout << "Timeout waiting for data" << std::endl;
+    }
+    return n;
 }
 
 void chameleon_stream::issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd)

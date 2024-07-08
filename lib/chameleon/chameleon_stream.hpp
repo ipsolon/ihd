@@ -24,6 +24,8 @@ public:
     void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd) override;
 
 private:
+    static const int vita_port = 49153;
+    static const int vita_port_timeout = 20;
     size_t _nChans{};
     uint32_t _chanMask{};
     chameleon_fw_commander _commander;
