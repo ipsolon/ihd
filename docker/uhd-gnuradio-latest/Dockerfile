@@ -49,6 +49,9 @@ RUN git clone https://github.com/EttusResearch/uhd.git && \
 # install extra gnuradio dev libs
 RUN apt-get install -y libspdlog-dev clang-format
 
+# Used to replay wireshark captures
+RUN apt-get install tcpreplay
+
 # Setup entry point script to take care of USERID, GROUPID, and whatever else needs to happen on startup
 RUN apt-get -y install gosu
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
