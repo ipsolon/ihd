@@ -74,7 +74,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [464, 148.0]
+    coordinate: [392, 172.0]
     rotation: 0
     state: true
 - name: qtgui_time_sink_x_0
