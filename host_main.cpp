@@ -67,10 +67,10 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     rx_stream->issue_stream_cmd(stream_cmd);
     std::vector<uint8_t *> buffs(1);
-    buffs[0] = new uint8_t[1472];
+    buffs[0] = new uint8_t[rx_stream->get_max_num_samps() * 2];
     uhd::rx_metadata_t md;
     for (int i = 0; i < 900; i++) {
-        rx_stream->recv(buffs, 0, md, 5);
+        rx_stream->recv(buffs, 0, md, 5.123456);
     }
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
     rx_stream->issue_stream_cmd(stream_cmd);

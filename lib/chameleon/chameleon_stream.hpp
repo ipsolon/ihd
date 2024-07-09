@@ -27,14 +27,17 @@ public:
 
 private:
     static const int vita_port = 49153;
-    static constexpr size_t max_sample_per_packet = 64 * 1024;
+    // FIXME - Real Chameleon will be: 64 * 1024, hard code for now: x310 packet size - CHDR - timestamp
+    static constexpr size_t bytes_per_sample = 2;
+    static constexpr size_t bytes_per_packet = (1472-8-8);
+    static constexpr size_t max_sample_per_packet = bytes_per_packet / bytes_per_sample;
 
     timeval _vita_port_timeout = {default_timeout, 0};
 
     size_t _nChans{};
     uint32_t _chanMask{};
     chameleon_fw_commander _commander;
-    int _socket_fd;
+    int _socket_fd{};
 
     void start_stream() const;
     void stop_stream() const;
