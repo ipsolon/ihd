@@ -74,14 +74,10 @@ size_t chameleon_stream::recv(const buffs_type& buffs, const size_t nsamps_per_b
                     (uint64_t)vita_buff[7] << 56;
 
             chdr_header chdr(header);
-            std::cout << chdr.get_seq_num() << std::endl;
+            //std::cout << chdr.get_seq_num() << std::endl;
 
             void *p = buffs[0];
-            memcpy(p, vita_buff + 16 /* CHDR + Timestamp */, n);
-
-        } else if (n < 0 && errno == ETIMEDOUT) {
-            n = 0;
-            std::cout << "Timeout waiting for data" << std::endl;
+            memcpy(p, vita_buff + 16 /* CHDR + Timestamp */, std::min(bytes_per_sample, (size_t)n));
         } else if (n < 0) {
             std::cout << "Receive error." << " errno:" << errno << ":" << strerror(errno) << std::endl;
         }

@@ -14,11 +14,13 @@ namespace po = boost::program_options;
 #include "ihd.h"
 #include "safe_main.hpp"
 
+#define NUMBER_OF_CHANNELS 1 /* We are limited to a single channel right now */
+
 int IHD_SAFE_MAIN(int argc, char *argv[])
 {
     std::cout << "Revision: " << ihd::get_version_string() << std::endl;
     std::string file, args;
-    size_t total_num_samps, channel;
+    size_t total_num_samps, channel, spb;
     double freq, total_time;
 
     po::options_description desc("Allowed options");
@@ -27,9 +29,9 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         ("file", po::value<std::string>(&file)->default_value("isrp_samples.dat"), "name of the file to write binary samples to")
         ("duration", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
+        ("spb", po::value<size_t>(&spb)->default_value(4096), "samples per buffer")
         ("freq", po::value<double>(&freq)->default_value(0.0), "RF center frequency in Hz")
         ("channel", po::value<size_t>(&channel)->default_value(0), "which channel to use")
-
         ("args", po::value<std::string>(&args)->default_value(""), "ISRP device address args")
     ;
     po::variables_map vm;
@@ -66,11 +68,18 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
 
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     rx_stream->issue_stream_cmd(stream_cmd);
-    std::vector<uint8_t *> buffs(1);
-    buffs[0] = new uint8_t[rx_stream->get_max_num_samps() * 2];
+    std::vector<uint8_t *> buffs(NUMBER_OF_CHANNELS);
+    try {
+        buffs[0] = new uint8_t[spb];
+    } catch (std::bad_alloc &exc) {
+        UHD_LOGGER_ERROR("UHD")
+                << "Bad memory allocation. "
+                   "Try a smaller samples per buffer setting or free up additional memory";
+        std::exit(EXIT_FAILURE);
+    }
     uhd::rx_metadata_t md;
     for (int i = 0; i < 900; i++) {
-        rx_stream->recv(buffs, 0, md, 5.123456);
+        rx_stream->recv(buffs, spb, md, 5);
     }
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
     rx_stream->issue_stream_cmd(stream_cmd);

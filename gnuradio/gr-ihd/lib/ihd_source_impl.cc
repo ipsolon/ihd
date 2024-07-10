@@ -9,10 +9,11 @@
 #include <gnuradio/io_signature.h>
 
 namespace gr::ihd {
+
 constexpr size_t samples = 4096;
 constexpr size_t n_chan = 1;
 constexpr size_t n_inputs = 1;
-constexpr int NUMBER_OF_STREAM_ITEMS = 4; /* Not at all correct, just getting GNU Radio to run */
+constexpr int NUMBER_OF_STREAM_ITEMS = 8; /* Not at all correct, just getting GNU Radio to run */
 
 ihd_source::sptr ihd_source::make(double center_freq)
 {
@@ -56,18 +57,16 @@ bool ihd_source_impl::stop()
 /*
  * The private constructor
  */
-ihd_source_impl::ihd_source_impl(double center_freq)
-    : gr::sync_block("ihd_source",
-                     gr::io_signature::make(0, 0, 0),
-                     gr::io_signature::make(
-                     n_inputs /* min outputs */,
-                                            n_chan /*max outputs */, NUMBER_OF_STREAM_ITEMS)),
-    _issue_stream_cmd_on_start(true),
-    _stream_args("sc16", "sc16")
+ihd_source_impl::ihd_source_impl(double center_freq) :
+                   gr::sync_block("ihd_source",
+      gr::io_signature::make(0,0, 0),
+     gr::io_signature::make(0,n_chan,NUMBER_OF_STREAM_ITEMS)),
+      _issue_stream_cmd_on_start(true),
+      _stream_args("sc16", "sc16")
 {
     d_logger->debug("Start constructing IHD");
     _center_freq = center_freq;
-    std::string args("addr=10.75.42.15");
+    std::string args("addr=127.0.0.1");
     size_t channel = 0;
 
     _isrp = ::ihd::ipsolon_isrp::make(args);
@@ -99,11 +98,14 @@ int ihd_source_impl::work(int noutput_items,
                           gr_vector_const_void_star& input_items,
                           gr_vector_void_star& output_items)
 {
-    d_logger->debug("Working.  number output_items:%d", noutput_items);
-    std::vector<uint8_t> buffs = std::vector<uint8_t>(samples);
-    output_items.push_back(&buffs);
-    usleep(1000);
+    d_logger->debug("Working.  number output_items:{:d}", noutput_items);
+    std::vector<uint8_t *> buffs(1);
+    buffs[0] = new uint8_t[_streamer->get_max_num_samps() * 2];
 
+    uhd::rx_metadata_t md;
+    _streamer->recv(buffs, 0, md, 5);
+
+    output_items.push_back(&buffs);
     // Tell runtime system how many output items we produced.
     return noutput_items;
 }

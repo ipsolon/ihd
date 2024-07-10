@@ -177,7 +177,7 @@ int map_file(map_file_t &map)
         perror("Error getting file stat");
     }
     if (!err) {
-        std::cout << "File size:" << s.st_size;
+        std::cout << "File size:" << s.st_size << std::endl;
         map.size = s.st_size;
         map.fd = open(map.filename.c_str(), O_RDONLY);
         if (map.fd < 0) {
@@ -187,13 +187,13 @@ int map_file(map_file_t &map)
     }
     if (!err) {
         map.num_packets = (map.size / RAW_PACKET_SIZE);
-        std::cout << "Map size:" << map.size;
+        std::cout << "Map size:" << map.size << std::endl;
         map.mem = (uint8_t *) mmap(0, map.size, PROT_READ, MAP_FILE | MAP_PRIVATE, map.fd, 0);
         if (map.mem == nullptr) {
             perror("Error mapping memory");
             err = -1;
         } else {
-            std::cout << "Map pointer:" << map.mem;
+            std::cout << "Map pointer:" << map.mem << std::endl;
         }
     }
     return err;
