@@ -38,13 +38,16 @@ RUN apt-get install -y gdb
 RUN apt-get install -y net-tools
 
 #install the wireshark dissector for CHDR/RFnoc headers
-RUN git clone https://github.com/EttusResearch/uhd.git && \
-    cd uhd/tools/dissectors && \
+RUN git clone https://github.com/EttusResearch/uhd.git /tmp/uhd && \
+    cd /tmp/uhd/tools/dissectors && \
     git checkout v4.1.0.5 && \
     mkdir build && \
     cd build && \
     cmake .. && \
     make && make install
+
+# Get back to root after installing UHD
+WORKDIR /
 
 # install extra gnuradio dev libs
 RUN apt-get install -y libspdlog-dev clang-format
