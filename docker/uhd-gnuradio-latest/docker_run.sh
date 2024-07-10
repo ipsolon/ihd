@@ -16,5 +16,4 @@ docker run --net=host --env="DISPLAY" -e LOCAL_UID=$(id -u $USER) -e LOCAL_GID=$
   --mount type=bind,source="$(pwd)"/../../../ihd,target=/ihd \
   ${MOUNT_OPT} \
   --group-add=audio \
-  -p 49152:49152/udp \
   -it ubuntu:gnuradio-releases-latest bash
