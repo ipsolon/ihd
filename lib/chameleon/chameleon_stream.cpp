@@ -50,6 +50,7 @@ size_t chameleon_stream::recv(const buffs_type& buffs, const size_t nsamps_per_b
     sockaddr_in server_addr{};
     socklen_t len;
     ssize_t n = 0;
+    size_t n_samples = nsamps_per_buff * bytes_per_sample;
 
     double vita_to = static_cast<double>(_vita_port_timeout.tv_sec) +
                      static_cast<double>(_vita_port_timeout.tv_usec) / 1000000.0;
@@ -64,12 +65,14 @@ size_t chameleon_stream::recv(const buffs_type& buffs, const size_t nsamps_per_b
     if (!err) {
         n = recvfrom(_socket_fd, &vita_buff, sizeof(vita_buff),0,(struct sockaddr *) &server_addr,&len);
         if (n > 0) {
-            uint64_t header = vita_buff[0] |
-                              vita_buff[1] << 8  |
-                              vita_buff[2] << 16 |
-                              vita_buff[3] << 24 |
-                    (uint64_t)vita_buff[4] << 32 |
-                    (uint64_t)vita_buff[5] << 40 |
+            uint64_t header =
+                    /* FIXME - temporary swap until the FPGA is updated */
+                    (uint64_t)vita_buff[1]       |
+                    (uint64_t)vita_buff[0] << 8  |
+                    (uint64_t)vita_buff[3] << 16 |
+                    (uint64_t)vita_buff[2] << 24 |
+                    (uint64_t)vita_buff[5] << 32 |
+                    (uint64_t)vita_buff[4] << 40 |
                     (uint64_t)vita_buff[6] << 48 |
                     (uint64_t)vita_buff[7] << 56;
 
