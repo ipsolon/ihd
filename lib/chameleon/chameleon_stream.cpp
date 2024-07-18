@@ -74,10 +74,11 @@ size_t chameleon_stream::recv(const buffs_type& buffs, const size_t nsamps_per_b
                     (uint64_t)vita_buff[7] << 56;
 
             chdr_header chdr(header);
-            //std::cout << chdr.get_seq_num() << std::endl;
+            std::cout << "CHDR:" << chdr.to_string() << std::endl;
 
             void *p = buffs[0];
-            memcpy(p, vita_buff + 16 /* CHDR + Timestamp */, std::min(bytes_per_sample, (size_t)n));
+            n = std::min(nsamps_per_buff, (size_t)n);
+            memcpy(p, vita_buff + 16 /* CHDR + Timestamp */, n);
         } else if (n < 0) {
             std::cout << "Receive error." << " errno:" << errno << ":" << strerror(errno) << std::endl;
         }
@@ -99,13 +100,26 @@ void chameleon_stream::issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd)
 
 void chameleon_stream::start_stream() const
 {
+#if IMPLEMENTED_CMD_PORT
     auto request = chameleon_fw_comms_t();
     request.flags             = CHAMELEON_FW_COMMS_FLAGS_WRITE;
     request.addr              = CHAMELEON_FW_COMMS_CMD_STREAM_CMD;
     request.stream.enable     = true;
     request.stream.chans      = _chanMask;
-
     _commander.send_request(request);
+#else
+    /* For now, you just send the radio 'anything' and it goes */
+    sockaddr_in radio_addr{};
+    radio_addr.sin_addr.s_addr = inet_addr("192.168.10.200");
+    radio_addr.sin_port = htons(vita_port);
+
+    uint8_t go[] = {0x67,0x6F};
+    int n = sendto(_socket_fd, go, sizeof(go), MSG_CONFIRM,
+                   (const struct sockaddr *) &radio_addr, sizeof(radio_addr));
+    if (n != sizeof(go)) {
+        THROW_SOCKET_ERROR();
+    }
+#endif
 }
 
 void chameleon_stream::stop_stream() const
@@ -124,18 +138,23 @@ void chameleon_stream::open_socket() {
     int sock_fd = -1;
 
     // Creating socket file descriptor
-    err = socket(AF_INET, SOCK_DGRAM, 0);
+    err = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (err < 0) {
         perror("socket creation failed");
     } else {
+        int broadcast = 1;
         sock_fd = err;
-        err = 0;
-
-        sockaddr_in server_addr{};
-        server_addr.sin_family = AF_INET;
-        server_addr.sin_port = htons(vita_port);
-        server_addr.sin_addr.s_addr = INADDR_ANY;
-        err = bind(sock_fd, (const struct sockaddr*)&server_addr, sizeof(server_addr));
+        err = setsockopt(sock_fd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof broadcast);
+        if (err) {
+            perror("setsockopt failed");
+        }
+    }
+    if (!err) {
+        sockaddr_in local_addr{};
+        local_addr.sin_family = AF_INET;
+        local_addr.sin_port = htons(vita_port);
+        local_addr.sin_addr.s_addr = INADDR_ANY;
+        err = bind(sock_fd, (const struct sockaddr *) &local_addr, sizeof(local_addr));
         if (err < 0) {
             perror("bind failed");
         }
@@ -146,17 +165,6 @@ void chameleon_stream::open_socket() {
             perror("Socket timeout set error");
         }
     }
-
-#if 0 // FIXME - investigate implementing PACKET_RX_RING: https://yusufonlinux.blogspot.com/2010/11/data-link-access-and-zero-copy.html
-    if (!err) {
-        struct tpacket_req req;
-        req.tp_block_size =  2048;
-        req.tp_block_nr   =     2;
-        req.tp_frame_size =   256;
-        req.tp_frame_nr   =    16;
-        setsockopt(sock_fd, SOL_PACKET, PACKET_RX_RING, (void *) &req, sizeof(req));
-    }
-#endif // end PACKET_RX_RING
     if (err) {
         if (sock_fd > -1) {
             close(sock_fd);

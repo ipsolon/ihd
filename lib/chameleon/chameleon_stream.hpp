@@ -26,10 +26,9 @@ public:
     void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd) override;
 
 private:
-    static const int vita_port = 49153;
-    // FIXME - Real Chameleon will be: 64 * 1024, hard code for now: x310 packet size - CHDR - timestamp
+    static const int vita_port = 9090;
     static constexpr size_t bytes_per_sample = 2;
-    static constexpr size_t bytes_per_packet = (1472-8-8);
+    static constexpr size_t bytes_per_packet = (64000);
     static constexpr size_t max_sample_per_packet = bytes_per_packet / bytes_per_sample;
 
     timeval _vita_port_timeout = {default_timeout, 0};
