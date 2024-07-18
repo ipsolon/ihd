@@ -19,10 +19,12 @@
 namespace po = boost::program_options;
 
 
-#define NUMBER_OF_CHANNELS 1 /* We are limited to a single channel right now */
-#define DEFAULT_UDP_PACKET_SIZE    64000
-#define DEFAULT_BYTES_PER_SAMPLE       4 /* 16 Bit I/Q = 4 Bytes */
-#define DEFAULT_SAMPLE_PER_BUFFER (DEFAULT_UDP_PACKET_SIZE / DEFAULT_BYTES_PER_SAMPLE)
+#define NUMBER_OF_CHANNELS                1 /* We are limited to a single channel right now */
+#define DEFAULT_UDP_PACKET_SIZE       64000 /* Fixed size by radio */
+#define DEFAULT_BYTES_PER_SAMPLE          2 /* 16 Bits */
+#define DEFAULT_BYTES_PER_IQ_PAIR      (DEFAULT_BYTES_PER_SAMPLE * 2)   /* 16 Bit I/Q = 4 Bytes */
+#define DEFAULT_IQ_SAMPLES_PER_BUFFER ((DEFAULT_UDP_PACKET_SIZE - 16) / \
+                                        DEFAULT_BYTES_PER_IQ_PAIR)      /* i.e. the number of IQ pairs, minus CHDR & timestamp */
 
 /**
  * Do a ramp check on the file, assumes
@@ -34,7 +36,7 @@ static void rampcheck(int fd, size_t buffer_size)
 {
     ssize_t  read_bytes = 0;
     size_t n_buffs = 0;
-    size_t IQ_count = buffer_size / DEFAULT_BYTES_PER_SAMPLE; // How many IQ pairs per buffer
+    size_t IQ_pairs = buffer_size / DEFAULT_BYTES_PER_IQ_PAIR; // How many IQ pairs per buffer
 
     int err = lseek(fd, 0, SEEK_SET);
     if (!err) {
@@ -57,13 +59,15 @@ static void rampcheck(int fd, size_t buffer_size)
                 uint16_t packet_count1 = buff[0];
                 uint16_t packet_count2 = buff[1];
                 uint16_t ramp = 1;
-                for (int j = 2; j < (IQ_count * 2); j += 2) {
+                for (int j = 2; j < (IQ_pairs * 2) && !err; j += 2) {
                     uint16_t i = buff[j];
                     uint16_t q = buff[j + 1];
                     if (i != q) {
+                        err = -1;
                         printf("\nI/Q mismatch: i:%04x q:%04x sample:%d\n", i, q, j);
                     }
                     if (i != ramp || q != ramp) {
+                        err = -1;
                         printf("\nRamp pattern mismatch: expected:%02x got i:%02x q:%02x sample:%d\n", ramp, i, q, j);
                     }
                     ramp++;
@@ -88,8 +92,8 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         ("help", "help message")
         ("file", po::value<std::string>(&file)->default_value("isrp_samples.dat"), "name of the file to write binary samples to")
         ("duration", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
-        ("spb", po::value<size_t>(&spb)->default_value(DEFAULT_SAMPLE_PER_BUFFER), "samples per buffer")
+        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(DEFAULT_IQ_SAMPLES_PER_BUFFER * 10), "total number of samples to receive")
+        ("spb", po::value<size_t>(&spb)->default_value(DEFAULT_IQ_SAMPLES_PER_BUFFER), "samples per buffer")
         ("freq", po::value<double>(&freq)->default_value(0.0), "RF center frequency in Hz")
         ("channel", po::value<size_t>(&channel)->default_value(0), "which channel to use")
         ("args", po::value<std::string>(&args)->default_value(""), "ISRP device address args")
@@ -130,7 +134,8 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     rx_stream->issue_stream_cmd(stream_cmd);
     std::vector<uint8_t *> buffs(NUMBER_OF_CHANNELS);
-    uint8_t p[DEFAULT_UDP_PACKET_SIZE];
+    size_t buffer_size = spb * DEFAULT_BYTES_PER_IQ_PAIR;
+    uint8_t p[buffer_size];
     buffs[0] = p;
 
     int fd = open(file.c_str(), O_CREAT | O_TRUNC | O_RDWR,
@@ -142,8 +147,9 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     }
 
     uhd::rx_metadata_t md;
-    for (int i = 0; i < 900; i++) {
-        size_t n = rx_stream->recv(buffs, DEFAULT_UDP_PACKET_SIZE, md, 5);
+    size_t sample_iterations = total_num_samps / spb;
+    for (size_t i = 0; i < sample_iterations; i++) {
+        size_t n = rx_stream->recv(buffs, spb, md, 5);
         ssize_t w = write(fd, buffs[0], n);
         if (w != n) {
             fprintf(stderr, "Write failed. Request %lu bytes written, write returned:%lu. %s",
@@ -152,7 +158,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     }
 
     if (vm.count("rampcheck")) {
-        rampcheck(fd, DEFAULT_UDP_PACKET_SIZE);
+        rampcheck(fd, buffer_size);
     }
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
     rx_stream->issue_stream_cmd(stream_cmd);

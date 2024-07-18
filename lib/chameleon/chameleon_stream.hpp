@@ -27,8 +27,8 @@ public:
 
 private:
     static const int vita_port = 9090;
-    static constexpr size_t bytes_per_sample = 2;
-    static constexpr size_t bytes_per_packet = (64000);
+    static constexpr size_t bytes_per_sample = 4;
+    static constexpr size_t bytes_per_packet = 64000;
     static constexpr size_t max_sample_per_packet = bytes_per_packet / bytes_per_sample;
 
     timeval _vita_port_timeout = {default_timeout, 0};

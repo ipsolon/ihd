@@ -77,7 +77,7 @@ size_t chameleon_stream::recv(const buffs_type& buffs, const size_t nsamps_per_b
             std::cout << "CHDR:" << chdr.to_string() << std::endl;
 
             void *p = buffs[0];
-            n = std::min(nsamps_per_buff, (size_t)n);
+            n = std::min((ssize_t)n_samples, n);
             memcpy(p, vita_buff + 16 /* CHDR + Timestamp */, n);
         } else if (n < 0) {
             std::cout << "Receive error." << " errno:" << errno << ":" << strerror(errno) << std::endl;
