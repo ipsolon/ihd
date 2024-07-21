@@ -13,6 +13,8 @@
 
 #define THROW_VALUE_NOT_SUPPORTED_ERROR(v) throw std::runtime_error("Value not supported: " + v)
 
-#define THROW_NARROWING_ERROR() throw std::runtime_error("Narrrow error")
+#define THROW_NARROWING_ERROR() throw std::runtime_error("Narrow error")
+
+#define THROW_SOCKET_ERROR() throw std::runtime_error("UDP Socket error")
 
 #endif //EXCEPTION_HPP

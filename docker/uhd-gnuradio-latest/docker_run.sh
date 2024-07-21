@@ -10,9 +10,14 @@ else
   fi
 fi
 
-docker run --net=host --env="DISPLAY" -e LOCAL_UID=$(id -u $USER) -e LOCAL_GID=$(id -g $USER) \
+echo "The ostype is: $OSTYPE"
+if [[ "$OSTYPE" == "msys"* ]]; then
+  # Windows want winpty, else leave the variable as non-existent
+  WINDOWS_RUN=winpty
+fi
+
+$WINDOWS_RUN docker run --net=host --env="DISPLAY" -e LOCAL_UID=$(id -u $USER) -e LOCAL_GID=$(id -g $USER) \
   --volume="$HOME/.Xauthority:/root/.Xauthority:rw" --privileged --privileged -v /dev/bus/usb/:/dev/bus/usb/ \
-  --device /dev/snd \
   --mount type=bind,source="$(pwd)"/../../../ihd,target=/ihd \
   ${MOUNT_OPT} \
   --group-add=audio \

@@ -8,10 +8,12 @@
 #include "ihd_source_impl.h"
 #include <gnuradio/io_signature.h>
 
-namespace gr {
-namespace ihd {
+namespace gr::ihd {
+
 constexpr size_t samples = 4096;
-constexpr size_t nchan = 1;
+constexpr size_t n_chan = 1;
+constexpr size_t n_inputs = 1;
+constexpr int NUMBER_OF_STREAM_ITEMS = 8; /* Not at all correct, just getting GNU Radio to run */
 
 ihd_source::sptr ihd_source::make(double center_freq)
 {
@@ -20,6 +22,7 @@ ihd_source::sptr ihd_source::make(double center_freq)
 
 bool ihd_source_impl::start()
 {
+    d_logger->debug("IHD starting");
     if (_issue_stream_cmd_on_start) {
         // Start the streamers
         ::uhd::stream_cmd_t stream_cmd(::uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
@@ -36,6 +39,7 @@ bool ihd_source_impl::start()
     } else {
         d_logger->debug("Starting RX streamer without stream command...");
     }
+    d_logger->debug("IHD done starting");
     return true;
 }
 
@@ -53,17 +57,17 @@ bool ihd_source_impl::stop()
 /*
  * The private constructor
  */
-ihd_source_impl::ihd_source_impl(double center_freq)
-    : gr::sync_block("ihd_source",
-                     gr::io_signature::make(0, 0, 0),
-                     gr::io_signature::make(
-                     1 /* min outputs */, 1 /*max outputs */, nchan)),
-    _issue_stream_cmd_on_start(true),
-    _stream_args("sc16", "sc16")
+ihd_source_impl::ihd_source_impl(double center_freq) :
+                   gr::sync_block("ihd_source",
+      gr::io_signature::make(0,0, 0),
+     gr::io_signature::make(0,n_chan,NUMBER_OF_STREAM_ITEMS)),
+      _issue_stream_cmd_on_start(true),
+      _stream_args("sc16", "sc16")
 {
+    d_logger->debug("Start constructing IHD");
     _center_freq = center_freq;
-    std::string args("addr=10.75.42.15");
-    size_t channel;
+    std::string args("addr=127.0.0.1");
+    size_t channel = 0;
 
     _isrp = ::ihd::ipsolon_isrp::make(args);
     uhd::tune_request_t tune_request{};
@@ -76,6 +80,7 @@ ihd_source_impl::ihd_source_impl(double center_freq)
     _stream_args.channels = channel_nums;
     _streamer = _isrp->get_rx_stream(_stream_args);
 
+    d_logger->debug("Done constructing IHD");
 
 #if 0
     sleep(5);
@@ -87,18 +92,45 @@ ihd_source_impl::ihd_source_impl(double center_freq)
 /*
  * Our virtual destructor.
  */
-ihd_source_impl::~ihd_source_impl() {}
+ihd_source_impl::~ihd_source_impl() = default;
+
+/* FIXME - Shared header? */
+#define NUMBER_OF_CHANNELS                1 /* We are limited to a single channel right now */
+#define DEFAULT_UDP_PACKET_SIZE       64000 /* Fixed size by radio */
+#define DEFAULT_BYTES_PER_SAMPLE          2 /* 16 Bits */
+#define DEFAULT_BYTES_PER_IQ_PAIR      (DEFAULT_BYTES_PER_SAMPLE * 2)   /* 16 Bit I/Q = 4 Bytes */
+#define DEFAULT_IQ_SAMPLES_PER_BUFFER ((DEFAULT_UDP_PACKET_SIZE - 16) / \
+                                        DEFAULT_BYTES_PER_IQ_PAIR)      /* i.e. the number of IQ pairs, minus CHDR & timestamp */
 
 int ihd_source_impl::work(int noutput_items,
                           gr_vector_const_void_star& input_items,
                           gr_vector_void_star& output_items)
 {
-     std::vector<uint8_t> buffs = std::vector<uint8_t>(samples);
-    output_items.push_back(&buffs);
+    int ret = std::min(noutput_items,DEFAULT_IQ_SAMPLES_PER_BUFFER);
+    static bool print_once = false;
+    if (!print_once) {
+        d_logger->debug("Working.  number output_items:{:d}", noutput_items);
+        print_once = true;
+    }
+
+    std::vector<uint8_t *> buffs(NUMBER_OF_CHANNELS);
+    uint8_t p[DEFAULT_IQ_SAMPLES_PER_BUFFER * DEFAULT_BYTES_PER_IQ_PAIR];
+    buffs[0] = p;
+
+    uhd::rx_metadata_t md;
+
+
+    _streamer->recv(buffs, DEFAULT_IQ_SAMPLES_PER_BUFFER, md, 5);
+    auto* optr = (gr_complex*)output_items[0];
+    for (int i =0; i < ret; i++) {
+        int s = i * 2;
+        gr_complex cs(p[s], p[s+1]);
+        optr[i] = cs;
+    }
 
     // Tell runtime system how many output items we produced.
-    return noutput_items;
+    return ret;
 }
 
-} /* namespace ihd */
-} /* namespace gr */
+} // namespace gr::ihd
+

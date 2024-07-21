@@ -17,6 +17,12 @@ parameters:
     label: Center Freq
     dtype: float
     default: 6000000000
+
+  - id: ip_addr
+    label: IP Address
+    dtype: string
+    default: "127.0.0.1"
+
 #- id: ...
 #  label: ...
 #  dtype: ...
@@ -31,7 +37,7 @@ parameters:
 outputs:
   - label: out0
     domain: stream
-    dtype: float
+    dtype: complex
 
 #  'file_format' specifies the version of the GRC yml format used in the file
 #  and should usually not be changed.

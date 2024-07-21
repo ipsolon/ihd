@@ -4,21 +4,87 @@
 * SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include <iostream>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
+#include <iostream>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
 
+#include "safe_main.hpp"
+#include "ihd.h"
+
 namespace po = boost::program_options;
 
-#include "ihd.h"
-#include "safe_main.hpp"
+
+#define NUMBER_OF_CHANNELS                1 /* We are limited to a single channel right now */
+#define DEFAULT_UDP_PACKET_SIZE       64000 /* Fixed size by radio */
+#define DEFAULT_BYTES_PER_SAMPLE          2 /* 16 Bits */
+#define DEFAULT_BYTES_PER_IQ_PAIR      (DEFAULT_BYTES_PER_SAMPLE * 2)   /* 16 Bit I/Q = 4 Bytes */
+#define DEFAULT_IQ_SAMPLES_PER_BUFFER ((DEFAULT_UDP_PACKET_SIZE - 16) / \
+                                        DEFAULT_BYTES_PER_IQ_PAIR)      /* i.e. the number of IQ pairs, minus CHDR & timestamp */
+
+/**
+ * Do a ramp check on the file, assumes
+ * @param fd open file descriptor to samples file
+ * @param buffer_size Each 'buffer size' chunk is expected to start with packet number and then ramp up,
+ *                      from 1 to 'buffer size' - 1.
+ */
+static void rampcheck(int fd, size_t buffer_size)
+{
+    ssize_t  read_bytes = 0;
+    size_t n_buffs = 0;
+    size_t IQ_pairs = buffer_size / DEFAULT_BYTES_PER_IQ_PAIR; // How many IQ pairs per buffer
+
+    int err = lseek(fd, 0, SEEK_SET);
+    if (!err) {
+        struct stat stat_buf{};
+        err = fstat(fd, &stat_buf);
+        if (err) {
+            fprintf(stderr, "Error getting stat on file:%s", strerror(errno));
+        } else {
+            n_buffs = (stat_buf.st_size / buffer_size);
+        }
+    }
+    if (!err && n_buffs) {
+        for (int iteration = 0; iteration < n_buffs; iteration++) {
+            uint16_t buff[buffer_size / 2];
+            ssize_t n = read(fd, buff, buffer_size);
+            if (n != buffer_size) {
+                fprintf(stderr, "Error reading from file:%s", strerror(errno));
+            } else {
+                read_bytes += n;
+                uint16_t packet_count1 = buff[0];
+                uint16_t packet_count2 = buff[1];
+                uint16_t ramp = 1;
+                for (int j = 2; j < (IQ_pairs * 2) && !err; j += 2) {
+                    uint16_t i = buff[j];
+                    uint16_t q = buff[j + 1];
+                    if (i != q) {
+                        err = -1;
+                        printf("\nI/Q mismatch: i:%04x q:%04x sample:%d\n", i, q, j);
+                    }
+                    if (i != ramp || q != ramp) {
+                        err = -1;
+                        printf("\nRamp pattern mismatch: expected:%02x got i:%02x q:%02x sample:%d\n", ramp, i, q, j);
+                    }
+                    ramp++;
+                    printf("Read bytes:%ld Packet Count:%x:%x i:%04x q:%04x\r",
+                           read_bytes, packet_count1, packet_count2, i, q);
+                }
+            }
+        }
+        printf("\n\n");
+    }
+}
 
 int IHD_SAFE_MAIN(int argc, char *argv[])
 {
     std::cout << "Revision: " << ihd::get_version_string() << std::endl;
     std::string file, args;
-    size_t total_num_samps, channel;
+    size_t total_num_samps, channel, spb;
     double freq, total_time;
 
     po::options_description desc("Allowed options");
@@ -26,11 +92,12 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         ("help", "help message")
         ("file", po::value<std::string>(&file)->default_value("isrp_samples.dat"), "name of the file to write binary samples to")
         ("duration", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
+        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(DEFAULT_IQ_SAMPLES_PER_BUFFER * 10), "total number of samples to receive")
+        ("spb", po::value<size_t>(&spb)->default_value(DEFAULT_IQ_SAMPLES_PER_BUFFER), "samples per buffer")
         ("freq", po::value<double>(&freq)->default_value(0.0), "RF center frequency in Hz")
         ("channel", po::value<size_t>(&channel)->default_value(0), "which channel to use")
-
         ("args", po::value<std::string>(&args)->default_value(""), "ISRP device address args")
+        ("rampcheck","Do ramp check on the file after collecting samples")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -66,9 +133,35 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
 
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     rx_stream->issue_stream_cmd(stream_cmd);
-    sleep(5);
+    std::vector<uint8_t *> buffs(NUMBER_OF_CHANNELS);
+    size_t buffer_size = spb * DEFAULT_BYTES_PER_IQ_PAIR;
+    uint8_t p[buffer_size];
+    buffs[0] = p;
+
+    int fd = open(file.c_str(), O_CREAT | O_TRUNC | O_RDWR,
+                                        S_IRUSR | S_IWUSR | S_IRGRP |
+                                        S_IWGRP | S_IROTH | S_IWOTH);
+    if (fd < 0) {
+        perror("File Open error");
+        exit(fd);
+    }
+
+    uhd::rx_metadata_t md;
+    size_t sample_iterations = total_num_samps / spb;
+    for (size_t i = 0; i < sample_iterations; i++) {
+        size_t n = rx_stream->recv(buffs, spb, md, 5);
+        ssize_t w = write(fd, buffs[0], n);
+        if (w != n) {
+            fprintf(stderr, "Write failed. Request %lu bytes written, write returned:%lu. %s",
+                    n, w, strerror(errno));
+        }
+    }
+
+    if (vm.count("rampcheck")) {
+        rampcheck(fd, buffer_size);
+    }
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
     rx_stream->issue_stream_cmd(stream_cmd);
-
-    return 0;
+    close(fd);
+    exit(0);
 }
