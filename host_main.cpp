@@ -71,8 +71,9 @@ static void rampcheck(int fd, size_t buffer_size)
                         printf("\nRamp pattern mismatch: expected:%02x got i:%02x q:%02x sample:%d\n", ramp, i, q, j);
                     }
                     ramp++;
-                    printf("Read bytes:%ld Packet Count:%x:%x i:%04x q:%04x\r",
-                           read_bytes, packet_count1, packet_count2, i, q);
+//                    printf("Read bytes:%ld Packet Count:%x:%x i:%04x q:%04x\r",
+//                           read_bytes, packet_count1, packet_count2, i, q);
+                    printf("Read bytes:%ld i:%04x q:%04x\r", read_bytes, i, q);
                 }
             }
         }
@@ -86,6 +87,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     std::string file, args;
     size_t total_num_samps, channel, spb;
     double freq, total_time;
+    uhd::rx_metadata_t md;
 
     po::options_description desc("Allowed options");
     desc.add_options()
@@ -113,6 +115,21 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         return ~0;
     }
 
+    int fd = open(file.c_str(), O_CREAT | O_TRUNC | O_RDWR,
+                                        S_IRUSR | S_IWUSR | S_IRGRP |
+                                        S_IWGRP | S_IROTH | S_IWOTH);
+    if (fd < 0) {
+        perror("File Open error");
+        exit(fd);
+    }
+
+    /************************************************************************
+     * Allocate buffers
+     ***********************************************************************/
+    std::vector<std::complex<uint16_t>*> buffs(NUMBER_OF_CHANNELS);
+    std::complex<uint16_t> p[spb];
+    buffs[0] = p;
+
     /************************************************************************
      * Create device and block controls
      ***********************************************************************/
@@ -125,28 +142,24 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     size_t chan = 0;
     isrp->set_rx_freq(tune_request, chan);
 
+    /************************************************************************
+     * Get Rx Stream
+     ***********************************************************************/
     uhd::stream_args_t stream_args("sc16", "sc16");
     std::vector<size_t> channel_nums;
     channel_nums.push_back(channel);
     stream_args.channels = channel_nums;
     auto rx_stream = isrp->get_rx_stream(stream_args);
 
+    /************************************************************************
+     * Start the stream
+     ***********************************************************************/
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     rx_stream->issue_stream_cmd(stream_cmd);
-    std::vector<uint8_t *> buffs(NUMBER_OF_CHANNELS);
-    size_t buffer_size = spb * DEFAULT_BYTES_PER_IQ_PAIR;
-    uint8_t p[buffer_size];
-    buffs[0] = p;
 
-    int fd = open(file.c_str(), O_CREAT | O_TRUNC | O_RDWR,
-                                        S_IRUSR | S_IWUSR | S_IRGRP |
-                                        S_IWGRP | S_IROTH | S_IWOTH);
-    if (fd < 0) {
-        perror("File Open error");
-        exit(fd);
-    }
-
-    uhd::rx_metadata_t md;
+    /************************************************************************
+     * Receive Data
+     ***********************************************************************/
     size_t sample_iterations = total_num_samps / spb;
     for (size_t i = 0; i < sample_iterations; i++) {
         size_t n = rx_stream->recv(buffs, spb, md, 5);
@@ -158,7 +171,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     }
 
     if (vm.count("rampcheck")) {
-        rampcheck(fd, buffer_size);
+        rampcheck(fd, spb);
     }
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
     rx_stream->issue_stream_cmd(stream_cmd);

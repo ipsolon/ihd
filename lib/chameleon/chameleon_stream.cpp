@@ -52,6 +52,12 @@ size_t chameleon_stream::recv(const buffs_type& buffs, const size_t nsamps_per_b
     ssize_t n = 0;
     size_t n_samples = nsamps_per_buff * bytes_per_sample;
 
+    /* FIXME - do a proper C++ cast here */
+    auto *output_arrary = (std::complex<uint16_t>*)(buffs[0]);
+    if(output_arrary == nullptr) {
+        THROW_TYPE_ERROR();
+    }
+
     double vita_to = static_cast<double>(_vita_port_timeout.tv_sec) +
                      static_cast<double>(_vita_port_timeout.tv_usec) / 1000000.0;
     if (timeout != vita_to) {
@@ -76,12 +82,17 @@ size_t chameleon_stream::recv(const buffs_type& buffs, const size_t nsamps_per_b
                     (uint64_t)vita_buff[6] << 48 |
                     (uint64_t)vita_buff[7] << 56;
 
-            chdr_header chdr(header);
-            std::cout << "CHDR:" << chdr.to_string() << std::endl;
+//            chdr_header chdr(header);
+//            std::cout << "CHDR:" << chdr.to_string() << std::endl;
 
-            void *p = buffs[0];
-            n = std::min((ssize_t)n_samples, n);
-            memcpy(p, vita_buff + 16 /* CHDR + Timestamp */, n);
+            auto *p = (uint16_t *)(vita_buff + 16/* FIXME - add constant */);
+            n = std::min((ssize_t)nsamps_per_buff, n/2 /* 1I+1Q */);
+            for (int i =0; i < n; i++) {
+                int s = i * 2;
+                std::complex<uint16_t> cs(p[s], p[s+1]);
+                output_arrary[i] = cs;
+            }
+
         } else if (n < 0) {
             std::cout << "Receive error." << " errno:" << errno << ":" << strerror(errno) << std::endl;
         }
