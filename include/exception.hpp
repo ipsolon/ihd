@@ -17,4 +17,6 @@
 
 #define THROW_TYPE_ERROR() throw std::runtime_error("Type cast error")
 
+#define THROW_MALLOC_ERROR() throw std::runtime_error("Memory Allocation error")
+
 #endif //EXCEPTION_HPP

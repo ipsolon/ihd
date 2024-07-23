@@ -71,9 +71,8 @@ static void rampcheck(int fd, size_t buffer_size)
                         printf("\nRamp pattern mismatch: expected:%02x got i:%02x q:%02x sample:%d\n", ramp, i, q, j);
                     }
                     ramp++;
-//                    printf("Read bytes:%ld Packet Count:%x:%x i:%04x q:%04x\r",
-//                           read_bytes, packet_count1, packet_count2, i, q);
-                    printf("Read bytes:%ld i:%04x q:%04x\r", read_bytes, i, q);
+                    printf("Read bytes:%ld Packet Count:%x:%x i:%04x q:%04x\r",
+                           read_bytes, packet_count1, packet_count2, i, q);
                 }
             }
         }
@@ -169,12 +168,12 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
                     n, w, strerror(errno));
         }
     }
+    stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
+    rx_stream->issue_stream_cmd(stream_cmd);
 
     if (vm.count("rampcheck")) {
         rampcheck(fd, spb);
     }
-    stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
-    rx_stream->issue_stream_cmd(stream_cmd);
     close(fd);
-    exit(0);
+    return(0);
 }
