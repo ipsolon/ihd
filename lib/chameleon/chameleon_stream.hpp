@@ -20,8 +20,6 @@
 
 namespace ihd {
 
-class chameleon_packet;
-
 class chameleon_stream : public ipsolon_stream {
 public:
     static const size_t default_timeout = 5;
