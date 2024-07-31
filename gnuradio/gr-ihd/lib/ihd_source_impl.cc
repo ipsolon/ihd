@@ -94,9 +94,9 @@ ihd_source_impl::ihd_source_impl(double center_freq) :
  */
 ihd_source_impl::~ihd_source_impl() = default;
 
-/* FIXME - Shared header? */
+/* FIXME - Shared header? --  Adjust this when we settle on a packet size for sure */
 #define NUMBER_OF_CHANNELS                1 /* We are limited to a single channel right now */
-#define DEFAULT_UDP_PACKET_SIZE       64000 /* Fixed size by radio */
+#define DEFAULT_UDP_PACKET_SIZE        8960 /* Fixed size by radio */
 #define DEFAULT_BYTES_PER_SAMPLE          2 /* 16 Bits */
 #define DEFAULT_BYTES_PER_IQ_PAIR      (DEFAULT_BYTES_PER_SAMPLE * 2)   /* 16 Bit I/Q = 4 Bytes */
 #define DEFAULT_IQ_SAMPLES_PER_BUFFER ((DEFAULT_UDP_PACKET_SIZE - 16) / \

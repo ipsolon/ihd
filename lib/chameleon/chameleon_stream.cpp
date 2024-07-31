@@ -93,9 +93,11 @@ size_t chameleon_stream::recv(const buffs_type& buffs, const size_t nsamps_per_b
     lock.unlock();
 
     // FIXME - for now just get the packet maximum or the number requested, whichever is less
+
     size_t samples_to_get = std::min(nsamps_per_buff, cp->getDataSize());
     n_samples = cp->getSamples(output_array, samples_to_get);
     // FIXME - get samples from multiple packets until number of samples is fulfilled or the timout occurs
+
 
     std::lock_guard<std::mutex> free_lock(mtx_free_queue);
     q_free_packets.push(cp);

@@ -15,7 +15,7 @@
 #include <condition_variable>
 
 #include "ipsolon_stream.hpp"
-#include "chameleon_chdr_header.h"
+#include "ipsolon_chdr_header.h"
 #include "exception.hpp"
 
 namespace ihd {
@@ -37,11 +37,11 @@ public:
     void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd) override;
 
 private:
+    // FIXME - too much, move this to its own hpp/cpp file
     class chameleon_packet {
     public:
         explicit chameleon_packet(size_t ps) :  packet_size(ps),
-                                                data_offset(chdr_header::CHDR_W + sizeof(uint64_t)), /* CHDR & timestamp */
-                                                data_size(ps - data_offset),
+                                                data_size(ps - ipsolon_stream::PACKET_HEADER_SIZE),
                                                 nIQ(data_size/2),
                                                 pos(0),
                                                 samples(nullptr)
@@ -50,7 +50,7 @@ private:
             if(packet_mem == nullptr) {
                 THROW_MALLOC_ERROR();
             } else {
-                samples = reinterpret_cast<uint16_t *>(packet_mem + data_offset);
+                samples = reinterpret_cast<uint16_t *>(packet_mem + ipsolon_stream::PACKET_HEADER_SIZE);
             }
         }
 
@@ -127,7 +127,6 @@ private:
 
     private:
         size_t packet_size;
-        size_t data_offset;
         size_t data_size;
         size_t nIQ;
         size_t pos;
@@ -137,10 +136,10 @@ private:
     };
 
     static constexpr int vita_port = 9090;
-    static constexpr size_t bytes_per_sample = 4;
-    static constexpr size_t bytes_per_packet = 64000;
+    static constexpr size_t bytes_per_sample = ipsolon_stream::BYTES_PER_SAMPLE;
+    static constexpr size_t bytes_per_packet = ipsolon_stream::UDP_PACKET_SIZE;
     static constexpr size_t max_sample_per_packet = bytes_per_packet / bytes_per_sample;
-    static constexpr size_t buffer_mem_size = (32 * 1024 * 1024); /* The memory allocated to store received UDP packets */
+    static constexpr size_t buffer_mem_size = (16 * 1024 * 1024); /* The memory allocated to store received UDP packets */
     static constexpr size_t buffer_packet_cnt = buffer_mem_size / bytes_per_sample;
 
     timeval _vita_port_timeout = {default_timeout, 0};

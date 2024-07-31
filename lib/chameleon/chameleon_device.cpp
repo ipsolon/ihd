@@ -6,10 +6,11 @@
 #include "chameleon_device.hpp"
 
 #include <ipsolon_stream.hpp>
+#include <utility>
 
 #include "exception.hpp"
 
-ihd::chameleon_device::chameleon_device(const uhd::device_addr_t& _device_addr) : _device_addr(_device_addr) {}
+ihd::chameleon_device::chameleon_device(uhd::device_addr_t  _device_addr) : _device_addr(std::move(_device_addr)) {}
 
 ihd::chameleon_device::~chameleon_device() = default;
 

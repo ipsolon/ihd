@@ -18,13 +18,14 @@
 
 namespace po = boost::program_options;
 
-
 #define NUMBER_OF_CHANNELS                1 /* We are limited to a single channel right now */
+#if 0
 #define DEFAULT_UDP_PACKET_SIZE       64000 /* Fixed size by radio */
 #define DEFAULT_BYTES_PER_SAMPLE          2 /* 16 Bits */
 #define DEFAULT_BYTES_PER_IQ_PAIR      (DEFAULT_BYTES_PER_SAMPLE * 2)   /* 16 Bit I/Q = 4 Bytes */
 #define DEFAULT_IQ_SAMPLES_PER_BUFFER ((DEFAULT_UDP_PACKET_SIZE - 16) / \
                                         DEFAULT_BYTES_PER_IQ_PAIR)      /* i.e. the number of IQ pairs, minus CHDR & timestamp */
+#endif
 
 /**
  * Do a ramp check on the file, assumes
@@ -36,7 +37,7 @@ static void rampcheck(int fd, size_t buffer_size)
 {
     ssize_t  read_bytes = 0;
     size_t n_buffs = 0;
-    size_t IQ_pairs = buffer_size / DEFAULT_BYTES_PER_IQ_PAIR; // How many IQ pairs per buffer
+    size_t IQ_pairs = buffer_size / ihd::ipsolon_stream::BYTES_PER_SAMPLE; // How many IQ pairs per buffer
 
     int err = lseek(fd, 0, SEEK_SET);
     if (!err) {
@@ -93,8 +94,8 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         ("help", "help message")
         ("file", po::value<std::string>(&file)->default_value("isrp_samples.dat"), "name of the file to write binary samples to")
         ("duration", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(DEFAULT_IQ_SAMPLES_PER_BUFFER * 10), "total number of samples to receive")
-        ("spb", po::value<size_t>(&spb)->default_value(DEFAULT_IQ_SAMPLES_PER_BUFFER), "samples per buffer")
+        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(ihd::ipsolon_stream::SAMPLES_PER_PACKET * 10), "total number of samples to receive")
+        ("spb", po::value<size_t>(&spb)->default_value(ihd::ipsolon_stream::SAMPLES_PER_PACKET), "samples per buffer")
         ("freq", po::value<double>(&freq)->default_value(0.0), "RF center frequency in Hz")
         ("channel", po::value<size_t>(&channel)->default_value(0), "which channel to use")
         ("args", po::value<std::string>(&args)->default_value(""), "ISRP device address args")

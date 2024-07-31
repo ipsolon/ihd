@@ -9,6 +9,7 @@
 
 #include <uhd/usrp/multi_usrp.hpp>
 #include "exception.hpp"
+#include "ipsolon_chdr_header.h"
 
 namespace ihd {
 
@@ -17,6 +18,7 @@ class ipsolon_isrp : public uhd::usrp::multi_usrp
 public:
     ~ipsolon_isrp() override;
     ipsolon_isrp();
+
     typedef std::shared_ptr<ipsolon_isrp> sptr;
     /*!
      * Make a new multi usrp from the device address.
