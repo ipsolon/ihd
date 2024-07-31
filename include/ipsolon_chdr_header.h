@@ -8,6 +8,8 @@
 #ifndef IHD_CHAMELEON_CHDR_HEADER_H
 #define IHD_CHAMELEON_CHDR_HEADER_H
 
+namespace ihd {
+
 enum packet_type_t {
     PKT_TYPE_MGMT         = 0x0, //! Management packet
     PKT_TYPE_STRS         = 0x1, //! Stream status
@@ -27,6 +29,8 @@ public: // Functions
     chdr_header()                       = default;
     chdr_header(const chdr_header& rhs) = default;
     chdr_header(chdr_header&& rhs)      = default;
+
+    static constexpr size_t CHDR_W = 8;
 
     //! Unpack the header from a uint64_t
     explicit chdr_header(uint64_t flat_hdr) : _flat_hdr(flat_hdr) {}
@@ -223,4 +227,6 @@ private:
                | ((static_cast<uint64_t>(field) & mask(width)) << offset);
     }
 };
+
+}
 #endif //IHD_CHAMELEON_CHDR_HEADER_H

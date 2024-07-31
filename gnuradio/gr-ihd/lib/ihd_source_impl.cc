@@ -94,9 +94,9 @@ ihd_source_impl::ihd_source_impl(double center_freq) :
  */
 ihd_source_impl::~ihd_source_impl() = default;
 
-/* FIXME - Shared header? */
+/* FIXME - Shared header? --  Adjust this when we settle on a packet size for sure */
 #define NUMBER_OF_CHANNELS                1 /* We are limited to a single channel right now */
-#define DEFAULT_UDP_PACKET_SIZE       64000 /* Fixed size by radio */
+#define DEFAULT_UDP_PACKET_SIZE        8960 /* Fixed size by radio */
 #define DEFAULT_BYTES_PER_SAMPLE          2 /* 16 Bits */
 #define DEFAULT_BYTES_PER_IQ_PAIR      (DEFAULT_BYTES_PER_SAMPLE * 2)   /* 16 Bit I/Q = 4 Bytes */
 #define DEFAULT_IQ_SAMPLES_PER_BUFFER ((DEFAULT_UDP_PACKET_SIZE - 16) / \
@@ -107,27 +107,11 @@ int ihd_source_impl::work(int noutput_items,
                           gr_vector_void_star& output_items)
 {
     int ret = std::min(noutput_items,DEFAULT_IQ_SAMPLES_PER_BUFFER);
-    static bool print_once = false;
-    if (!print_once) {
-        d_logger->debug("Working.  number output_items:{:d}", noutput_items);
-        print_once = true;
-    }
-
-    std::vector<uint8_t *> buffs(NUMBER_OF_CHANNELS);
-    uint8_t p[DEFAULT_IQ_SAMPLES_PER_BUFFER * DEFAULT_BYTES_PER_IQ_PAIR];
-    buffs[0] = p;
-
     uhd::rx_metadata_t md;
+    _streamer->recv(output_items, DEFAULT_IQ_SAMPLES_PER_BUFFER, md, 5);
 
-
-    _streamer->recv(buffs, DEFAULT_IQ_SAMPLES_PER_BUFFER, md, 5);
-    auto* optr = (gr_complex*)output_items[0];
-    for (int i =0; i < ret; i++) {
-        int s = i * 2;
-        gr_complex cs(p[s], p[s+1]);
-        optr[i] = cs;
-    }
-
+    static int work_count = 0;
+    if((work_count++ % 10000) == 0) printf("Working.  number output_items:%d ret:%d\n", noutput_items, ret);
     // Tell runtime system how many output items we produced.
     return ret;
 }

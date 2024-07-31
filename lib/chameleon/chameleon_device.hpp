@@ -13,7 +13,7 @@ namespace ihd {
 class chameleon_device : public uhd::device
 {
 public:
-    explicit chameleon_device(const uhd::device_addr_t& _device_addr);
+    explicit chameleon_device(uhd::device_addr_t  _device_addr);
     ~chameleon_device() override;
     uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t& args) override;
     uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t& args) override;

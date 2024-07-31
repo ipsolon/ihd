@@ -18,13 +18,14 @@
 
 namespace po = boost::program_options;
 
-
 #define NUMBER_OF_CHANNELS                1 /* We are limited to a single channel right now */
+#if 0
 #define DEFAULT_UDP_PACKET_SIZE       64000 /* Fixed size by radio */
 #define DEFAULT_BYTES_PER_SAMPLE          2 /* 16 Bits */
 #define DEFAULT_BYTES_PER_IQ_PAIR      (DEFAULT_BYTES_PER_SAMPLE * 2)   /* 16 Bit I/Q = 4 Bytes */
 #define DEFAULT_IQ_SAMPLES_PER_BUFFER ((DEFAULT_UDP_PACKET_SIZE - 16) / \
                                         DEFAULT_BYTES_PER_IQ_PAIR)      /* i.e. the number of IQ pairs, minus CHDR & timestamp */
+#endif
 
 /**
  * Do a ramp check on the file, assumes
@@ -36,7 +37,7 @@ static void rampcheck(int fd, size_t buffer_size)
 {
     ssize_t  read_bytes = 0;
     size_t n_buffs = 0;
-    size_t IQ_pairs = buffer_size / DEFAULT_BYTES_PER_IQ_PAIR; // How many IQ pairs per buffer
+    size_t IQ_pairs = buffer_size / ihd::ipsolon_stream::BYTES_PER_SAMPLE; // How many IQ pairs per buffer
 
     int err = lseek(fd, 0, SEEK_SET);
     if (!err) {
@@ -86,14 +87,15 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     std::string file, args;
     size_t total_num_samps, channel, spb;
     double freq, total_time;
+    uhd::rx_metadata_t md;
 
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
         ("file", po::value<std::string>(&file)->default_value("isrp_samples.dat"), "name of the file to write binary samples to")
         ("duration", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(DEFAULT_IQ_SAMPLES_PER_BUFFER * 10), "total number of samples to receive")
-        ("spb", po::value<size_t>(&spb)->default_value(DEFAULT_IQ_SAMPLES_PER_BUFFER), "samples per buffer")
+        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(ihd::ipsolon_stream::SAMPLES_PER_PACKET * 10), "total number of samples to receive")
+        ("spb", po::value<size_t>(&spb)->default_value(ihd::ipsolon_stream::SAMPLES_PER_PACKET), "samples per buffer")
         ("freq", po::value<double>(&freq)->default_value(0.0), "RF center frequency in Hz")
         ("channel", po::value<size_t>(&channel)->default_value(0), "which channel to use")
         ("args", po::value<std::string>(&args)->default_value(""), "ISRP device address args")
@@ -113,6 +115,21 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         return ~0;
     }
 
+    int fd = open(file.c_str(), O_CREAT | O_TRUNC | O_RDWR,
+                                        S_IRUSR | S_IWUSR | S_IRGRP |
+                                        S_IWGRP | S_IROTH | S_IWOTH);
+    if (fd < 0) {
+        perror("File Open error");
+        exit(fd);
+    }
+
+    /************************************************************************
+     * Allocate buffers
+     ***********************************************************************/
+    std::vector<std::complex<uint16_t>*> buffs(NUMBER_OF_CHANNELS);
+    std::complex<uint16_t> p[spb];
+    buffs[0] = p;
+
     /************************************************************************
      * Create device and block controls
      ***********************************************************************/
@@ -125,28 +142,24 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     size_t chan = 0;
     isrp->set_rx_freq(tune_request, chan);
 
+    /************************************************************************
+     * Get Rx Stream
+     ***********************************************************************/
     uhd::stream_args_t stream_args("sc16", "sc16");
     std::vector<size_t> channel_nums;
     channel_nums.push_back(channel);
     stream_args.channels = channel_nums;
     auto rx_stream = isrp->get_rx_stream(stream_args);
 
+    /************************************************************************
+     * Start the stream
+     ***********************************************************************/
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     rx_stream->issue_stream_cmd(stream_cmd);
-    std::vector<uint8_t *> buffs(NUMBER_OF_CHANNELS);
-    size_t buffer_size = spb * DEFAULT_BYTES_PER_IQ_PAIR;
-    uint8_t p[buffer_size];
-    buffs[0] = p;
 
-    int fd = open(file.c_str(), O_CREAT | O_TRUNC | O_RDWR,
-                                        S_IRUSR | S_IWUSR | S_IRGRP |
-                                        S_IWGRP | S_IROTH | S_IWOTH);
-    if (fd < 0) {
-        perror("File Open error");
-        exit(fd);
-    }
-
-    uhd::rx_metadata_t md;
+    /************************************************************************
+     * Receive Data
+     ***********************************************************************/
     size_t sample_iterations = total_num_samps / spb;
     for (size_t i = 0; i < sample_iterations; i++) {
         size_t n = rx_stream->recv(buffs, spb, md, 5);
@@ -156,12 +169,12 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
                     n, w, strerror(errno));
         }
     }
-
-    if (vm.count("rampcheck")) {
-        rampcheck(fd, buffer_size);
-    }
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
     rx_stream->issue_stream_cmd(stream_cmd);
+
+    if (vm.count("rampcheck")) {
+        rampcheck(fd, spb);
+    }
     close(fd);
-    exit(0);
+    return(0);
 }
