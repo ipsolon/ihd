@@ -22,6 +22,7 @@ namespace py = pybind11;
 /**************************************/
 // BINDING_FUNCTION_PROTOTYPES(
     void bind_ihd_source(py::module& m);
+    void bind_chameleon(py::module& m);
 // ) END BINDING_FUNCTION_PROTOTYPES
 
 
@@ -51,5 +52,6 @@ PYBIND11_MODULE(ihd_python, m)
     /**************************************/
     // BINDING_FUNCTION_CALLS(
     bind_ihd_source(m);
+    bind_chameleon(m);
     // ) END BINDING_FUNCTION_CALLS
 }

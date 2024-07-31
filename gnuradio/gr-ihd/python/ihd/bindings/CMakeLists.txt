@@ -27,9 +27,9 @@ include(GrPybind)
 ########################################################################
 # Python Bindings
 ########################################################################
-
 list(APPEND ihd_python_files
-    ihd_source_python.cc python_bindings.cc)
+    ihd_source_python.cc
+    chameleon_python.cc python_bindings.cc)
 
 GR_PYBIND_MAKE_OOT(ihd
    ../../..

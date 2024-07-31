@@ -163,7 +163,7 @@ void chameleon_stream::start_stream()
 #else
     /* For now, you just send the radio 'anything' and it goes */
     sockaddr_in radio_addr{};
-    radio_addr.sin_addr.s_addr = inet_addr("192.168.10.200");
+    radio_addr.sin_addr.s_addr = inet_addr(_commander.getIP());
     radio_addr.sin_port = htons(vita_port);
 
     uint8_t go[] = {0x67,0x6F};

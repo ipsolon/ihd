@@ -13,11 +13,13 @@ namespace ihd {
 
 class chameleon_fw_commander {
 public:
-    explicit chameleon_fw_commander(const uhd::device_addr_t& dev_addr);
+    explicit chameleon_fw_commander(uhd::device_addr_t  dev_addr);
     size_t send_request(chameleon_fw_comms_t &request) const;
+    const char *getIP();
 private:
     uhd::transport::udp_simple::sptr _udp_cmd_port{};
     static std::atomic<size_t> _seq;
+    uhd::device_addr_t _dev_addr;
 };
 
 } // ihd
