@@ -33,13 +33,13 @@ chameleon_stream::chameleon_stream(const uhd::stream_args_t& stream_cmd, const u
         _chanMask |= 1 << chan; /* Channels indexed at zero */
     }
     try {
-        stream_type st(stream_cmd.args[ipsolon_stream::stream_type::STREAM_FORMAT_KEY]);
-        printf("Stream format:\n");
+        std::string str = stream_cmd.args[ipsolon_stream::stream_type::STREAM_FORMAT_KEY];
+        stream_type st(str);
         if (st.modeEquals(stream_type::FFT_STREAM)) {
             // FIXME - implement abstract recv class to handle IQ vs FFT - instantiate it here
-            printf("FFT");
+            printf("Create FFT stream\n");
         } else {
-            printf("IQ");
+            printf("Create IQ stream\n");
         }
 
     } catch (const uhd::key_error&) {

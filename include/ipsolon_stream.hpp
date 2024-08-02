@@ -34,7 +34,7 @@ public:
 
         explicit stream_type(const std::string& st)
         {
-            if (_modes.find(st) != _modes.end()) {
+            if (_modes.find(st) == _modes.end()) {
                 throw uhd::key_error("Invalid stream mode:" + st);
             }
             _stream_mode_str = st;
