@@ -1,6 +1,9 @@
-//
-// Created by jmeyers on 6/28/24.
-//
+/*
+* Copyright 2024 Ipsolon Research
+*
+* SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 #include "chameleon_fw_commander.hpp"
 
 #include <utility>

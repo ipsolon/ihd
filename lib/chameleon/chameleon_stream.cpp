@@ -3,6 +3,7 @@
 *
 * SPDX-License-Identifier: GPL-3.0-or-later
 */
+
 #include <iostream>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -12,6 +13,7 @@
 
 #include "chameleon_fw_common.h"
 #include "chameleon_stream.hpp"
+#include "chameleon_packet.hpp"
 
 #define IMPLEMENTED_CMD_PORT 0 /* Command server not yet implemented */
 

@@ -3,7 +3,9 @@
 *
 * SPDX-License-Identifier: GPL-3.0-or-later
 */
-#include <stdint.h>
+#include <cstdint>
+#include <string>
+#include <boost/format.hpp>
 
 #ifndef IHD_CHAMELEON_CHDR_HEADER_H
 #define IHD_CHAMELEON_CHDR_HEADER_H

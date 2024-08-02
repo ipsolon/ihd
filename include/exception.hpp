@@ -1,6 +1,8 @@
-//
-// Created by jmeyers on 6/25/24.
-//
+/*
+* Copyright 2024 Ipsolon Research
+*
+* SPDX-License-Identifier: GPL-3.0-or-later
+*/
 
 #ifndef EXCEPTION_HPP
 #define EXCEPTION_HPP

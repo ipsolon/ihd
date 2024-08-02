@@ -1,6 +1,8 @@
-//
-// Created by jmeyers on 6/28/24.
-//
+/*
+* Copyright 2024 Ipsolon Research
+*
+* SPDX-License-Identifier: GPL-3.0-or-later
+*/
 
 #ifndef CHAMELEON_FW_CMD_HPP
 #define CHAMELEON_FW_CMD_HPP
