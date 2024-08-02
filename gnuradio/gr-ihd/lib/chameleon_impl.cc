@@ -87,19 +87,20 @@ chameleon_impl::chameleon_impl(double center_freq, std::string ip_addr)
  */
 chameleon_impl::~chameleon_impl() = default;
 
-#define PACKET_SIZE 4096
+#define PACKET_SIZE 4088
 int chameleon_impl::work(int noutput_items,
                          gr_vector_const_void_star& input_items,
                          gr_vector_void_star& output_items)
 {
-    int ret = std::min(noutput_items, PACKET_SIZE);
     uhd::rx_metadata_t md;
-    _streamer->recv(output_items, PACKET_SIZE, md, 5);
+    auto ret = _streamer->recv(output_items, PACKET_SIZE, md, 5);
 
     static int work_count = 0;
-    if((work_count++ % 1000) == 0) printf("Working.  number output_items:%d ret:%d\n", noutput_items, ret);
+    if((work_count++ % 1000) == 0) {
+        printf("Working.  number output_items:%d ret:%zu\n", noutput_items, ret);
+    }
     // Tell runtime system how many output items we produced.
-    return ret;
+    return (int)ret;
 }
 
 } // namespace gr::ihd

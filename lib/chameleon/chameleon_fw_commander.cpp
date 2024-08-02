@@ -21,6 +21,6 @@ namespace ihd {
     }
 
     const char *chameleon_fw_commander::getIP() {
-        return _dev_addr["add"].c_str();
+        return _dev_addr["addr"].c_str();
     }
 } // ihd

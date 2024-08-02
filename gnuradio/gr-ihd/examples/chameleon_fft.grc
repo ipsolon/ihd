@@ -37,7 +37,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '1024'
+    value: '2048'
   states:
     bus_sink: false
     bus_source: false
@@ -83,7 +83,7 @@ blocks:
     maxoutbuf: '0'
     minoutbuf: '0'
     type: complex
-    vlen: '1024'
+    vlen: rec_len
   states:
     bus_sink: false
     bus_source: false
@@ -101,7 +101,7 @@ blocks:
     maxoutbuf: '0'
     minoutbuf: '0'
     n: '1'
-    vlen: '1024'
+    vlen: rec_len
   states:
     bus_sink: false
     bus_source: false
@@ -191,7 +191,7 @@ blocks:
     ref_level: '0'
     showports: 'False'
     update_time: '0.10'
-    vlen: '1024'
+    vlen: rec_len
     width1: '1'
     width10: '1'
     width2: '1'

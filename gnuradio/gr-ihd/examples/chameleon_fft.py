@@ -75,13 +75,13 @@ class chameleon_fft(gr.top_block, Qt.QWidget):
         # Variables
         ##################################################
         self.samp_rate = samp_rate = 32000
-        self.rec_len = rec_len = 1024
+        self.rec_len = rec_len = 2048
 
         ##################################################
         # Blocks
         ##################################################
         self.qtgui_vector_sink_f_0 = qtgui.vector_sink_f(
-            1024,
+            rec_len,
             0,
             1.0,
             "x-Axis",
@@ -120,8 +120,8 @@ class chameleon_fft(gr.top_block, Qt.QWidget):
         self.top_layout.addWidget(self._qtgui_vector_sink_f_0_win)
         self.ihd_chameleon_0 = ihd.chameleon(6000000000, '192.168.10.200')
         self.blocks_stream_to_vector_0 = blocks.stream_to_vector(gr.sizeof_gr_complex*1, rec_len)
-        self.blocks_nlog10_ff_0 = blocks.nlog10_ff(1, 1024, 0)
-        self.blocks_multiply_const_xx_0 = blocks.multiply_const_cc(.000976562, 1024)
+        self.blocks_nlog10_ff_0 = blocks.nlog10_ff(1, rec_len, 0)
+        self.blocks_multiply_const_xx_0 = blocks.multiply_const_cc(.000976562, rec_len)
         self.blocks_complex_to_mag_squared_0 = blocks.complex_to_mag_squared(rec_len)
 
 
