@@ -93,10 +93,10 @@ int chameleon_impl::work(int noutput_items,
                          gr_vector_void_star& output_items)
 {
     uhd::rx_metadata_t md;
-    auto ret = _streamer->recv(output_items, PACKET_SIZE, md, 5);
+    auto ret = _streamer->recv(output_items, noutput_items, md, 5);
 
     static int work_count = 0;
-    if((work_count++ % 1000) == 0) {
+    if((work_count++ % 1000) == 0 || noutput_items != (int)ret) {
         printf("Working.  number output_items:%d ret:%zu\n", noutput_items, ret);
     }
     // Tell runtime system how many output items we produced.

@@ -181,6 +181,9 @@ void chameleon_stream::issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd)
 
 void chameleon_stream::start_stream()
 {
+    _receive_thread_context.run = true;
+    _recv_thread = std::thread([=] { receive_thread_func(&_receive_thread_context); });
+
 #if IMPLEMENTED_CMD_PORT
     auto request = chameleon_fw_comms_t();
     request.flags             = CHAMELEON_FW_COMMS_FLAGS_WRITE;
@@ -202,8 +205,6 @@ void chameleon_stream::start_stream()
         THROW_SOCKET_ERROR();
     }
 #endif
-    _receive_thread_context.run = true;
-    _recv_thread = std::thread([=] { receive_thread_func(&_receive_thread_context); });
 }
 
 void chameleon_stream::stop_stream()
@@ -219,6 +220,7 @@ void chameleon_stream::stop_stream()
 #endif
     _receive_thread_context.run = false;
     _recv_thread.join();
+    // TODO - Flush the stream queue, put everything back in the free queue
 }
 
 void chameleon_stream::open_socket() {

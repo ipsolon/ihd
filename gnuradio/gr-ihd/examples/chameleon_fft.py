@@ -75,18 +75,56 @@ class chameleon_fft(gr.top_block, Qt.QWidget):
         # Variables
         ##################################################
         self.samp_rate = samp_rate = 32000
-        self.rec_len = rec_len = 2048
+        self.rec_len = rec_len = 4096
 
         ##################################################
         # Blocks
         ##################################################
+        self.qtgui_vector_sink_f_0_0 = qtgui.vector_sink_f(
+            rec_len,
+            0,
+            1.0,
+            "x-Axis",
+            "y-Axis",
+            "No Fast Multiply",
+            1, # Number of inputs
+            None # parent
+        )
+        self.qtgui_vector_sink_f_0_0.set_update_time(0.10)
+        self.qtgui_vector_sink_f_0_0.set_y_axis(-140, 10)
+        self.qtgui_vector_sink_f_0_0.enable_autoscale(True)
+        self.qtgui_vector_sink_f_0_0.enable_grid(False)
+        self.qtgui_vector_sink_f_0_0.set_x_axis_units("")
+        self.qtgui_vector_sink_f_0_0.set_y_axis_units("")
+        self.qtgui_vector_sink_f_0_0.set_ref_level(0)
+
+        labels = ['', '', '', '', '',
+            '', '', '', '', '']
+        widths = [1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1]
+        colors = ["blue", "red", "green", "black", "cyan",
+            "magenta", "yellow", "dark red", "dark green", "dark blue"]
+        alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0, 1.0, 1.0]
+
+        for i in range(1):
+            if len(labels[i]) == 0:
+                self.qtgui_vector_sink_f_0_0.set_line_label(i, "Data {0}".format(i))
+            else:
+                self.qtgui_vector_sink_f_0_0.set_line_label(i, labels[i])
+            self.qtgui_vector_sink_f_0_0.set_line_width(i, widths[i])
+            self.qtgui_vector_sink_f_0_0.set_line_color(i, colors[i])
+            self.qtgui_vector_sink_f_0_0.set_line_alpha(i, alphas[i])
+
+        self._qtgui_vector_sink_f_0_0_win = sip.wrapinstance(self.qtgui_vector_sink_f_0_0.qwidget(), Qt.QWidget)
+        self.top_layout.addWidget(self._qtgui_vector_sink_f_0_0_win)
         self.qtgui_vector_sink_f_0 = qtgui.vector_sink_f(
             rec_len,
             0,
             1.0,
             "x-Axis",
             "y-Axis",
-            "",
+            "Multiplied",
             1, # Number of inputs
             None # parent
         )
@@ -120,8 +158,10 @@ class chameleon_fft(gr.top_block, Qt.QWidget):
         self.top_layout.addWidget(self._qtgui_vector_sink_f_0_win)
         self.ihd_chameleon_0 = ihd.chameleon(6000000000, '192.168.10.200')
         self.blocks_stream_to_vector_0 = blocks.stream_to_vector(gr.sizeof_gr_complex*1, rec_len)
+        self.blocks_nlog10_ff_0_0 = blocks.nlog10_ff(1, rec_len, 0)
         self.blocks_nlog10_ff_0 = blocks.nlog10_ff(1, rec_len, 0)
         self.blocks_multiply_const_xx_0 = blocks.multiply_const_cc(.000976562, rec_len)
+        self.blocks_complex_to_mag_squared_0_0 = blocks.complex_to_mag_squared(rec_len)
         self.blocks_complex_to_mag_squared_0 = blocks.complex_to_mag_squared(rec_len)
 
 
@@ -129,8 +169,11 @@ class chameleon_fft(gr.top_block, Qt.QWidget):
         # Connections
         ##################################################
         self.connect((self.blocks_complex_to_mag_squared_0, 0), (self.blocks_nlog10_ff_0, 0))
+        self.connect((self.blocks_complex_to_mag_squared_0_0, 0), (self.blocks_nlog10_ff_0_0, 0))
         self.connect((self.blocks_multiply_const_xx_0, 0), (self.blocks_complex_to_mag_squared_0, 0))
         self.connect((self.blocks_nlog10_ff_0, 0), (self.qtgui_vector_sink_f_0, 0))
+        self.connect((self.blocks_nlog10_ff_0_0, 0), (self.qtgui_vector_sink_f_0_0, 0))
+        self.connect((self.blocks_stream_to_vector_0, 0), (self.blocks_complex_to_mag_squared_0_0, 0))
         self.connect((self.blocks_stream_to_vector_0, 0), (self.blocks_multiply_const_xx_0, 0))
         self.connect((self.ihd_chameleon_0, 0), (self.blocks_stream_to_vector_0, 0))
 
