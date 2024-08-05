@@ -19,7 +19,7 @@ chameleon_packet::chameleon_packet(size_t maximum_packet_size) :_packet_size(max
     if(_packet_mem == nullptr) {
         THROW_MALLOC_ERROR();
     } else {
-        _samples = reinterpret_cast<uint16_t *>(_packet_mem + ipsolon_stream::PACKET_HEADER_SIZE);
+        _samples = reinterpret_cast<int16_t *>(_packet_mem + ipsolon_stream::PACKET_HEADER_SIZE);
     }
 }
 

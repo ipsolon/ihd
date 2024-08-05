@@ -38,7 +38,7 @@ private:
     size_t _nIQ_pairs;
     size_t _pos;
     uint8_t *_packet_mem;
-    uint16_t *_samples;
+    int16_t *_samples;
 
 };
 

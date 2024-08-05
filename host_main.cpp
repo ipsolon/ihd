@@ -154,8 +154,9 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     /************************************************************************
      * Allocate buffers
      ***********************************************************************/
-    std::vector<std::complex<uint16_t>*> buffs(NUMBER_OF_CHANNELS);
-    std::complex<uint16_t> p[spb];
+     // FIXME - You should NOT have to just 'know' the data type here
+    std::vector<std::complex<int16_t>*> buffs(NUMBER_OF_CHANNELS);
+    std::complex<int16_t> p[spb];
     buffs[0] = p;
 
     /************************************************************************
