@@ -93,7 +93,7 @@ class fft_generate(gr.top_block, Qt.QWidget):
         )
         self.qtgui_vector_sink_f_0.set_update_time(0.10)
         self.qtgui_vector_sink_f_0.set_y_axis(-140, 10)
-        self.qtgui_vector_sink_f_0.enable_autoscale(True)
+        self.qtgui_vector_sink_f_0.enable_autoscale(False)
         self.qtgui_vector_sink_f_0.enable_grid(False)
         self.qtgui_vector_sink_f_0.set_x_axis_units("")
         self.qtgui_vector_sink_f_0.set_y_axis_units("")
@@ -125,7 +125,7 @@ class fft_generate(gr.top_block, Qt.QWidget):
         self.blocks_nlog10_ff_0 = blocks.nlog10_ff(1, 1024, 0)
         self.blocks_multiply_const_xx_0 = blocks.multiply_const_cc(.000976562, 1024)
         self.blocks_complex_to_mag_squared_0 = blocks.complex_to_mag_squared(rec_len)
-        self.analog_sig_source_x_0 = analog.sig_source_c(samp_rate, analog.GR_SQR_WAVE, 1000, 1, 0, 0)
+        self.analog_sig_source_x_0 = analog.sig_source_c(samp_rate, analog.GR_COS_WAVE, 1000, 1, 0, 0)
 
 
         ##################################################

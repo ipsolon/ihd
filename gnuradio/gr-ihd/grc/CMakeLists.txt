@@ -7,5 +7,6 @@
 #
 install(FILES
     ihd_ihd_source.block.yml
-    ihd_chameleon.block.yml DESTINATION share/gnuradio/grc/blocks
+    ihd_chameleon.block.yml
+    ihd_chameleon_fft.block.yml DESTINATION share/gnuradio/grc/blocks
 )

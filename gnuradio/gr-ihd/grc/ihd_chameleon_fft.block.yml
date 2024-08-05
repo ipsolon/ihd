@@ -1,10 +1,10 @@
-id: ihd_chameleon
-label: chameleon
+id: ihd_chameleon_fft
+label: chameleon_fft
 category: '[ihd]'
 
 templates:
   imports: from gnuradio import ihd
-  make: ihd.chameleon(${center_freq}, ${ip_addr})
+  make: ihd.chameleon_fft(${center_freq}, ${ip_addr})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
@@ -41,14 +41,10 @@ parameters:
 #  optional: ...
 
 outputs:
-#- label: ...
-#  domain: ...
-#  dtype: ...
-#  vlen: ...
-#  optional: ...
   - label: out0
     domain: stream
-    dtype: complex
+    dtype: float
+
 #  'file_format' specifies the version of the GRC yml format used in the file
 #  and should usually not be changed.
 file_format: 1

@@ -12,5 +12,6 @@
 install(FILES
     api.h
     ihd_source.h
-    chameleon.h DESTINATION include/gnuradio/ihd
+    chameleon.h
+    chameleon_fft.h DESTINATION include/gnuradio/ihd
 )

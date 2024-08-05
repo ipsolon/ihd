@@ -12,7 +12,8 @@
 include(GrPlatform) #define LIB_SUFFIX
 list(APPEND ihd_sources
     ihd_source_impl.cc
-    chameleon_impl.cc )
+    chameleon_impl.cc
+    chameleon_fft_impl.cc )
 
 set(ihd_sources "${ihd_sources}" PARENT_SCOPE)
 if(NOT ihd_sources)
