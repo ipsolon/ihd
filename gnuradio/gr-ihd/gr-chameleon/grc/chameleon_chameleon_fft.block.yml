@@ -4,7 +4,7 @@ category: '[chameleon]'
 
 templates:
   imports: from gnuradio import chameleon
-  make: chameleon.chameleon_fft(${center_freq}, ${&ip_addr})
+  make: chameleon.chameleon_fft(${center_freq}, ${ip_addr})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
@@ -13,13 +13,15 @@ templates:
 #     * dtype (e.g. int, float, complex, byte, short, xxx_vector, ...)
 #     * default
 parameters:
-- id: parametername_replace_me
-  label: FIX ME:
+- id: center_freq
+  label: Center Frequency
+  dtype: float
+  default: 6000000
+
+- id: ip_addr
+  label: IP Address
   dtype: string
-  default: You need to fill in your grc/chameleon_chameleon_fft.block.yaml
-#- id: ...
-#  label: ...
-#  dtype: ...
+  default: "192.168.10.200"
 
 #  Make one 'inputs' list entry per input and one 'outputs' list entry per output.
 #  Keys include:
@@ -36,9 +38,9 @@ inputs:
 #  optional: ...
 
 outputs:
-#- label: ...
-#  domain: ...
-#  dtype: ...
+- label: FFT_samples
+  domain: stream
+  dtype: complex
 #  vlen: ...
 #  optional: ...
 

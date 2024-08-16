@@ -11,8 +11,8 @@
 #include <gnuradio/chameleon/api.h>
 #include <gnuradio/sync_block.h>
 
-namespace gr {
-namespace chameleon {
+
+namespace gr::chameleon {
 
 /*!
  * \brief <+description of block+>
@@ -32,10 +32,10 @@ public:
      * class. chameleon::chameleon_fft::make is the public interface for
      * creating new instances.
      */
-    static sptr make(double center_freq, std::string& ip_addr);
+    static sptr make(double center_freq, std::string ip_addr);
 };
 
-} // namespace chameleon
-} // namespace gr
+} // namespace gr::chameleon
+
 
 #endif /* INCLUDED_CHAMELEON_CHAMELEON_FFT_H */

@@ -16,11 +16,12 @@ namespace chameleon {
 class chameleon_fft_impl : public chameleon_fft
 {
 private:
-    // Nothing to declare in this block.
+    double _center_freq;
+    std::string _ipaddr;
 
 public:
-    chameleon_fft_impl(double center_freq, std::string& ip_addr);
-    ~chameleon_fft_impl();
+    chameleon_fft_impl(double center_freq, std::string ip_addr);
+    ~chameleon_fft_impl() override;
 
     // Where all the action really happens
     int work(int noutput_items,
