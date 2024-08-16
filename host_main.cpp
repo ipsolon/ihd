@@ -19,13 +19,6 @@
 namespace po = boost::program_options;
 
 #define NUMBER_OF_CHANNELS                1 /* We are limited to a single channel right now */
-#if 0
-#define DEFAULT_UDP_PACKET_SIZE       64000 /* Fixed size by radio */
-#define DEFAULT_BYTES_PER_SAMPLE          2 /* 16 Bits */
-#define DEFAULT_BYTES_PER_IQ_PAIR      (DEFAULT_BYTES_PER_SAMPLE * 2)   /* 16 Bit I/Q = 4 Bytes */
-#define DEFAULT_IQ_SAMPLES_PER_BUFFER ((DEFAULT_UDP_PACKET_SIZE - 16) / \
-                                        DEFAULT_BYTES_PER_IQ_PAIR)      /* i.e. the number of IQ pairs, minus CHDR & timestamp */
-#endif
 
 /**
  * Do a ramp check on the file, assumes
@@ -154,7 +147,6 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     /************************************************************************
      * Allocate buffers
      ***********************************************************************/
-     // FIXME - You should NOT have to just 'know' the data type here
     std::vector<std::complex<int16_t>*> buffs(NUMBER_OF_CHANNELS);
     std::complex<int16_t> p[spb];
     buffs[0] = p;
@@ -167,13 +159,14 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
 
     ihd::ipsolon_isrp::sptr isrp = ihd::ipsolon_isrp::make(args);
     uhd::tune_request_t tune_request{};
-    tune_request.rf_freq = 5123456789;
+    tune_request.rf_freq = freq;
     size_t chan = 0;
     isrp->set_rx_freq(tune_request, chan);
 
     /************************************************************************
      * Get Rx Stream
      ***********************************************************************/
+    // FIXME - You should NOT have to just 'know' the data type here
     uhd::stream_args_t stream_args("sc16", "sc16");
     std::vector<size_t> channel_nums;
     channel_nums.push_back(channel);
