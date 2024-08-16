@@ -50,9 +50,9 @@ while (not stop_signal_called
          size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md, 3.0, enable_size_map);
          /* --- Process Samples --- */
 ```
-## Example IHD implmentation
+## Example IHD implementation
 
-To replace the UHD implementaion, simply replace `multi_usrp` with `ipsolon_isrp`
+To replace the UHD implementation, simply replace `multi_usrp` with `ipsolon_isrp`
 
 ``` C++
  // create a isrp device
