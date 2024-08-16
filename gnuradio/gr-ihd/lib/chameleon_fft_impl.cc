@@ -5,22 +5,22 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-#include "ihd_source_impl.h"
+#include "chameleon_fft_impl.h"
 #include <gnuradio/io_signature.h>
+
 
 namespace gr::ihd {
 
-constexpr size_t samples = 4096;
-constexpr size_t n_chan = 1;
-constexpr size_t n_inputs = 1;
-constexpr int NUMBER_OF_STREAM_ITEMS = 8; /* Not at all correct, just getting GNU Radio to run */
 
-ihd_source::sptr ihd_source::make(double center_freq)
+constexpr size_t n_chan = 1;
+constexpr int NUMBER_OF_STREAM_ITEMS = 4; /* Not at all correct, just getting GNU Radio to run */
+
+chameleon_fft::sptr chameleon_fft::make(double center_freq, std::string ip_addr)
 {
-    return gnuradio::make_block_sptr<ihd_source_impl>(center_freq);
+    return gnuradio::make_block_sptr<chameleon_fft_impl>(center_freq, ip_addr);
 }
 
-bool ihd_source_impl::start()
+bool chameleon_fft_impl::start()
 {
     d_logger->debug("IHD starting");
     if (_issue_stream_cmd_on_start) {
@@ -43,7 +43,7 @@ bool ihd_source_impl::start()
     return true;
 }
 
-bool ihd_source_impl::stop()
+bool chameleon_fft_impl::stop()
 {
     // If we issue a stream command on start, we also issue it on stop
     if (_issue_stream_cmd_on_start) {
@@ -57,14 +57,14 @@ bool ihd_source_impl::stop()
 /*
  * The private constructor
  */
-ihd_source_impl::ihd_source_impl(double center_freq) :
-                   gr::sync_block("ihd_source",
-      gr::io_signature::make(0,0, 0),
-     gr::io_signature::make(0,n_chan,NUMBER_OF_STREAM_ITEMS)),
+chameleon_fft_impl::chameleon_fft_impl(double center_freq, std::string ip_addr)
+    : gr::sync_block("chameleon",
+                     gr::io_signature::make(0,0, 0),
+                     gr::io_signature::make(0,n_chan,NUMBER_OF_STREAM_ITEMS)),
       _issue_stream_cmd_on_start(true),
       _stream_args("sc16", "sc16")
 {
-    d_logger->debug("Start constructing IHD");
+    d_logger->debug("Start constructing Chameleon FFT");
     _center_freq = center_freq;
     std::string args("addr=192.168.10.200");
     size_t channel = 0;
@@ -80,35 +80,37 @@ ihd_source_impl::ihd_source_impl(double center_freq) :
     _stream_args.channels = channel_nums;
     _streamer = _isrp->get_rx_stream(_stream_args);
 
-    d_logger->debug("Done constructing IHD");
-
+    d_logger->debug("Done constructing Chameleon FFT");
 }
 
 /*
  * Our virtual destructor.
  */
-ihd_source_impl::~ihd_source_impl() = default;
+chameleon_fft_impl::~chameleon_fft_impl() {}
 
-/* FIXME - Shared header? --  Adjust this when we settle on a packet size for sure */
-#define NUMBER_OF_CHANNELS                1 /* We are limited to a single channel right now */
-#define DEFAULT_UDP_PACKET_SIZE        8960 /* Fixed size by radio */
-#define DEFAULT_BYTES_PER_SAMPLE          2 /* 16 Bits */
-#define DEFAULT_BYTES_PER_IQ_PAIR      (DEFAULT_BYTES_PER_SAMPLE * 2)   /* 16 Bit I/Q = 4 Bytes */
-#define DEFAULT_IQ_SAMPLES_PER_BUFFER ((DEFAULT_UDP_PACKET_SIZE - 16) / \
-                                        DEFAULT_BYTES_PER_IQ_PAIR)      /* i.e. the number of IQ pairs, minus CHDR & timestamp */
-
-int ihd_source_impl::work(int noutput_items,
-                          gr_vector_const_void_star& input_items,
-                          gr_vector_void_star& output_items)
+int chameleon_fft_impl::work(int noutput_items,
+                             gr_vector_const_void_star& input_items,
+                             gr_vector_void_star& output_items)
 {
-    int ret = std::min(noutput_items,DEFAULT_IQ_SAMPLES_PER_BUFFER);
     uhd::rx_metadata_t md;
-    _streamer->recv(output_items, DEFAULT_IQ_SAMPLES_PER_BUFFER, md, 5);
+    std::vector<std::complex<int16_t>*> buffs(n_chan);
+    std::complex<int16_t> p[noutput_items];
+    buffs[0] = p;
+    auto ret = _streamer->recv(buffs, noutput_items, md, 5);
+
+
+    auto *out_array = static_cast<float *>(output_items[0]);
+    for (size_t iter = 0; iter < ret; iter++) {
+        static float c = .0000000976562;
+        out_array[iter] = ((float)abs(p[iter])) * c;
+    }
 
     static int work_count = 0;
-    if((work_count++ % 10000) == 0) printf("Working.  number output_items:%d ret:%d\n", noutput_items, ret);
+    if((work_count++ % 1000) == 0 || noutput_items != (int)ret) {
+        printf("Working.  number output_items:%d ret:%zu\n", noutput_items, ret);
+    }
     // Tell runtime system how many output items we produced.
-    return ret;
+    return (int)ret;
 }
 
 } // namespace gr::ihd

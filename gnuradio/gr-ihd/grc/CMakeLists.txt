@@ -5,7 +5,8 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-
 install(FILES
-    ihd_ihd_source.block.yml DESTINATION share/gnuradio/grc/blocks
+    ihd_ihd_source.block.yml
+    ihd_chameleon.block.yml
+    ihd_chameleon_fft.block.yml DESTINATION share/gnuradio/grc/blocks
 )

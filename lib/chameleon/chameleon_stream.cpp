@@ -3,6 +3,7 @@
 *
 * SPDX-License-Identifier: GPL-3.0-or-later
 */
+
 #include <iostream>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -12,13 +13,15 @@
 
 #include "chameleon_fw_common.h"
 #include "chameleon_stream.hpp"
+#include "chameleon_packet.hpp"
 
 #define IMPLEMENTED_CMD_PORT 0 /* Command server not yet implemented */
 
 using namespace ihd;
 
 chameleon_stream::chameleon_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr) :
-    _nChans(stream_cmd.channels.size()), _commander(device_addr), _chanMask(0), _receive_thread_context{}
+    _nChans(stream_cmd.channels.size()), _commander(device_addr), _chanMask(0), _receive_thread_context{},
+    _current_packet(nullptr)
 {
     if(stream_cmd.cpu_format != "sc16") {
         THROW_VALUE_NOT_SUPPORTED_ERROR(stream_cmd.args.to_string());
@@ -28,6 +31,19 @@ chameleon_stream::chameleon_stream(const uhd::stream_args_t& stream_cmd, const u
     }
     for(const size_t& chan : stream_cmd.channels) {
         _chanMask |= 1 << chan; /* Channels indexed at zero */
+    }
+    try {
+        std::string str = stream_cmd.args[ipsolon_stream::stream_type::STREAM_FORMAT_KEY];
+        stream_type st(str);
+        if (st.modeEquals(stream_type::FFT_STREAM)) {
+            // FIXME - implement abstract recv class to handle IQ vs FFT - instantiate it here
+            printf("Create FFT stream\n");
+        } else {
+            printf("Create IQ stream\n");
+        }
+
+    } catch (const uhd::key_error&) {
+        printf("No stream format specified\n");
     }
     open_socket();
 
@@ -41,8 +57,8 @@ chameleon_stream::chameleon_stream(const uhd::stream_args_t& stream_cmd, const u
     _receive_thread_context.socket_fd = _socket_fd;
 
     /* Fill the free queue */
+    std::lock_guard<std::mutex> lock(mtx_free_queue);
     for (int i = 0; i < buffer_packet_cnt; ++i) {
-        std::lock_guard<std::mutex> lock(mtx_free_queue);
         auto cp = new chameleon_packet(bytes_per_packet);
         q_free_packets.push(cp);
     }
@@ -72,12 +88,31 @@ size_t chameleon_stream::get_max_num_samps() const
     return max_sample_per_packet;
 }
 
+size_t chameleon_stream::get_packet_data(size_t n_samples, chameleon_data_type *buff)
+{
+    if (_current_packet == nullptr) {
+        std::unique_lock<std::mutex> lock(mtx_sample_queue);
+        cv_sample_queue.wait(lock, [this] { return !q_sample_packets.empty(); });
+        _current_packet = q_sample_packets.front();
+        q_sample_packets.pop();
+        lock.unlock();
+    }
+
+    n_samples = _current_packet->getSamples(buff, n_samples);
+
+    if (_current_packet->endOfPacket()) {
+        std::lock_guard<std::mutex> free_lock(mtx_free_queue);
+        q_free_packets.push(_current_packet);
+        _current_packet = nullptr;
+        cv_free_queue.notify_one();
+    }
+    return n_samples;
+}
+
 size_t chameleon_stream::recv(const buffs_type& buffs, const size_t nsamps_per_buff, uhd::rx_metadata_t& metadata,
                               const double timeout, const bool one_packet)
 {
-    sockaddr_in server_addr{};
-    socklen_t len;
-    ssize_t n = 0;
+    int err = 0;
     size_t n_samples = 0;
 
     /* FIXME - do a proper C++ cast here */
@@ -86,36 +121,16 @@ size_t chameleon_stream::recv(const buffs_type& buffs, const size_t nsamps_per_b
         THROW_TYPE_ERROR();
     }
 
-    std::unique_lock<std::mutex> lock(mtx_sample_queue);
-    cv_sample_queue.wait(lock, [this] { return !q_sample_packets.empty(); });
-    auto cp = q_sample_packets.front();
-    q_sample_packets.pop();
-    lock.unlock();
-
-    // FIXME - for now just get the packet maximum or the number requested, whichever is less
-
-    size_t samples_to_get = std::min(nsamps_per_buff, cp->getDataSize());
-    n_samples = cp->getSamples(output_array, samples_to_get);
-    // FIXME - get samples from multiple packets until number of samples is fulfilled or the timout occurs
-
-
-    std::lock_guard<std::mutex> free_lock(mtx_free_queue);
-    q_free_packets.push(cp);
-    cv_free_queue.notify_one();
-
-    return n_samples;
-}
-
-void chameleon_stream::issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd)
-{
-    switch (stream_cmd.stream_mode) {
-        case uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS : start_stream(); break;
-        case uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS :  stop_stream(); break;
-        case uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE :
-        case uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE :
-        default:
-            THROW_NOT_IMPLEMENTED_ERROR();
+    while (n_samples < nsamps_per_buff && !err) {
+        size_t n = get_packet_data(nsamps_per_buff - n_samples, output_array + n_samples);
+        if (n > 0) {
+            n_samples += n;
+        } else {
+            fprintf(stderr, "Error getting samples\n");
+            err = -1;
+        }
     }
+    return n_samples;
 }
 
 void chameleon_stream::receive_thread_func(const receive_thread_context *rtc)
@@ -139,6 +154,7 @@ void chameleon_stream::receive_thread_func(const receive_thread_context *rtc)
                 lock_free.unlock();
 
                 std::lock_guard<std::mutex> lock_samples(*rtc->mtx_free);
+                cp->setPacketSize(n);
                 rtc->q_samples->push(cp);
                 rtc->cv_samples->notify_one();
 
@@ -151,8 +167,23 @@ void chameleon_stream::receive_thread_func(const receive_thread_context *rtc)
     }
 }
 
+void chameleon_stream::issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd)
+{
+    switch (stream_cmd.stream_mode) {
+        case uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS : start_stream(); break;
+        case uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS :  stop_stream(); break;
+        case uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE :
+        case uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE :
+        default:
+            THROW_NOT_IMPLEMENTED_ERROR();
+    }
+}
+
 void chameleon_stream::start_stream()
 {
+    _receive_thread_context.run = true;
+    _recv_thread = std::thread([=] { receive_thread_func(&_receive_thread_context); });
+
 #if IMPLEMENTED_CMD_PORT
     auto request = chameleon_fw_comms_t();
     request.flags             = CHAMELEON_FW_COMMS_FLAGS_WRITE;
@@ -162,8 +193,9 @@ void chameleon_stream::start_stream()
     _commander.send_request(request);
 #else
     /* For now, you just send the radio 'anything' and it goes */
+    std::string ipAddr = _commander.getIP();
     sockaddr_in radio_addr{};
-    radio_addr.sin_addr.s_addr = inet_addr("192.168.10.200");
+    radio_addr.sin_addr.s_addr = inet_addr(ipAddr.c_str());
     radio_addr.sin_port = htons(vita_port);
 
     uint8_t go[] = {0x67,0x6F};
@@ -173,8 +205,6 @@ void chameleon_stream::start_stream()
         THROW_SOCKET_ERROR();
     }
 #endif
-    _receive_thread_context.run = true;
-    _recv_thread = std::thread([=] { receive_thread_func(&_receive_thread_context); });
 }
 
 void chameleon_stream::stop_stream()
@@ -190,6 +220,7 @@ void chameleon_stream::stop_stream()
 #endif
     _receive_thread_context.run = false;
     _recv_thread.join();
+    // TODO - Flush the stream queue, put everything back in the free queue
 }
 
 void chameleon_stream::open_socket() {
