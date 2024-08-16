@@ -20,87 +20,6 @@ namespace po = boost::program_options;
 
 #define NUMBER_OF_CHANNELS                1 /* We are limited to a single channel right now */
 
-/**
- * Do a ramp check on the file, assumes
- * @param fd open file descriptor to samples file
- * @param buffer_size Each 'buffer size' chunk is expected to start with packet number and then ramp up,
- *                      from 1 to 'buffer size' - 1.
- */
-
-static bool first_check = true;
-static uint16_t next_expect_ramp = 0;
-static void rampcheck(int fd, size_t buffer_size)
-{
-    ssize_t  read_bytes = 0;
-    size_t n_buffs = 0;
-    size_t IQ_pairs = buffer_size / ihd::ipsolon_stream::BYTES_PER_SAMPLE; // How many IQ pairs per buffer
-
-    int err = lseek(fd, 0, SEEK_SET);
-    if (!err) {
-        struct stat stat_buf{};
-        err = fstat(fd, &stat_buf);
-        if (err) {
-            fprintf(stderr, "Error getting stat on file:%s", strerror(errno));
-        } else {
-            n_buffs = (stat_buf.st_size / buffer_size);
-        }
-    }
-    uint16_t ramp = 0;
-    if (!err && n_buffs) {
-        for (int iteration = 0; iteration < n_buffs; iteration++) {
-            uint16_t buff[buffer_size / 2];
-            ssize_t n = read(fd, buff, buffer_size);
-            if (n != buffer_size) {
-                fprintf(stderr, "Error reading from file:%s", strerror(errno));
-            } else {
-                read_bytes += n;
-                uint16_t ramp_count1 = buff[0];
-                uint16_t ramp_count2 = buff[1];
-                uint16_t ramp_count3 = buff[2];
-                uint16_t ramp_count4 = buff[3];
-
-                if (ramp_count1 == ramp_count2 &&
-                    ramp_count2 == ramp_count3 &&
-                    ramp_count3 == ramp_count4)
-                {
-                    if (first_check) {
-                        ramp = ramp_count1 + 1;
-                    } else {
-                        if (ramp_count1 != next_expect_ramp) {
-                            fprintf(stderr, "Dropped packet possible, expected:0x%02x got:0x%02x diff:0x%02x\n",
-                                    next_expect_ramp, ramp_count1, ramp_count1 - next_expect_ramp);
-                        }
-                    }
-                } else {
-                    fprintf(stderr, "Leading ramp count failed:%02x:%02x:%02x:%02x\n",
-                            ramp_count1, ramp_count2, ramp_count3, ramp_count4);
-                }
-
-                for (int j = 4; j < IQ_pairs && !err; j += 2) {
-                    uint16_t i = buff[j];
-                    uint16_t q = buff[j + 1];
-                    if (i != q) {
-                        err = -1;
-                        size_t fpos = (lseek(fd, 0, SEEK_CUR) - buffer_size) + (j * sizeof(uint16_t));
-                        printf("\nI/Q mismatch: i:0x%04x q:0x%04x sample:0x%x file offset:0x%lx\n",
-                               i, q, j, fpos);
-                    }
-                    if (i != ramp || q != ramp) {
-                        err = -1;
-                        size_t fpos = (lseek(fd, 0, SEEK_CUR) - buffer_size) + (j * sizeof(uint16_t));
-                        printf("\nRamp pattern mismatch: expected:%02x got i:%02x q:%02x sample:%x file offset:0x%lx\n",
-                               ramp, i, q, j, fpos);
-                    }
-                    ramp++;
-                    printf("Read bytes:%ld i:%04x q:%04x\r", read_bytes, i, q);
-                }
-            }
-        }
-        next_expect_ramp = ramp - 1;  // Then next packet should lead with the last value of the previous packet
-        printf("\n\n");
-    }
-}
-
 int IHD_SAFE_MAIN(int argc, char *argv[])
 {
     std::cout << "Revision: " << ihd::get_version_string() << std::endl;
@@ -120,7 +39,6 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         ("channel", po::value<size_t>(&channel)->default_value(0), "which channel to use")
         ("args", po::value<std::string>(&args)->default_value(""), "ISRP device address args")
         ("fft","Stream FFTs (versus an I/Q stream)")
-        ("rampcheck","Do ramp check on the file after collecting samples")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -172,6 +90,8 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     channel_nums.push_back(channel);
     stream_args.channels = channel_nums;
 
+    // TODO - There is currently no difference right now.  In the future you will be able to
+    //           to select what you want in you stream, raw IQ, FFT, etc.
     if (vm.count("fft")) {
         stream_args.args[ihd::ipsolon_stream::stream_type::STREAM_FORMAT_KEY] =
                          ihd::ipsolon_stream::stream_type::FFT_STREAM;
@@ -203,9 +123,6 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
     rx_stream->issue_stream_cmd(stream_cmd);
 
-    if (vm.count("rampcheck")) {
-        rampcheck(fd, spb * ihd::ipsolon_stream::BYTES_PER_IQ_PAIR);
-    }
     close(fd);
     return(0);
 }
