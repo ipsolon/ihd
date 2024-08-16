@@ -27,11 +27,9 @@ file(GLOB LIB_FILES lib/*.c
 include_directories(include lib/chameleon)
 link_directories(${Boost_LIBRARY_DIRS})
 
-add_executable(ihd_recv host_main.cpp ${LIB_FILES})
-add_executable(target_sim target_sim_main.cpp ${LIB_FILES})
+add_executable(rx_samples_to_file rx_samples_to_file.cpp ${LIB_FILES})
 
-target_link_libraries(ihd_recv -luhd ${Boost_LIBRARIES})
-target_link_libraries(target_sim -luhd ${Boost_LIBRARIES})
+target_link_libraries(rx_samples_to_file -luhd ${Boost_LIBRARIES})
 
 add_library(ihd SHARED ${LIB_FILES})
 
