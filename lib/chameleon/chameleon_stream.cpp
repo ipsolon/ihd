@@ -185,11 +185,8 @@ void chameleon_stream::start_stream()
     _recv_thread = std::thread([=] { receive_thread_func(&_receive_thread_context); });
 
 #if IMPLEMENTED_CMD_PORT
-    auto request = chameleon_fw_comms_t();
-    request.flags             = CHAMELEON_FW_COMMS_FLAGS_WRITE;
-    request.addr              = CHAMELEON_FW_COMMS_CMD_STREAM_CMD;
-    request.stream.enable     = true;
-    request.stream.chans      = _chanMask;
+    chameleon_fw_cmd_stream stream_cmd(_chanMask, true);
+    auto request = chameleon_fw_comms(CHAMELEON_FW_COMMS_FLAGS_WRITE, CHAMELEON_FW_COMMS_CMD_STREAM_CMD, stream_cmd);
     _commander.send_request(request);
 #else
     /* For now, you just send the radio 'anything' and it goes */
@@ -210,12 +207,8 @@ void chameleon_stream::start_stream()
 void chameleon_stream::stop_stream()
 {
 #if IMPLEMENTED_CMD_PORT
-    auto request = chameleon_fw_comms_t();
-    request.flags             = CHAMELEON_FW_COMMS_FLAGS_WRITE;
-    request.addr              = CHAMELEON_FW_COMMS_CMD_STREAM_CMD;
-    request.stream.enable     = false;
-    request.stream.chans      = _chanMask;
-
+    chameleon_fw_cmd_stream stream_cmd(_chanMask, false);
+    auto request = chameleon_fw_comms(CHAMELEON_FW_COMMS_FLAGS_WRITE, CHAMELEON_FW_COMMS_CMD_STREAM_CMD, stream_cmd);
     _commander.send_request(request);
 #endif
     _receive_thread_context.run = false;

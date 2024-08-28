@@ -28,12 +28,13 @@ uhd::tx_streamer::sptr chameleon_isrp_impl::get_tx_stream(const uhd::stream_args
 uhd::tune_result_t chameleon_isrp_impl::set_rx_freq(const uhd::tune_request_t& tune_request, size_t chan)
 {
     uhd::tune_result_t tr{};
-    chameleon_fw_comms_t request = chameleon_fw_comms_t();
-    request.flags =  CHAMELEON_FW_COMMS_FLAGS_WRITE;
-    request.addr     = CHAMELEON_FW_COMMS_CMD_TUNE_FREQ;
-    request.tune     = chameleon_fw_cmd_tune_t{chan, tune_request.rf_freq};
+    std::unique_ptr<chameleon_fw_cmd> tune_cmd(
+            new chameleon_fw_cmd_tune(chan, static_cast<uint64_t>(tune_request.rf_freq)));
+    chameleon_fw_comms request(CHAMELEON_FW_COMMS_FLAGS_WRITE, CHAMELEON_FW_COMMS_CMD_TUNE_FREQ,
+                               std::move(tune_cmd));
 
     // send request
     _commander.send_request(request);
+    // TODO implement tune result
     return tr;
 }
