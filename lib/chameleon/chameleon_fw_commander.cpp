@@ -17,10 +17,11 @@ namespace ihd {
         _udp_cmd_port = uhd::transport::udp_simple::make_connected(_dev_addr["addr"],
                                                                    std::to_string(CHAMELEON_FW_COMMS_UDP_PORT));
     }
-    size_t chameleon_fw_commander::send_request(chameleon_fw_comms_t &request) const
+    size_t chameleon_fw_commander::send_request(chameleon_fw_comms &request) const
     {
-        request.sequence = _seq++;
-        return _udp_cmd_port->send(boost::asio::buffer(&request, sizeof(request)));
+        request.setSequence(_seq++);
+        const char *str = request.getCommandString();
+        return _udp_cmd_port->send(boost::asio::buffer(str, strlen(str)));
     }
 
     const char *chameleon_fw_commander::getIP() {

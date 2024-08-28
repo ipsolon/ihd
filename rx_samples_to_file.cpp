@@ -18,7 +18,8 @@
 
 namespace po = boost::program_options;
 
-#define NUMBER_OF_CHANNELS                1 /* We are limited to a single channel right now */
+#define NUMBER_OF_CHANNELS          1 /* We are limited to a single channel right now */
+#define DEFAULT_FREQ       2400000000.0
 
 int IHD_SAFE_MAIN(int argc, char *argv[])
 {
@@ -35,7 +36,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         ("duration", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(ihd::ipsolon_stream::SAMPLES_PER_PACKET * 10), "total number of samples to receive")
         ("spb", po::value<size_t>(&spb)->default_value(ihd::ipsolon_stream::SAMPLES_PER_PACKET), "samples per buffer")
-        ("freq", po::value<double>(&freq)->default_value(0.0), "RF center frequency in Hz")
+        ("freq", po::value<double>(&freq)->default_value(DEFAULT_FREQ), "RF center frequency in Hz")
         ("channel", po::value<size_t>(&channel)->default_value(0), "which channel to use")
         ("args", po::value<std::string>(&args)->default_value(""), "ISRP device address args")
         ("fft","Stream FFTs (versus an I/Q stream)")
