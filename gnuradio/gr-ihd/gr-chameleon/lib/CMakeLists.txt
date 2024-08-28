@@ -22,7 +22,7 @@ if(NOT chameleon_sources)
 endif(NOT chameleon_sources)
 
 add_library(gnuradio-chameleon SHARED ${chameleon_sources})
-target_link_libraries(gnuradio-chameleon gnuradio::gnuradio-runtime)
+target_link_libraries(gnuradio-chameleon gnuradio::gnuradio-runtime uhd ihd)
 target_include_directories(gnuradio-chameleon
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
     PUBLIC $<INSTALL_INTERFACE:include>

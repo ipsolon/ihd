@@ -12,6 +12,7 @@
 cmake_minimum_required(VERSION 3.8)
 project(gr-chameleon CXX C)
 enable_testing()
+include_directories(../../../include)
 
 # Install to PyBOMBS target prefix if defined
 if(DEFINED ENV{PYBOMBS_PREFIX})

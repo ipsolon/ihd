@@ -118,7 +118,7 @@ class ChameleonFFT(gr.top_block, Qt.QWidget):
 
         self._qtgui_vector_sink_f_0_win = sip.wrapinstance(self.qtgui_vector_sink_f_0.qwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._qtgui_vector_sink_f_0_win)
-        self.chameleon_chameleon_fft_0 = chameleon.chameleon_fft(6000000, '192.168.10.200')
+        self.chameleon_chameleon_fft_0 = chameleon.chameleon_fft(2450000000, '10.75.42.208')
         self.blocks_stream_to_vector_0 = blocks.stream_to_vector(gr.sizeof_gr_complex*1, rec_len)
         self.blocks_complex_to_mag_0 = blocks.complex_to_mag(rec_len)
 

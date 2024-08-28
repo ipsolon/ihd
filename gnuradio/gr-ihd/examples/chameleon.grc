@@ -96,9 +96,9 @@ blocks:
   parameters:
     affinity: ''
     alias: ''
-    center_freq: '6000000'
+    center_freq: '2450000000'
     comment: ''
-    ip_addr: 192.168.10.200
+    ip_addr: 10.75.42.208
     maxoutbuf: '0'
     minoutbuf: '0'
   states:
