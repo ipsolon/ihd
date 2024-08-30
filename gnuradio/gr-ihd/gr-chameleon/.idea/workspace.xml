@@ -31,15 +31,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f37cf3e3-2847-4774-b6b3-657a77a1878f" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../examples/ChameleonFFT.py" beforeDir="false" afterPath="$PROJECT_DIR$/../examples/ChameleonFFT.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../examples/chameleon.grc" beforeDir="false" afterPath="$PROJECT_DIR$/../examples/chameleon.grc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gr-chameleon.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gr-chameleon.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/lib/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/chameleon_fft_impl.cc" beforeDir="false" afterPath="$PROJECT_DIR$/lib/chameleon_fft_impl.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/chameleon_fft_impl.h" beforeDir="false" afterPath="$PROJECT_DIR$/lib/chameleon_fft_impl.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../docker/uhd-gnuradio-latest/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/../../../docker/uhd-gnuradio-latest/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../include/ipsolon_isrp.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../../include/ipsolon_isrp.hpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -73,6 +68,7 @@
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
     "git-widget-placeholder": "add__gnuradio",
+    "last_opened_file_path": "/home/jmeyers/ihd/gnuradio/gr-ihd/gr-chameleon",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -89,7 +85,7 @@
       <window_info id="Pull Requests" show_stripe_button="false" />
       <window_info id="Learn" show_stripe_button="false" />
       <window_info id="DFA" show_stripe_button="false" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.3297706" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.14244792" />
       <window_info id="Commit" order="1" weight="0.25" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Database Changes" show_stripe_button="false" />
@@ -104,8 +100,8 @@
       <window_info anchor="bottom" id="Problems View" order="2" />
       <window_info anchor="bottom" id="Terminal" order="3" />
       <window_info anchor="bottom" id="Services" order="4" />
-      <window_info active="true" anchor="bottom" id="CMake" order="5" visible="true" weight="0.18593083" />
-      <window_info anchor="bottom" id="Messages" order="5" weight="0.18593083" />
+      <window_info active="true" anchor="bottom" id="CMake" order="5" visible="true" weight="0.19574653" />
+      <window_info anchor="bottom" id="Messages" order="6" weight="0.18593083" />
       <window_info anchor="right" id="make" show_stripe_button="false" side_tool="true" />
       <window_info anchor="right" id="Coverage" show_stripe_button="false" side_tool="true" />
       <window_info anchor="right" id="Python Console" show_stripe_button="false" />
@@ -182,7 +178,9 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1724869103664</updated>
-      <workItem from="1724869104722" duration="4040000" />
+      <workItem from="1724869104722" duration="6628000" />
+      <workItem from="1724953741131" duration="646000" />
+      <workItem from="1724954829148" duration="4291000" />
     </task>
     <servers />
   </component>
