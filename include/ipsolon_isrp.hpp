@@ -29,6 +29,8 @@ public:
      */
     static sptr make(const uhd::device_addr_t& dev_addr);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
     uhd::device::sptr      get_device() override { THROW_NOT_IMPLEMENTED_ERROR(); }
     uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t& args) override { THROW_NOT_IMPLEMENTED_ERROR(); }
     uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t& args) override { THROW_NOT_IMPLEMENTED_ERROR(); }
@@ -178,6 +180,7 @@ public:
     uhd::filter_info_base::sptr get_tx_filter(const std::string& name, const size_t chan)  override { THROW_NOT_IMPLEMENTED_ERROR(); }
     void set_tx_filter(const std::string& name, uhd::filter_info_base::sptr filter, const size_t chan)  override { THROW_NOT_IMPLEMENTED_ERROR(); }
     uhd::rfnoc::mb_controller& get_mb_controller(const size_t mboard)  override { THROW_NOT_IMPLEMENTED_ERROR(); }
+#pragma GCC diagnostic pop
 };
 
 }
