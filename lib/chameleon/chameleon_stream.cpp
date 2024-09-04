@@ -213,7 +213,12 @@ void chameleon_stream::stop_stream()
 #endif
     _receive_thread_context.run = false;
     _recv_thread.join();
-    // TODO - Flush the stream queue, put everything back in the free queue
+    std::lock_guard<std::mutex> free_lock(mtx_free_queue);
+    std::lock_guard<std::mutex> sample_lock(mtx_sample_queue);
+    while(!q_sample_packets.empty()) {
+        q_free_packets.push(q_sample_packets.front());
+        q_sample_packets.pop();
+    }
 }
 
 void chameleon_stream::open_socket() {
