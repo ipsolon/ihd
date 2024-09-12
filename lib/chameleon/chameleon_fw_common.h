@@ -34,7 +34,7 @@ namespace ihd {
 
         const char *to_command_string() override {
             std::stringstream ss;
-            ss << _cmd << " " << freq;
+            ss << _cmd << " chan=" << chan << "," " freq=" << freq;
             _command_string = ss.str();
             return _command_string.c_str();
         }

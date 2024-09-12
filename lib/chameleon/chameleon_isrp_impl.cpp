@@ -30,6 +30,7 @@ uhd::tune_result_t chameleon_isrp_impl::set_rx_freq(const uhd::tune_request_t& t
     uhd::tune_result_t tr{};
     std::unique_ptr<chameleon_fw_cmd> tune_cmd(
             new chameleon_fw_cmd_tune(chan, static_cast<uint64_t>(tune_request.rf_freq)));
+
     chameleon_fw_comms request(CHAMELEON_FW_COMMS_FLAGS_WRITE, CHAMELEON_FW_COMMS_CMD_TUNE_FREQ,
                                std::move(tune_cmd));
 
