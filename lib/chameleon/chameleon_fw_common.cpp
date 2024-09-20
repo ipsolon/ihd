@@ -21,13 +21,10 @@ void chameleon_fw_comms::setSequence(uint32_t sequence) {
 
 std::string chameleon_fw_comms::getCommandString() {
     std::stringstream ss;
-    printf("The sequence number:%d\n", _sequence);
     if (_sequence > 0) {
         ss << _sequence << " ";
     }
-    printf("The sequence string:%s\n", ss.str().c_str());
     ss << _command->to_command_string();
-    printf("The string:%s\n", ss.str().c_str());
     return ss.str();
 }
 
@@ -57,14 +54,8 @@ void chameleon_fw_comms::setResponse(const char *response) {
     const std::regex comma_regx(R"([,]+)");
     const std::regex space_regx(R"([\s]+)");
     const std::vector <std::string> tokenized = tokenize(std::string(response), comma_regx);
-    printf("parsed response:%s", response);
 
-    int i = 0;
-    for (auto ptr = tokenized.begin(); ptr < tokenized.end(); ptr++) {
-        printf(" tokenize[%d]:%s\n", i++, ptr->c_str());
-    }
-
-    if (tokenized.size() == 0) {
+    if (tokenized.empty()) {
         err = -1;
     } else {
         if (tokenized[0] == ACK_STR) {
@@ -90,7 +81,6 @@ void chameleon_fw_comms::setResponse(const char *response) {
                     cmd = cmd_tokenized[1].c_str(); /* <seq> <cmd> */
                     try {
                         auto response_sequence_number = static_cast<uint32_t>(std::stoul(cmd_tokenized[0]));
-                        printf("response seq:%d command seq:%d\n", response_sequence_number, _sequence);
                         if (response_sequence_number != _sequence) {
                             err = -1;
                         }
@@ -101,8 +91,6 @@ void chameleon_fw_comms::setResponse(const char *response) {
                     }
                 }
             } else {
-                printf("token size:%zu\n", cmd_tokenized.size());
-
                 if (cmd_tokenized.size() != 1) {
                     err = -1;
                 } else {
@@ -111,7 +99,6 @@ void chameleon_fw_comms::setResponse(const char *response) {
                 }
             }
             if (!err && cmd != nullptr) {
-                printf("command:%s\n", cmd);
                 if (strcmp(_command->getCommand(), cmd) != 0) {
                     err = -1;
                 }
@@ -121,11 +108,11 @@ void chameleon_fw_comms::setResponse(const char *response) {
     if (err) {
         _result = Result::ERROR;
     }
-    printf("command result:%d\n", _result);
 }
 
 void chameleon_fw_comms::setResponseTimedout() {
     printf("Timeout waiting for response\n");
+    _result = Result::ERROR;
 }
 
 }

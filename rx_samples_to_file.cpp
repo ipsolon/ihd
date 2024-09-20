@@ -79,13 +79,10 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     ihd::ipsolon_isrp::sptr isrp = ihd::ipsolon_isrp::make(args);
 
     if (!vm["freq"].defaulted()) {
-        printf("Tune it to:%f vmcount:%ld\n", freq, vm.count("freq"));
         uhd::tune_request_t tune_request{};
         tune_request.rf_freq = freq;
         size_t chan = 0;
         isrp->set_rx_freq(tune_request, chan);
-    } else {
-        printf("do not tune\n");
     }
     /************************************************************************
      * Get Rx Stream
