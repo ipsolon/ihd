@@ -7,7 +7,7 @@
 #include "chameleon_fw_commander.hpp"
 
 #include <utility>
-#include "chameleon_fw_common.h"
+#include "chameleon_fw_common.hpp"
 
 namespace ihd {
     std::atomic<size_t> chameleon_fw_commander::_seq = 1;

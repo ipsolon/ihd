@@ -4,7 +4,7 @@
 * SPDX-License-Identifier: GPL-3.0-or-later
 */
 #include "chameleon_isrp_impl.hpp"
-#include "chameleon_fw_common.h"
+#include "chameleon_fw_common.hpp"
 
 using namespace ihd;
 

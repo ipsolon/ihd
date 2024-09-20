@@ -8,6 +8,10 @@
 #define CHAMELEON_FW_COMMON_H
 
 #include <sstream>
+#include <iostream>
+#include <regex>
+#include <string>
+#include <vector>
 
 #define CHAMELEON_FW_COMMS_UDP_PORT  64000
 #define CHAMELEON_FW_CMD_MAX_SIZE     9000
@@ -19,6 +23,8 @@ namespace ihd {
         virtual const char *to_command_string() = 0;
 
         virtual ~chameleon_fw_cmd() = default;
+
+        const char *getCommand() {return _cmd;}
 
     protected:
         const char *_cmd{};
@@ -59,45 +65,36 @@ namespace ihd {
     class chameleon_fw_comms {
     public:
         chameleon_fw_comms(uint32_t sequence, std::unique_ptr<chameleon_fw_cmd> command) :
-                _sequence(sequence), _command(std::move(command)) {}
+                _sequence(sequence), _command(std::move(command)), _result(NONE) {}
 
         chameleon_fw_comms(std::unique_ptr<chameleon_fw_cmd> command) :
-                _sequence(0), _command(std::move(command)) {}
-
-        [[nodiscard]]
-        uint32_t getSequence() const {
-            return _sequence;
-        }
-
-        void setSequence(uint32_t sequence) {
-            _sequence = sequence;
-        }
-
-        std::string getCommandString() {
-            std::stringstream ss;
-            printf("The sequence number:%d\n", _sequence);
-            if (_sequence > 0) {
-                ss << _sequence << " ";
-            }
-            printf("The sequence string:%s\n", ss.str().c_str());
-            ss << _command->to_command_string();
-            printf("The string:%s\n", ss.str().c_str());
-            return ss.str();
-        }
+                _sequence(0), _command(std::move(command)), _result(NONE) {}
 
         virtual ~chameleon_fw_comms() = default;
 
-        void setResponse(const char *response) {
-            printf("TODO: parse response:%s\n", response);
-        }
+        [[nodiscard]]
+        uint32_t getSequence() const;
 
-        void setResponseTimedout() {
-            printf("Timeout waiting for response\n");
-        }
+        void setSequence(uint32_t sequence);
+        std::string getCommandString();
+        std::vector<std::string> tokenize(const std::string str, const std::regex re);
+        void setResponse(const char *response);
+        void setResponseTimedout();
+
+        enum Result {
+            NONE, /* No result/response yet (default value) */
+            ACK,
+            NAK,
+            ERROR /* Invalid response, timeout, etc. */
+        };
 
     private:
         uint32_t _sequence{};
         std::unique_ptr<chameleon_fw_cmd> _command{};
+        Result _result;
+
+        static const char *ACK_STR;
+        static const char *NCK_STR;
     };
 }
 
