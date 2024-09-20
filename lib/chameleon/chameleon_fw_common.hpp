@@ -8,6 +8,10 @@
 #define CHAMELEON_FW_COMMON_H
 
 #include <sstream>
+#include <iostream>
+#include <regex>
+#include <string>
+#include <vector>
 
 #define CHAMELEON_FW_COMMS_UDP_PORT  64000
 #define CHAMELEON_FW_CMD_MAX_SIZE     9000
@@ -19,6 +23,8 @@ namespace ihd {
         virtual const char *to_command_string() = 0;
 
         virtual ~chameleon_fw_cmd() = default;
+
+        const char *getCommand() {return _cmd;}
 
     protected:
         const char *_cmd{};
@@ -58,65 +64,38 @@ namespace ihd {
 
     class chameleon_fw_comms {
     public:
-        chameleon_fw_comms(uint32_t flags, uint32_t sequence, uint32_t cmd, std::unique_ptr<chameleon_fw_cmd> command) :
-            _flags(flags), _sequence(sequence), _cmd(cmd), _command(std::move(command)) {}
+        chameleon_fw_comms(uint32_t sequence, std::unique_ptr<chameleon_fw_cmd> command) :
+                _sequence(sequence), _command(std::move(command)), _result(NONE) {}
 
-        chameleon_fw_comms(uint32_t flags, uint32_t cmd, std::unique_ptr<chameleon_fw_cmd> command) :
-                _flags(flags), _sequence(0), _cmd(cmd), _command(std::move(command)) {}
-
-        [[nodiscard]]
-        uint32_t getFlags() const {
-            return _flags;
-        }
-
-        void setFlags(uint32_t flags) {
-            _flags = flags;
-        }
-
-        [[nodiscard]]
-        uint32_t getSequence() const {
-            return _sequence;
-        }
-
-        void setSequence(uint32_t sequence) {
-            _sequence = sequence;
-        }
-
-        [[nodiscard]]
-        uint32_t getCmd() const {
-            return _cmd;
-        }
-
-        void setCmd(uint32_t cmd) {
-            _cmd = cmd;
-        }
-
-        const char *getCommandString() {
-            return _command->to_command_string();
-        }
+        chameleon_fw_comms(std::unique_ptr<chameleon_fw_cmd> command) :
+                _sequence(0), _command(std::move(command)), _result(NONE) {}
 
         virtual ~chameleon_fw_comms() = default;
 
+        [[nodiscard]]
+        uint32_t getSequence() const;
+
+        void setSequence(uint32_t sequence);
+        std::string getCommandString();
+        std::vector<std::string> tokenize(const std::string str, const std::regex re);
+        void setResponse(const char *response);
+        void setResponseTimedout();
+
+        enum Result {
+            NONE, /* No result/response yet (default value) */
+            ACK,
+            NAK,
+            ERROR /* Invalid response, timeout, etc. */
+        };
+
     private:
-        uint32_t _flags{};
         uint32_t _sequence{};
-        uint32_t _cmd{};
         std::unique_ptr<chameleon_fw_cmd> _command{};
+        Result _result;
+
+        static const char *ACK_STR;
+        static const char *NCK_STR;
     };
-
-    typedef enum {
-        CHAMELEON_FW_COMMS_FLAGS_ACK   = 1 << 0,
-        CHAMELEON_FW_COMMS_FLAGS_NCK   = 1 << 1,
-        CHAMELEON_FW_COMMS_FLAGS_ERROR = 1 << 2,
-        CHAMELEON_FW_COMMS_FLAGS_READ  = 1 << 3,
-        CHAMELEON_FW_COMMS_FLAGS_WRITE = 1 << 4,
-    } chameleon_flags_t;
-
-    typedef enum {
-        CHAMELEON_FW_COMMS_CMD_TUNE_FREQ,
-        CHAMELEON_FW_COMMS_CMD_STREAM_CMD,
-    } chameleon_command_t;
-
 }
 
 #endif //CHAMELEON_FW_COMMON_H

@@ -11,7 +11,7 @@
 
 #include <uhd/transport/udp_simple.hpp>
 
-#include "chameleon_fw_common.h"
+#include "chameleon_fw_common.hpp"
 #include "chameleon_stream.hpp"
 #include "chameleon_packet.hpp"
 

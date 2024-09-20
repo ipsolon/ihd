@@ -9,14 +9,14 @@
 #include <atomic>
 #include <uhd/device.hpp>
 #include <uhd/transport/udp_simple.hpp>
-#include "chameleon_fw_common.h"
+#include "chameleon_fw_common.hpp"
 
 namespace ihd {
 
 class chameleon_fw_commander {
 public:
     explicit chameleon_fw_commander(uhd::device_addr_t  dev_addr);
-    size_t send_request(chameleon_fw_comms &request) const;
+    int send_request(chameleon_fw_comms &request, int timeout_ms = 0) const;
     const char *getIP();
 private:
     uhd::transport::udp_simple::sptr _udp_cmd_port{};
