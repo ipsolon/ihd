@@ -29,8 +29,8 @@ if [ ! "${CID}" ]; then
     -it ubuntu:gnuradio-releases-latest bash
 else
   echo "Container ${CONTAINER_NAME} does exist, start and run it";
-  docker exec -it  ${CONTAINER_NAME} --env="DISPLAY"
   docker start ${CONTAINER_NAME}
+  docker exec -it ${CONTAINER_NAME} /bin/bash -c "echo $DISPLAY > /tmp/.display"
   docker attach ${CONTAINER_NAME}
 fi
 unset CID
