@@ -66,9 +66,9 @@ private:
     int _socket_fd{};
 
     chameleon_packet *_current_packet;
-    bool _first_packet;
+    bool _first_packet{};
     /** Last sequence number received - compare to current to detect missing packets */
-    uint16_t _previous_seq;
+    uint16_t _previous_seq{};
 
     typedef struct receive_thread_context {
         bool run;
@@ -93,7 +93,7 @@ private:
     void open_socket();
 
     static void receive_thread_func(const receive_thread_context_t *rtc);
-    size_t get_packet_data(size_t n, chameleon_data_type *buff, uhd::rx_metadata_t& metadata);
+    size_t get_packet_data(size_t n, chameleon_data_type *buff, uhd::rx_metadata_t& metadata, uint64_t timeout_ms);
 };
 
 } // ihd

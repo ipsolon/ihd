@@ -73,6 +73,8 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     channel_nums.push_back(channel);
     stream_args.channels = channel_nums;
 
+    stream_args.args[ihd::ipsolon_stream::stream_type::STREAM_FORMAT_KEY] =
+            ihd::ipsolon_stream::stream_type::IQ_STREAM;
    auto rx_stream = isrp->get_rx_stream(stream_args);
 
     /************************************************************************
@@ -93,7 +95,11 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     while (std::chrono::high_resolution_clock::now() - startTime < duration) {
         size_t n = rx_stream->recv(buffs, spb, md, 5);
         if (md.out_of_sequence) {
-            fprintf(stderr, "*** OUT OF SEQUENCE PACKET:%s ***\n", md.to_pp_string(false).c_str());
+            fprintf(stderr, "*** OUT OF SEQUENCE PACKET:\n%s\n***\n", md.to_pp_string(false).c_str());
+            errors++;
+        }
+        if (!n) {
+            fprintf(stderr, "*** No bytes received:\n%s\n***\n", md.to_pp_string(false).c_str());
             errors++;
         }
         bytes += n;
