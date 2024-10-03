@@ -114,21 +114,12 @@ size_t chameleon_stream::get_packet_data(size_t n_samples,
             metadata.time_spec = uhd::time_spec_t(
                     static_cast<double>(_current_packet->getTimestamp()) / 1000000000);
 
-        uint16_t seq = _current_packet->getCHDR().get_seq_num();
-        uint16_t expected = _previous_seq + 1;
-        metadata.out_of_sequence = (!_first_packet) && expected != seq;
-        if (metadata.out_of_sequence) {
-            metadata.error_code = uhd::rx_metadata_t::ERROR_CODE_OVERFLOW;
-            printf("Previous seq:%x Current:%x missing:%d count:%d\n",
-                   _previous_seq, seq, seq - _previous_seq, count);
-        }
-        _first_packet = false;
-        _previous_seq = seq;
             uint16_t seq = _current_packet->getCHDR().get_seq_num();
             uint16_t expected = _previous_seq + 1;
             metadata.out_of_sequence = (!_first_packet) && expected != seq;
             if (metadata.out_of_sequence) {
                 metadata.error_code = uhd::rx_metadata_t::ERROR_CODE_OVERFLOW;
+                // TODO - add logging
                 printf("Previous seq:%x Current:%x missing:%d count:%d\n",
                        _previous_seq, seq, seq - _previous_seq, count);
             }
