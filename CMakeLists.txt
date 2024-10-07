@@ -28,8 +28,10 @@ include_directories(include lib/chameleon)
 link_directories(${Boost_LIBRARY_DIRS})
 
 add_executable(rx_samples_to_file rx_samples_to_file.cpp ${LIB_FILES})
+add_executable(packet_check packet_check.cpp ${LIB_FILES})
 
 target_link_libraries(rx_samples_to_file -luhd ${Boost_LIBRARIES})
+target_link_libraries(packet_check -luhd ${Boost_LIBRARIES})
 
 add_library(ihd SHARED ${LIB_FILES})
 

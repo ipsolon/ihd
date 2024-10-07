@@ -88,14 +88,36 @@ size_t chameleon_stream::get_max_num_samps() const
     return max_sample_per_packet;
 }
 
-size_t chameleon_stream::get_packet_data(size_t n_samples, chameleon_data_type *buff)
+size_t chameleon_stream::get_packet_data(size_t n_samples, chameleon_data_type *buff, uhd::rx_metadata_t& metadata)
 {
+    std::lock_guard<std::mutex> stream_lock(mtx_stream);
+    static int count = 0;
+    count++;
+
     if (_current_packet == nullptr) {
         std::unique_lock<std::mutex> lock(mtx_sample_queue);
         cv_sample_queue.wait(lock, [this] { return !q_sample_packets.empty(); });
         _current_packet = q_sample_packets.front();
         q_sample_packets.pop();
+
+        metadata.reset();
+        metadata.has_time_spec = true;
+        metadata.time_spec = uhd::time_spec_t(
+                static_cast<double>(_current_packet->getTimestamp())/1000000000);
+
+        uint16_t seq = _current_packet->getCHDR().get_seq_num();
+        uint16_t expected = _previous_seq + 1;
+        metadata.out_of_sequence = (!_first_packet) && expected != seq;
+        if (metadata.out_of_sequence) {
+            metadata.error_code = uhd::rx_metadata_t::ERROR_CODE_OVERFLOW;
+            printf("Previous seq:%x Current:%x missing:%d count:%d\n",
+                   _previous_seq, seq, seq - _previous_seq, count);
+        }
+        _first_packet = false;
+        _previous_seq = seq;
         lock.unlock();
+    } else {
+        metadata.fragment_offset = _current_packet->getPos();
     }
 
     n_samples = _current_packet->getSamples(buff, n_samples);
@@ -105,6 +127,8 @@ size_t chameleon_stream::get_packet_data(size_t n_samples, chameleon_data_type *
         q_free_packets.push(_current_packet);
         _current_packet = nullptr;
         cv_free_queue.notify_one();
+    } else {
+        metadata.more_fragments = true;
     }
     return n_samples;
 }
@@ -122,7 +146,7 @@ size_t chameleon_stream::recv(const buffs_type& buffs, const size_t nsamps_per_b
     }
 
     while (n_samples < nsamps_per_buff && !err) {
-        size_t n = get_packet_data(nsamps_per_buff - n_samples, output_array + n_samples);
+        size_t n = get_packet_data(nsamps_per_buff - n_samples, output_array + n_samples, metadata);
         if (n > 0) {
             n_samples += n;
         } else {
@@ -181,6 +205,7 @@ void chameleon_stream::issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd)
 
 void chameleon_stream::start_stream()
 {
+    _first_packet = true;
     _receive_thread_context.run = true;
     _recv_thread = std::thread([=] { receive_thread_func(&_receive_thread_context); });
 
