@@ -1,6 +1,6 @@
 #ifndef INCLUDED_IPSOLON_TIMED_JAMMER_BLOCK_CTRL_HPP
 #define INCLUDED_IPSOLON_TIMED_JAMMER_BLOCK_CTRL_HPP
-#include <stdint.h>
+#include <cstdint>
 #include <map>
 #include <complex>
 #include <vector>

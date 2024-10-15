@@ -43,7 +43,8 @@ chameleon_stream::chameleon_stream(const uhd::stream_args_t& stream_cmd, const u
         }
 
     } catch (const uhd::key_error&) {
-        printf("No stream format specified\n");
+        // TODO - add logging
+        fprintf(stderr, "No stream format specified\n");
     }
     open_socket();
 
@@ -119,8 +120,7 @@ size_t chameleon_stream::get_packet_data(size_t n_samples,
             metadata.out_of_sequence = (!_first_packet) && expected != seq;
             if (metadata.out_of_sequence) {
                 metadata.error_code = uhd::rx_metadata_t::ERROR_CODE_OVERFLOW;
-                // TODO - add logging
-                printf("Previous seq:%x Current:%x missing:%d count:%d\n",
+                fprintf(stderr, "Previous seq:%x Current:%x missing:%d count:%d\n",
                        _previous_seq, seq, seq - _previous_seq, count);
             }
             _first_packet = false;
