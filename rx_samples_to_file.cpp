@@ -34,8 +34,8 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         ("help", "help message")
         ("file", po::value<std::string>(&file)->default_value("isrp_samples.dat"), "name of the file to write binary samples to")
         ("duration", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(ihd::ipsolon_stream::SAMPLES_PER_PACKET * 10), "total number of samples to receive")
-        ("spb", po::value<size_t>(&spb)->default_value(ihd::ipsolon_stream::SAMPLES_PER_PACKET), "samples per buffer")
+        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(ihd::ipsolon_rx_stream::SAMPLES_PER_PACKET * 10), "total number of samples to receive")
+        ("spb", po::value<size_t>(&spb)->default_value(ihd::ipsolon_rx_stream::SAMPLES_PER_PACKET), "samples per buffer")
         ("freq", po::value<double>(&freq)->default_value(DEFAULT_FREQ), "RF center frequency in Hz")
         ("channel", po::value<size_t>(&channel)->default_value(0), "which channel to use")
         ("args", po::value<std::string>(&args)->default_value(""), "ISRP device address args")
@@ -96,11 +96,11 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     // TODO - There is currently no difference right now.  In the future you will be able to
     //           to select what you want in you stream, raw IQ, FFT, etc.
     if (vm.count("fft")) {
-        stream_args.args[ihd::ipsolon_stream::stream_type::STREAM_FORMAT_KEY] =
-                         ihd::ipsolon_stream::stream_type::FFT_STREAM;
+        stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
+                         ihd::ipsolon_rx_stream::stream_type::FFT_STREAM;
     } else {
-        stream_args.args[ihd::ipsolon_stream::stream_type::STREAM_FORMAT_KEY] =
-                ihd::ipsolon_stream::stream_type::IQ_STREAM;
+        stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
+                ihd::ipsolon_rx_stream::stream_type::IQ_STREAM;
     }
     auto rx_stream = isrp->get_rx_stream(stream_args);
 
@@ -125,7 +125,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
             fprintf(stderr, "*** No bytes received:\n%s\n***\n", md.to_pp_string(false).c_str());
             err = -1;
         }
-        size_t ws = n *  ihd::ipsolon_stream::BYTES_PER_IQ_PAIR;
+        size_t ws = n *  ihd::ipsolon_rx_stream::BYTES_PER_IQ_PAIR;
         ssize_t w = write(fd, buffs[0], ws);
         if (w != ws) {
             fprintf(stderr, "Write failed. Request %lu bytes written, write returned:%lu. %s\n",

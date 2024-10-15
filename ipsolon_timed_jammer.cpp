@@ -1,29 +1,37 @@
 //
 // Created by jmeyers on 10/10/24.
 //
-
 #include <iostream>
+#include "safe_main.hpp"
+
+#define COMPILE_JAMMER 0
+#if     COMPILE_JAMMER == 0
+int IHD_SAFE_MAIN(int argc, char *argv[]) {
+    printf("Not implemented");
+    return EXIT_SUCCESS;
+}
+#else
+
 #include <csignal>
 #include <cstdint>
+#include <arpa/inet.h>
 
 #include <boost/program_options.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/thread.hpp>
-#include <uhd/rfnoc/radio_ctrl.hpp>
-
-#include <citadel/rfnoc/timed_jammer_block_ctrl.hpp>
-
 #include <uhd/convert.hpp>
-#include <arpa/inet.h>
 
-uhd::convert::converter::~converter() { }
+#include "ihd.h"
+#include "ipsolon_timed_jammer_block_ctrl.hpp"
+
+uhd::convert::converter::~converter() = default;
 
 class convert_u32_u32be : public uhd::convert::converter {
 public:
-    convert_u32_u32be(void) { }
-    void set_scalar(const double scalar) { (void)scalar ; }
+    convert_u32_u32be(void) = default;
+    void set_scalar(const double scalar) override { (void)scalar ; }
 private:
     void operator()(const input_type &inputs, const output_type &outputs, const size_t nsamps) {
         const uint32_t *input = reinterpret_cast<const uint32_t *>(inputs[0]) ;
@@ -36,11 +44,12 @@ private:
     }
 } ;
 
-static uhd::convert::converter::sptr make_convert_u32_u32be(void) {
+static uhd::convert::converter::sptr make_convert_u32_u32be() {
     return uhd::convert::converter::sptr(new convert_u32_u32be()) ;
 }
 
 void register_converter() {
+
     uhd::convert::register_bytes_per_item("u32", sizeof(uint32_t)) ;
 
     uhd::convert::id_type id ;
@@ -67,7 +76,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     float gain ;
     std::string fname ;
     uint32_t nsamps ;
-    std::string usrp_args ;
+    std::string isrp_args ;
     float time ;
 
     po::options_description desc("Allowed options") ;
@@ -78,7 +87,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
             ("time",        po::value<float>(&time)->default_value(10.0),                                                           "Sleep time")
             ("file",        po::value<std::string>(&fname)->default_value(""),                                                      "File to save looped back samples from")
             ("n",           po::value<uint32_t>(&nsamps)->default_value(1000000),                                                   "Number of samples to read in file mode")
-            ("args",        po::value<std::string>(&usrp_args)->default_value("addr=192.168.30.2,second_addr=192.168.40.2"),        "UHD Device Arguments")
+            ("args", po::value<std::string>(&isrp_args)->default_value("addr=192.168.30.2,second_addr=192.168.40.2"), "UHD Device Arguments")
             ;
 
     po::variables_map vm ;
@@ -93,12 +102,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
 
     // Create a new context to force deletion of objects below
     {
-        printf( "Creating USRP with: %s\n", usrp_args.c_str() ) ;
-        auto usrp = uhd::device3::make(usrp_args) ;
+        printf("Creating USRP with: %s\n", isrp_args.c_str() ) ;
+        auto isrp = ihd::ipsolon_isrp::make(isrp_args);
 
-        // Control and block ID's for the RFNoC components
-        auto ctrl_radio     = usrp->get_block_ctrl<uhd::rfnoc::radio_ctrl>(uhd::rfnoc::block_id_t(0, "Radio", 0)) ;
-        auto ctrl_jammer    = usrp->get_block_ctrl<citadel::rfnoc::timed_jammer_block_ctrl>(uhd::rfnoc::block_id_t(0, "CitadelTimedJammer")) ;
+        auto ctrl_jammer = isrp->get_block_ctrl<citadel::rfnoc::timed_jammer_block_ctrl>(uhd::rfnoc::block_id_t(0, "CitadelTimedJammer")) ;
 
         auto blockid_radio  = ctrl_radio->get_block_id() ;
         auto blockid_jammer = ctrl_jammer->get_block_id() ;
@@ -116,13 +123,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
         if( fname == "" ) {
             printf( "Streaming Jammer -> Radio\n" ) ;
             // Setting TX Frequency and Gain setting
-            ctrl_radio->set_tx_frequency(freq, 0) ;
-            ctrl_radio->set_tx_gain(gain, 0) ;
-            ctrl_radio->set_arg<uint32_t>("spp", 4096) ;
-            printf( "Actual frequency: %14.8f\n", ctrl_radio->get_tx_frequency(0) ) ;
+            isrp->set_tx_freq(freq, 0) ;
+            isrp->set_tx_gain(gain, 0) ;
+            isrp->set_arg<uint32_t>("spp", 4096) ;
+            printf( "Actual frequency: %14.8f\n", isrp->get_tx_freq(0) ) ;
 
             // Create and connect the graph
-            auto tx_graph = usrp->create_graph("TX") ;
+            auto tx_graph = isrp->create_graph("TX") ;
             tx_graph->connect( blockid_jammer, 0, blockid_radio, uhd::rfnoc::ANY_PORT) ;
 
             // Metadata
@@ -137,7 +144,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
             target["block_id"] = blockid_jammer ;
             stream_args.args = target ;
             stream_args.channels = std::vector<size_t>(1) ;
-            auto tx_stream = usrp->get_tx_stream(stream_args) ;
+            auto tx_stream = isrp->get_tx_stream(stream_args) ;
 
             // Pass the TX stream over to the jammer
             ctrl_jammer->set_streamer(tx_stream) ;
@@ -230,7 +237,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
             uhd::device_addr_t target ;
             target["block_id"] = blockid_jammer ;
             rx_args.args = target ;
-            auto rx_stream = usrp->get_rx_stream(rx_args) ;
+            auto rx_stream = isrp->get_rx_stream(rx_args) ;
             std::vector<std::complex<float>> samples(nsamps) ;
 
             uhd::rx_metadata_t md ;
@@ -254,3 +261,4 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
 
     return EXIT_SUCCESS ;
 }
+#endif

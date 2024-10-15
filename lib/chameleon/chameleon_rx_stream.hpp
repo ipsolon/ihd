@@ -13,7 +13,7 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "ipsolon_stream.hpp"
+#include "ipsolon_rx_stream.hpp"
 #include "ipsolon_chdr_header.h"
 #include "exception.hpp"
 
@@ -21,13 +21,13 @@ namespace ihd {
 
 class chameleon_packet;
 
-class chameleon_stream : public ipsolon_stream {
+class chameleon_rx_stream : public ipsolon_rx_stream {
 public:
     static const size_t default_timeout = 5;
     typedef std::complex<int16_t> chameleon_data_type;
 
-    explicit chameleon_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr);
-    ~chameleon_stream() override;
+    explicit chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr);
+    ~chameleon_rx_stream() override;
 
     [[nodiscard]] size_t get_num_channels() const override;
     [[nodiscard]] size_t get_max_num_samps() const override;
@@ -37,8 +37,8 @@ public:
 
 private:
     static constexpr int vita_port = 9090;
-    static constexpr size_t bytes_per_sample = ipsolon_stream::BYTES_PER_SAMPLE;
-    static constexpr size_t bytes_per_packet = ipsolon_stream::UDP_PACKET_SIZE;
+    static constexpr size_t bytes_per_sample = ipsolon_rx_stream::BYTES_PER_SAMPLE;
+    static constexpr size_t bytes_per_packet = ipsolon_rx_stream::UDP_PACKET_SIZE;
     static constexpr size_t max_sample_per_packet = bytes_per_packet / bytes_per_sample;
     static constexpr size_t buffer_mem_size = (4 * 1024 * 1024); /* The memory allocated to store received UDP packets */
     static constexpr size_t buffer_packet_cnt = buffer_mem_size / bytes_per_sample;

@@ -5,13 +5,13 @@
 */
 
 #include "chameleon_packet.hpp"
-#include "chameleon_stream.hpp"
+#include "chameleon_rx_stream.hpp"
 
 using namespace ihd;
 
 chameleon_packet::chameleon_packet(size_t maximum_packet_size) :_packet_size(maximum_packet_size),
-                                                                _data_size(maximum_packet_size - ipsolon_stream::PACKET_HEADER_SIZE),
-                                                                _nIQ_pairs(_data_size / ipsolon_stream::BYTES_PER_IQ_PAIR),
+                                                                _data_size(maximum_packet_size - ipsolon_rx_stream::PACKET_HEADER_SIZE),
+                                                                _nIQ_pairs(_data_size / ipsolon_rx_stream::BYTES_PER_IQ_PAIR),
                                                                 _pos(0),
                                                                 _samples(nullptr)
 {
@@ -19,7 +19,7 @@ chameleon_packet::chameleon_packet(size_t maximum_packet_size) :_packet_size(max
     if(_packet_mem == nullptr) {
         THROW_MALLOC_ERROR();
     } else {
-        _samples = reinterpret_cast<int16_t *>(_packet_mem + ipsolon_stream::PACKET_HEADER_SIZE);
+        _samples = reinterpret_cast<int16_t *>(_packet_mem + ipsolon_rx_stream::PACKET_HEADER_SIZE);
     }
 }
 
@@ -74,8 +74,8 @@ size_t chameleon_packet::getPacketSize() const
 void chameleon_packet::setPacketSize(size_t packetSize)
 {
     _packet_size = packetSize;
-    _data_size = _packet_size - ipsolon_stream::PACKET_HEADER_SIZE;
-    _nIQ_pairs = _data_size / ipsolon_stream::BYTES_PER_IQ_PAIR;
+    _data_size = _packet_size - ipsolon_rx_stream::PACKET_HEADER_SIZE;
+    _nIQ_pairs = _data_size / ipsolon_rx_stream::BYTES_PER_IQ_PAIR;
     rewind();
 }
 
@@ -100,12 +100,12 @@ void chameleon_packet::rewind()
     setPos(0);
 }
 
-size_t chameleon_packet::getSamples(chameleon_stream::chameleon_data_type *buff, size_t n_samples)
+size_t chameleon_packet::getSamples(chameleon_rx_stream::chameleon_data_type *buff, size_t n_samples)
 {
     size_t n = std::min(n_samples, _nIQ_pairs - _pos);
     for (size_t i = 0; i < n; i++) {
         size_t s = (i * 2);
-        buff[i] = chameleon_stream::chameleon_data_type(_samples[s], _samples[s + 1]);
+        buff[i] = chameleon_rx_stream::chameleon_data_type(_samples[s], _samples[s + 1]);
     }
     _pos += n; // Move position in packet
     return n;

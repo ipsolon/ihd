@@ -32,7 +32,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     desc.add_options()
             ("help", "help message")
             ("duration", po::value<uint32_t>(&total_time)->default_value(10), "total number of seconds to receive")
-            ("spb", po::value<size_t>(&spb)->default_value(ihd::ipsolon_stream::SAMPLES_PER_PACKET), "samples per buffer")
+            ("spb", po::value<size_t>(&spb)->default_value(ihd::ipsolon_rx_stream::SAMPLES_PER_PACKET), "samples per buffer")
             ("channel", po::value<size_t>(&channel)->default_value(0), "which channel to use")
             ("args", po::value<std::string>(&args)->default_value(""), "ISRP device address args")
             ;
@@ -73,8 +73,8 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     channel_nums.push_back(channel);
     stream_args.channels = channel_nums;
 
-    stream_args.args[ihd::ipsolon_stream::stream_type::STREAM_FORMAT_KEY] =
-            ihd::ipsolon_stream::stream_type::IQ_STREAM;
+    stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
+            ihd::ipsolon_rx_stream::stream_type::IQ_STREAM;
    auto rx_stream = isrp->get_rx_stream(stream_args);
 
     /************************************************************************

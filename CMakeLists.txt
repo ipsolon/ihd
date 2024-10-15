@@ -33,6 +33,7 @@ add_executable(ipsolon_timed_jammer ipsolon_timed_jammer.cpp ${LIB_FILES})
 
 target_link_libraries(rx_samples_to_file -luhd ${Boost_LIBRARIES})
 target_link_libraries(packet_check -luhd ${Boost_LIBRARIES})
+target_link_libraries(ipsolon_timed_jammer -luhd ${Boost_LIBRARIES})
 
 add_library(ihd SHARED ${LIB_FILES})
 

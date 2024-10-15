@@ -12,14 +12,14 @@
 #include <uhd/transport/udp_simple.hpp>
 
 #include "chameleon_fw_common.hpp"
-#include "chameleon_stream.hpp"
+#include "chameleon_rx_stream.hpp"
 #include "chameleon_packet.hpp"
 
 #define IMPLEMENTED_CMD_PORT 0 /* Command server not yet implemented */
 
 using namespace ihd;
 
-chameleon_stream::chameleon_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr) :
+chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr) :
     _nChans(stream_cmd.channels.size()), _commander(device_addr), _chanMask(0), _receive_thread_context{},
     _current_packet(nullptr)
 {
@@ -33,7 +33,7 @@ chameleon_stream::chameleon_stream(const uhd::stream_args_t& stream_cmd, const u
         _chanMask |= 1 << chan; /* Channels indexed at zero */
     }
     try {
-        std::string str = stream_cmd.args[ipsolon_stream::stream_type::STREAM_FORMAT_KEY];
+        std::string str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY];
         stream_type st(str);
         if (st.modeEquals(stream_type::FFT_STREAM)) {
             // FIXME - implement abstract recv class to handle IQ vs FFT - instantiate it here
@@ -65,7 +65,7 @@ chameleon_stream::chameleon_stream(const uhd::stream_args_t& stream_cmd, const u
     }
 }
 
-chameleon_stream::~chameleon_stream()
+chameleon_rx_stream::~chameleon_rx_stream()
 {
     while (!q_free_packets.empty()) {
         chameleon_packet *pk = q_free_packets.front();
@@ -79,20 +79,20 @@ chameleon_stream::~chameleon_stream()
     }
 }
 
-size_t chameleon_stream::get_num_channels() const
+size_t chameleon_rx_stream::get_num_channels() const
 {
     return _nChans;
 }
 
-size_t chameleon_stream::get_max_num_samps() const
+size_t chameleon_rx_stream::get_max_num_samps() const
 {
     return max_sample_per_packet;
 }
 
-size_t chameleon_stream::get_packet_data(size_t n_samples,
-                                         chameleon_data_type *buff,
-                                         uhd::rx_metadata_t& metadata,
-                                         uint64_t timeout_ms)
+size_t chameleon_rx_stream::get_packet_data(size_t n_samples,
+                                            chameleon_data_type *buff,
+                                            uhd::rx_metadata_t& metadata,
+                                            uint64_t timeout_ms)
 {
     std::lock_guard<std::mutex> stream_lock(mtx_stream);
     size_t n = 0;
@@ -146,8 +146,8 @@ size_t chameleon_stream::get_packet_data(size_t n_samples,
     return n;
 }
 
-size_t chameleon_stream::recv(const buffs_type& buffs, const size_t nsamps_per_buff, uhd::rx_metadata_t& metadata,
-                              const double timeout, const bool one_packet)
+size_t chameleon_rx_stream::recv(const buffs_type& buffs, const size_t nsamps_per_buff, uhd::rx_metadata_t& metadata,
+                                 const double timeout, const bool one_packet)
 {
     int err = 0;
     size_t n_samples = 0;
@@ -173,7 +173,7 @@ size_t chameleon_stream::recv(const buffs_type& buffs, const size_t nsamps_per_b
     return n_samples;
 }
 
-void chameleon_stream::receive_thread_func(const receive_thread_context *rtc)
+void chameleon_rx_stream::receive_thread_func(const receive_thread_context *rtc)
 {
     sockaddr_in server_addr{};
     socklen_t len;
@@ -207,7 +207,7 @@ void chameleon_stream::receive_thread_func(const receive_thread_context *rtc)
     }
 }
 
-void chameleon_stream::issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd)
+void chameleon_rx_stream::issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd)
 {
     switch (stream_cmd.stream_mode) {
         case uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS : start_stream(); break;
@@ -219,7 +219,7 @@ void chameleon_stream::issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd)
     }
 }
 
-void chameleon_stream::start_stream()
+void chameleon_rx_stream::start_stream()
 {
     _first_packet = true;
     _receive_thread_context.run = true;
@@ -245,7 +245,7 @@ void chameleon_stream::start_stream()
 #endif
 }
 
-void chameleon_stream::stop_stream()
+void chameleon_rx_stream::stop_stream()
 {
 #if IMPLEMENTED_CMD_PORT
     chameleon_fw_cmd_stream stream_cmd(_chanMask, false);
@@ -262,7 +262,7 @@ void chameleon_stream::stop_stream()
     }
 }
 
-void chameleon_stream::open_socket() {
+void chameleon_rx_stream::open_socket() {
     int err = 0;
     int sock_fd = -1;
 

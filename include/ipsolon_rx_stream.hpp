@@ -13,10 +13,10 @@
 
 namespace ihd {
 
-class ipsolon_stream : public uhd::rx_streamer {
+class ipsolon_rx_stream : public uhd::rx_streamer {
 
 public:
-    ipsolon_stream() = default;
+    ipsolon_rx_stream() = default;
 
     static constexpr size_t UDP_PACKET_SIZE    =  1040;
     static constexpr size_t BYTES_PER_SAMPLE   =      2;
@@ -24,7 +24,7 @@ public:
     static constexpr size_t PACKET_HEADER_SIZE = (chdr_header::CHDR_W + sizeof(uint64_t)); /* CHDR + timestamp */
     static constexpr size_t SAMPLES_PER_PACKET = ((UDP_PACKET_SIZE - PACKET_HEADER_SIZE) / BYTES_PER_IQ_PAIR);
 
-    typedef std::shared_ptr<ipsolon_stream> sptr;
+    typedef std::shared_ptr<ipsolon_rx_stream> sptr;
 
     class stream_type {
     public:

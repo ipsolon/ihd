@@ -8,7 +8,7 @@
 #define IHD_CHAMELEON_PACKET_H
 #include <cstdlib>
 
-#include "chameleon_stream.hpp"
+#include "chameleon_rx_stream.hpp"
 #include "ipsolon_chdr_header.h"
 
 namespace ihd {
@@ -26,7 +26,7 @@ public:
     [[nodiscard]] size_t getPos() const;
     [[nodiscard]] chdr_header getCHDR() const;
 
-    size_t getSamples(chameleon_stream::chameleon_data_type *buff, size_t n_samples);
+    size_t getSamples(chameleon_rx_stream::chameleon_data_type *buff, size_t n_samples);
 
     void setPacketSize(size_t packetSize);
     void setPos(size_t position);
