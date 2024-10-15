@@ -114,10 +114,16 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
      * Receive Data
      ***********************************************************************/
     size_t sample_iterations = total_num_samps / spb;
-    for (size_t i = 0; i < sample_iterations; i++) {
+    int err = 0;
+    for (size_t i = 0; i < sample_iterations && !err; i++) {
         size_t n = rx_stream->recv(buffs, spb, md, 5);
         if (md.out_of_sequence) {
-            fprintf(stderr, "*** OUT OF SEQUENCE PACKET:%s ***\n", md.to_pp_string(false).c_str());
+            fprintf(stderr, "*** OUT OF SEQUENCE PACKET:\n%s\n***\n", md.to_pp_string(false).c_str());
+            err = -1;
+        }
+        if (!n) {
+            fprintf(stderr, "*** No bytes received:\n%s\n***\n", md.to_pp_string(false).c_str());
+            err = -1;
         }
         size_t ws = n *  ihd::ipsolon_stream::BYTES_PER_IQ_PAIR;
         ssize_t w = write(fd, buffs[0], ws);
