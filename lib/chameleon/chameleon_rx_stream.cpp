@@ -21,7 +21,7 @@ using namespace ihd;
 
 chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr) :
     _nChans(stream_cmd.channels.size()), _commander(device_addr), _chanMask(0), _receive_thread_context{},
-    _current_packet(nullptr)
+    _current_packet(nullptr), _socket_fd(-1)
 {
     if(stream_cmd.cpu_format != "sc16") {
         THROW_VALUE_NOT_SUPPORTED_ERROR(stream_cmd.args.to_string());
@@ -32,20 +32,27 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
     for(const size_t& chan : stream_cmd.channels) {
         _chanMask |= 1 << chan; /* Channels indexed at zero */
     }
-    try {
-        std::string str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY];
-        stream_type st(str);
-        if (st.modeEquals(stream_type::FFT_STREAM)) {
-            // FIXME - implement abstract recv class to handle IQ vs FFT - instantiate it here
-            printf("Create FFT stream\n");
-        } else {
-            printf("Create IQ stream\n");
+    std::string type_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY];
+    stream_type st(type_str);
+    if (st.modeEquals(stream_type::FFT_STREAM)) {
+        printf("Create FFT stream\n");
+
+        std::string ip_str   = stream_cmd.args[ipsolon_rx_stream::STREAM_DEST_IP_KEY];
+        int err = inet_pton(AF_INET, ip_str.c_str(), &ip_str);
+        if (err != 1) {
+            THROW_SOCKET_ERROR();
         }
 
-    } catch (const uhd::key_error&) {
-        // TODO - add logging
-        fprintf(stderr, "No stream format specified\n");
+        std::string port_str = stream_cmd.args[ipsolon_rx_stream::STREAM_DEST_PORT_KEY];
+        _vita_port= std::stoul(port_str, nullptr, 0);
+
+        _fft_size = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_SIZE_KEY];
+        _fft_avg  = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY];
+
+    } else {
+        printf("Create IQ stream\n");
     }
+
     open_socket();
 
     _receive_thread_context.run = false;
@@ -76,6 +83,9 @@ chameleon_rx_stream::~chameleon_rx_stream()
         chameleon_packet *pk = q_sample_packets.front();
         q_sample_packets.pop();
         free(pk);
+    }
+    if (_socket_fd >= 0) {
+        close(_socket_fd);
     }
 }
 
@@ -225,24 +235,9 @@ void chameleon_rx_stream::start_stream()
     _receive_thread_context.run = true;
     _recv_thread = std::thread([=] { receive_thread_func(&_receive_thread_context); });
 
-#if IMPLEMENTED_CMD_PORT
     chameleon_fw_cmd_stream stream_cmd(_chanMask, true);
     auto request = chameleon_fw_comms(CHAMELEON_FW_COMMS_FLAGS_WRITE, CHAMELEON_FW_COMMS_CMD_STREAM_CMD, stream_cmd);
     _commander.send_request(request);
-#else
-    /* For now, you just send the radio 'anything' and it goes */
-    std::string ipAddr = _commander.getIP();
-    sockaddr_in radio_addr{};
-    radio_addr.sin_addr.s_addr = inet_addr(ipAddr.c_str());
-    radio_addr.sin_port = htons(vita_port);
-
-    uint8_t go[] = {0x67,0x6F};
-    int n = sendto(_socket_fd, go, sizeof(go), MSG_CONFIRM,
-                   (const struct sockaddr *) &radio_addr, sizeof(radio_addr));
-    if (n != sizeof(go)) {
-        THROW_SOCKET_ERROR();
-    }
-#endif
 }
 
 void chameleon_rx_stream::stop_stream()
@@ -281,8 +276,8 @@ void chameleon_rx_stream::open_socket() {
     if (!err) {
         sockaddr_in local_addr{};
         local_addr.sin_family = AF_INET;
-        local_addr.sin_port = htons(vita_port);
-        local_addr.sin_addr.s_addr = INADDR_ANY;
+        local_addr.sin_port = htons(_vita_port);
+        local_addr.sin_addr.s_addr = _vita_ip;
         err = bind(sock_fd, (const struct sockaddr *) &local_addr, sizeof(local_addr));
         if (err < 0) {
             perror("bind failed");
