@@ -245,13 +245,14 @@ void chameleon_rx_stream::start_stream()
 
 void chameleon_rx_stream::stop_stream()
 {
+    _receive_thread_context.run = false;
+    _recv_thread.join();
+
     std::unique_ptr<chameleon_fw_cmd> stream_cmd(
             new chameleon_fw_cmd_stream(false));
     chameleon_fw_comms request(std::move(stream_cmd));
     _commander.send_request(request);
 
-    _receive_thread_context.run = false;
-    _recv_thread.join();
     std::lock_guard<std::mutex> free_lock(mtx_free_queue);
     std::lock_guard<std::mutex> sample_lock(mtx_sample_queue);
     while(!q_sample_packets.empty()) {

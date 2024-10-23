@@ -31,13 +31,19 @@ namespace ihd {
             // Send passed and the caller wants to wait for a response
             char response[CHAMELEON_FW_CMD_MAX_SIZE] = {0};
             // TODO - check in a loop to make sure it the response this is looking for (somehow)
-            ret = _udp_cmd_port->recv(boost::asio::buffer(response), ((double)timeout_ms/1000.0));
-            if (!ret) { // Timeout
-                request.setResponseTimedout();
-                err = -1;
-            } else {
-                request.setResponse(response);
-            }
+            try {
+                ret = _udp_cmd_port->recv(boost::asio::buffer(response), ((double) timeout_ms / 1000.0));
+                if (!ret) { // Timeout
+                    request.setResponseTimedout();
+                    err = -1;
+                } else {
+                    request.setResponse(response);
+                }
+            } catch (const std::exception& e) {
+                std::cerr << "Error: " << e.what() << std::endl;
+            } catch (...) {
+                std::cerr << "Error: unknown exception" << std::endl;
+            }                                                         \
         }
         return err;
     }
