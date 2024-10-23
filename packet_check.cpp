@@ -74,8 +74,12 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     stream_args.channels = channel_nums;
 
     stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
-            ihd::ipsolon_rx_stream::stream_type::IQ_STREAM;
-   auto rx_stream = isrp->get_rx_stream(stream_args);
+            ihd::ipsolon_rx_stream::stream_type::FFT_STREAM;
+    stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] = "10.75.42.37";
+    stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] = "9090";
+    stream_args.args[ihd::ipsolon_rx_stream::stream_type::FFT_SIZE_KEY] = "256";
+    stream_args.args[ihd::ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY] = "105";
+    auto rx_stream = isrp->get_rx_stream(stream_args);
 
     /************************************************************************
      * Start the stream

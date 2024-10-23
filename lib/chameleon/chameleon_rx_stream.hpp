@@ -12,6 +12,7 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
+#include <netinet/in.h>
 
 #include "ipsolon_rx_stream.hpp"
 #include "ipsolon_chdr_header.h"
@@ -36,7 +37,13 @@ public:
     void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd) override;
 
 private:
-    static constexpr int vita_port = 9090;
+    std::string _vita_ip_str;
+    in_addr_t _vita_ip = INADDR_ANY;
+    uint16_t _vita_port = 9090;
+
+    uint32_t _fft_size;
+    uint32_t _fft_avg;
+
     static constexpr size_t bytes_per_sample = ipsolon_rx_stream::BYTES_PER_SAMPLE;
     static constexpr size_t bytes_per_packet = ipsolon_rx_stream::UDP_PACKET_SIZE;
     static constexpr size_t max_sample_per_packet = bytes_per_packet / bytes_per_sample;

@@ -21,7 +21,7 @@ using namespace ihd;
 
 chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr) :
     _nChans(stream_cmd.channels.size()), _commander(device_addr), _chanMask(0), _receive_thread_context{},
-    _current_packet(nullptr), _socket_fd(-1)
+    _current_packet(nullptr), _socket_fd(-1), _vita_ip_str("0.0.0.0")
 {
     if(stream_cmd.cpu_format != "sc16") {
         THROW_VALUE_NOT_SUPPORTED_ERROR(stream_cmd.args.to_string());
@@ -37,17 +37,19 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
     if (st.modeEquals(stream_type::FFT_STREAM)) {
         printf("Create FFT stream\n");
 
-        std::string ip_str   = stream_cmd.args[ipsolon_rx_stream::STREAM_DEST_IP_KEY];
-        int err = inet_pton(AF_INET, ip_str.c_str(), &ip_str);
+        _vita_ip_str.assign(stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY]);
+        int err = inet_pton(AF_INET, _vita_ip_str.c_str(), &_vita_ip);
         if (err != 1) {
             THROW_SOCKET_ERROR();
         }
 
-        std::string port_str = stream_cmd.args[ipsolon_rx_stream::STREAM_DEST_PORT_KEY];
+        std::string port_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY];
         _vita_port= std::stoul(port_str, nullptr, 0);
 
-        _fft_size = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_SIZE_KEY];
-        _fft_avg  = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY];
+        std::string fft_size = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_SIZE_KEY];
+        _fft_size = std::strtol(fft_size.c_str(), nullptr, 0);
+        std::string fft_avg  = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY];
+        _fft_avg  = std::strtol(fft_avg.c_str(), nullptr, 0);
 
     } else {
         printf("Create IQ stream\n");
@@ -235,18 +237,19 @@ void chameleon_rx_stream::start_stream()
     _receive_thread_context.run = true;
     _recv_thread = std::thread([=] { receive_thread_func(&_receive_thread_context); });
 
-    chameleon_fw_cmd_stream stream_cmd(_chanMask, true);
-    auto request = chameleon_fw_comms(CHAMELEON_FW_COMMS_FLAGS_WRITE, CHAMELEON_FW_COMMS_CMD_STREAM_CMD, stream_cmd);
+    std::unique_ptr<chameleon_fw_cmd> stream_cmd(
+            new chameleon_fw_cmd_stream(_chanMask, true, _vita_ip_str.c_str(), _vita_port, _fft_size, _fft_avg));
+    chameleon_fw_comms request(std::move(stream_cmd));
     _commander.send_request(request);
 }
 
 void chameleon_rx_stream::stop_stream()
 {
-#if IMPLEMENTED_CMD_PORT
-    chameleon_fw_cmd_stream stream_cmd(_chanMask, false);
-    auto request = chameleon_fw_comms(CHAMELEON_FW_COMMS_FLAGS_WRITE, CHAMELEON_FW_COMMS_CMD_STREAM_CMD, stream_cmd);
+    std::unique_ptr<chameleon_fw_cmd> stream_cmd(
+            new chameleon_fw_cmd_stream(false));
+    chameleon_fw_comms request(std::move(stream_cmd));
     _commander.send_request(request);
-#endif
+
     _receive_thread_context.run = false;
     _recv_thread.join();
     std::lock_guard<std::mutex> free_lock(mtx_free_queue);

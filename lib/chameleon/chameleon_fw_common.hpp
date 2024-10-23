@@ -11,6 +11,7 @@
 #include <iostream>
 #include <regex>
 #include <string>
+#include <utility>
 #include <vector>
 
 #define CHAMELEON_FW_COMMS_UDP_PORT  64000
@@ -52,14 +53,36 @@ namespace ihd {
 
     class chameleon_fw_cmd_stream : public chameleon_fw_cmd {
     public:
-        chameleon_fw_cmd_stream(uint32_t mask, bool enable) :
-            chameleon_fw_cmd("stream"),
-            _chan_mask(mask), _enable(enable) {}
+        explicit chameleon_fw_cmd_stream(uint32_t chan_mask, bool enable, const char *ip, uint16_t port,
+                                uint32_t size, uint32_t avg) :
+                chameleon_fw_cmd(_cmd_str),
+                _chan_mask(chan_mask),_enable(enable), _ip_addr(ip), _port(port),
+                _fft_size(size), _avg(avg) {}
 
-        const char *to_command_string() override { return nullptr; /* TODO - implement stream command */ }
+        explicit chameleon_fw_cmd_stream(bool enable) :
+                chameleon_fw_cmd(_cmd_str),
+                _chan_mask(0), _enable(enable), _ip_addr(), _port(0),
+                _fft_size(0), _avg(0) {}
+
+        const char *to_command_string() override {
+            std::stringstream ss;
+            if (_enable) {
+                ss << _cmd << "_start ip=" << _ip_addr << ", port=" << _port << ", fft_size="
+                   << _fft_size << ", avg=" << _avg;
+            } else {
+                ss << _cmd << "_stop";
+            }
+            _command_string = ss.str();
+            return _command_string.c_str();
+        }
     private:
+        constexpr static const char* const _cmd_str = "stream";
         uint32_t _chan_mask{};
         bool _enable{};
+        std::string _ip_addr{};
+        uint16_t _port{};
+        uint32_t _fft_size{};
+        uint32_t _avg{};
     };
 
     class chameleon_fw_comms {

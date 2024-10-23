@@ -32,6 +32,12 @@ public:
         static inline const std::string IQ_STREAM         = "IQ";
         static inline const std::string FFT_STREAM        = "FFT";
 
+        static inline const std::string STREAM_DEST_IP_KEY   = "IP";
+        static inline const std::string STREAM_DEST_PORT_KEY = "PORT";
+
+        static inline const std::string FFT_AVG_COUNT_KEY  = "FFT_AVERAGE_COUNT";
+        static inline const std::string FFT_SIZE_KEY       = "FFT_SIZE";
+
         explicit stream_type(const std::string& st)
         {
             if (_modes.find(st) == _modes.end()) {
@@ -52,12 +58,6 @@ public:
         std::set<std::string> _modes { IQ_STREAM, FFT_STREAM };
         std::string _stream_mode_str;
     };
-
-    [[nodiscard]] size_t get_num_channels() const override;
-    [[nodiscard]] size_t get_max_num_samps() const override;
-    size_t recv(const buffs_type& buffs, size_t nsamps_per_buff, uhd::rx_metadata_t& metadata,
-        double timeout, bool one_packet) override;
-    void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd) override;
 
     static sptr make(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& _device_addr);
 };
