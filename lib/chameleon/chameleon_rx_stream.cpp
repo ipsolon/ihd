@@ -20,8 +20,17 @@
 using namespace ihd;
 
 chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr) :
-    _nChans(stream_cmd.channels.size()), _commander(device_addr), _chanMask(0), _receive_thread_context{},
-    _current_packet(nullptr), _socket_fd(-1), _vita_ip_str("0.0.0.0")
+    _nChans(stream_cmd.channels.size()),
+    _commander(device_addr),
+    _chanMask(0),
+    _receive_thread_context{},
+    _current_packet(nullptr),
+    _socket_fd(-1),
+    _vita_ip(DEFAULT_VITA_IP),
+    _vita_ip_str(DEFAULT_VITA_IP_STR),
+    _vita_port(DEFAULT_VITA_PORT),
+    _fft_size(DEFAULT_FFT_SIZE),
+    _fft_avg(DEFAULT_FFT_AVG)
 {
     if(stream_cmd.cpu_format != "sc16") {
         THROW_VALUE_NOT_SUPPORTED_ERROR(stream_cmd.args.to_string());
@@ -36,25 +45,28 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
     stream_type st(type_str);
     if (st.modeEquals(stream_type::FFT_STREAM)) {
         printf("Create FFT stream\n");
-
-        _vita_ip_str.assign(stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY]);
-        int err = inet_pton(AF_INET, _vita_ip_str.c_str(), &_vita_ip);
-        if (err != 1) {
-            THROW_SOCKET_ERROR();
+        if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY)) {
+            _vita_ip_str.assign(stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY]);
+            int err = inet_pton(AF_INET, _vita_ip_str.c_str(), &_vita_ip);
+            if (err != 1) {
+                THROW_SOCKET_ERROR();
+            }
         }
-
-        std::string port_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY];
-        _vita_port= std::stoul(port_str, nullptr, 0);
-
-        std::string fft_size = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_SIZE_KEY];
-        _fft_size = std::strtol(fft_size.c_str(), nullptr, 0);
-        std::string fft_avg  = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY];
-        _fft_avg  = std::strtol(fft_avg.c_str(), nullptr, 0);
-
+        if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY)) {
+            std::string port_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY];
+            _vita_port = std::stoul(port_str, nullptr, 0);
+        }
+        if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::FFT_SIZE_KEY)) {
+            std::string fft_size = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_SIZE_KEY];
+            _fft_size = std::strtol(fft_size.c_str(), nullptr, 0);
+        }
+        if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY)) {
+            std::string fft_avg = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY];
+            _fft_avg = std::strtol(fft_avg.c_str(), nullptr, 0);
+        }
     } else {
         printf("Create IQ stream\n");
     }
-
     open_socket();
 
     _receive_thread_context.run = false;
@@ -66,10 +78,14 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
     _receive_thread_context.cv_samples = &cv_sample_queue;
     _receive_thread_context.socket_fd = _socket_fd;
 
+    _bytes_per_packet = (_fft_size * BYTES_PER_IQ_PAIR) + PACKET_HEADER_SIZE;
+    _max_samples_per_packet = (_bytes_per_packet - PACKET_HEADER_SIZE) / BYTES_PER_IQ_PAIR;
+    _buffer_packet_cnt = buffer_mem_size / _max_samples_per_packet;
+
     /* Fill the free queue */
     std::lock_guard<std::mutex> lock(mtx_free_queue);
-    for (int i = 0; i < buffer_packet_cnt; ++i) {
-        auto cp = new chameleon_packet(bytes_per_packet);
+    for (int i = 0; i < _buffer_packet_cnt; ++i) {
+        auto cp = new chameleon_packet(_bytes_per_packet);
         q_free_packets.push(cp);
     }
 }
@@ -98,7 +114,7 @@ size_t chameleon_rx_stream::get_num_channels() const
 
 size_t chameleon_rx_stream::get_max_num_samps() const
 {
-    return max_sample_per_packet;
+    return _max_samples_per_packet;
 }
 
 size_t chameleon_rx_stream::get_packet_data(size_t n_samples,

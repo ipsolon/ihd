@@ -37,18 +37,24 @@ public:
     void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd) override;
 
 private:
+    static constexpr char     DEFAULT_VITA_IP_STR[] = "0.0.0.0";
+    static constexpr uint32_t DEFAULT_VITA_IP     = INADDR_ANY;
+    static constexpr uint32_t DEFAULT_VITA_PORT   = 9090;
     std::string _vita_ip_str;
-    in_addr_t _vita_ip = INADDR_ANY;
-    uint16_t _vita_port = 9090;
+    in_addr_t _vita_ip;
+    uint16_t _vita_port;
 
+    static constexpr uint32_t DEFAULT_FFT_SIZE = 256;
+    static constexpr uint32_t DEFAULT_FFT_AVG  = 105;
     uint32_t _fft_size;
     uint32_t _fft_avg;
 
-    static constexpr size_t bytes_per_sample = ipsolon_rx_stream::BYTES_PER_SAMPLE;
-    static constexpr size_t bytes_per_packet = ipsolon_rx_stream::UDP_PACKET_SIZE;
-    static constexpr size_t max_sample_per_packet = bytes_per_packet / bytes_per_sample;
+    static constexpr uint32_t DEFAULT_UDP_PACKET_SIZE = (DEFAULT_FFT_SIZE * BYTES_PER_SAMPLE) * PACKET_HEADER_SIZE;
+    size_t _bytes_per_packet;
+    size_t _max_samples_per_packet;
+
     static constexpr size_t buffer_mem_size = (4 * 1024 * 1024); /* The memory allocated to store received UDP packets */
-    static constexpr size_t buffer_packet_cnt = buffer_mem_size / bytes_per_sample;
+    size_t _buffer_packet_cnt;
 
     timeval _vita_port_timeout = {default_timeout, 0};
 
