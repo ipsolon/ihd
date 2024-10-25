@@ -35,6 +35,7 @@ public:
     uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t& args) override { THROW_NOT_IMPLEMENTED_ERROR(); }
     uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t& args) override { THROW_NOT_IMPLEMENTED_ERROR(); }
     uhd::tune_result_t     set_rx_freq(const uhd::tune_request_t& tune_request, size_t chan) override { THROW_NOT_IMPLEMENTED_ERROR(); }
+    void                   set_rx_gain(double gain, const std::string& name, size_t chan) override { THROW_NOT_IMPLEMENTED_ERROR(); }
 
     uhd::property_tree::sptr get_tree() const override { THROW_NOT_IMPLEMENTED_ERROR(); }
     uhd::dict<std::string, std::string> get_usrp_rx_info(size_t chan) override { THROW_NOT_IMPLEMENTED_ERROR(); }
@@ -101,7 +102,6 @@ public:
     double set_tx_lo_freq(const double freq, const std::string& name, const size_t chan) override { THROW_NOT_IMPLEMENTED_ERROR(); }
     double get_tx_lo_freq(const std::string& name, const size_t chan) override { THROW_NOT_IMPLEMENTED_ERROR(); }
     uhd::freq_range_t get_tx_lo_freq_range(const std::string& name, const size_t chan) override { THROW_NOT_IMPLEMENTED_ERROR(); }
-    void set_rx_gain(double gain, const std::string& name, size_t chan) override { THROW_NOT_IMPLEMENTED_ERROR(); }
     std::vector<std::string> get_rx_gain_profile_names(const size_t chan) override { THROW_NOT_IMPLEMENTED_ERROR(); }
     void set_rx_gain_profile(const std::string& profile, const size_t chan) override { THROW_NOT_IMPLEMENTED_ERROR(); }
     std::string get_rx_gain_profile(const size_t chan) override { THROW_NOT_IMPLEMENTED_ERROR(); }

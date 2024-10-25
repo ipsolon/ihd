@@ -39,3 +39,8 @@ uhd::tune_result_t chameleon_isrp_impl::set_rx_freq(const uhd::tune_request_t& t
     // TODO implement tune result
     return tr;
 }
+
+void chameleon_isrp_impl::set_rx_gain(double gain, const std::string& name, size_t chan)
+{
+    THROW_NOT_IMPLEMENTED_ERROR();
+}

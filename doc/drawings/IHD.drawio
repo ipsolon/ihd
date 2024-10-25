@@ -225,7 +225,7 @@
             <mxPoint x="-1" y="-5" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="L2gmkhJbMCFJ-E8kOfrQ-79" value="&lt;span style=&quot;font-style: normal;&quot;&gt;ihd::chameleon_stream&lt;/span&gt;" style="swimlane;fontStyle=3;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+        <mxCell id="L2gmkhJbMCFJ-E8kOfrQ-79" value="&lt;span style=&quot;font-style: normal;&quot;&gt;ihd::chameleon_rx_stream&lt;/span&gt;" style="swimlane;fontStyle=3;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
           <mxGeometry x="1040" y="505" width="530" height="160" as="geometry">
             <mxRectangle x="290" y="220" width="70" height="30" as="alternateBounds" />
           </mxGeometry>

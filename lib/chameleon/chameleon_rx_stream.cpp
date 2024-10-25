@@ -12,16 +12,25 @@
 #include <uhd/transport/udp_simple.hpp>
 
 #include "chameleon_fw_common.hpp"
-#include "chameleon_stream.hpp"
+#include "chameleon_rx_stream.hpp"
 #include "chameleon_packet.hpp"
 
 #define IMPLEMENTED_CMD_PORT 0 /* Command server not yet implemented */
 
 using namespace ihd;
 
-chameleon_stream::chameleon_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr) :
-    _nChans(stream_cmd.channels.size()), _commander(device_addr), _chanMask(0), _receive_thread_context{},
-    _current_packet(nullptr)
+chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr) :
+    _nChans(stream_cmd.channels.size()),
+    _commander(device_addr),
+    _chanMask(0),
+    _receive_thread_context{},
+    _current_packet(nullptr),
+    _socket_fd(-1),
+    _vita_ip(DEFAULT_VITA_IP),
+    _vita_ip_str(DEFAULT_VITA_IP_STR),
+    _vita_port(DEFAULT_VITA_PORT),
+    _fft_size(DEFAULT_FFT_SIZE),
+    _fft_avg(DEFAULT_FFT_AVG)
 {
     if(stream_cmd.cpu_format != "sc16") {
         THROW_VALUE_NOT_SUPPORTED_ERROR(stream_cmd.args.to_string());
@@ -32,18 +41,31 @@ chameleon_stream::chameleon_stream(const uhd::stream_args_t& stream_cmd, const u
     for(const size_t& chan : stream_cmd.channels) {
         _chanMask |= 1 << chan; /* Channels indexed at zero */
     }
-    try {
-        std::string str = stream_cmd.args[ipsolon_stream::stream_type::STREAM_FORMAT_KEY];
-        stream_type st(str);
-        if (st.modeEquals(stream_type::FFT_STREAM)) {
-            // FIXME - implement abstract recv class to handle IQ vs FFT - instantiate it here
-            printf("Create FFT stream\n");
-        } else {
-            printf("Create IQ stream\n");
+    std::string type_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY];
+    stream_type st(type_str);
+    if (st.modeEquals(stream_type::FFT_STREAM)) {
+        printf("Create FFT stream\n");
+        if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY)) {
+            _vita_ip_str.assign(stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY]);
+            int err = inet_pton(AF_INET, _vita_ip_str.c_str(), &_vita_ip);
+            if (err != 1) {
+                THROW_SOCKET_ERROR();
+            }
         }
-
-    } catch (const uhd::key_error&) {
-        printf("No stream format specified\n");
+        if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY)) {
+            std::string port_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY];
+            _vita_port = std::stoul(port_str, nullptr, 0);
+        }
+        if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::FFT_SIZE_KEY)) {
+            std::string fft_size = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_SIZE_KEY];
+            _fft_size = std::strtol(fft_size.c_str(), nullptr, 0);
+        }
+        if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY)) {
+            std::string fft_avg = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY];
+            _fft_avg = std::strtol(fft_avg.c_str(), nullptr, 0);
+        }
+    } else {
+        printf("Create IQ stream\n");
     }
     open_socket();
 
@@ -56,15 +78,19 @@ chameleon_stream::chameleon_stream(const uhd::stream_args_t& stream_cmd, const u
     _receive_thread_context.cv_samples = &cv_sample_queue;
     _receive_thread_context.socket_fd = _socket_fd;
 
+    _bytes_per_packet = (_fft_size * BYTES_PER_IQ_PAIR) + PACKET_HEADER_SIZE;
+    _max_samples_per_packet = (_bytes_per_packet - PACKET_HEADER_SIZE) / BYTES_PER_IQ_PAIR;
+    _buffer_packet_cnt = buffer_mem_size / _max_samples_per_packet;
+
     /* Fill the free queue */
     std::lock_guard<std::mutex> lock(mtx_free_queue);
-    for (int i = 0; i < buffer_packet_cnt; ++i) {
-        auto cp = new chameleon_packet(bytes_per_packet);
+    for (int i = 0; i < _buffer_packet_cnt; ++i) {
+        auto cp = new chameleon_packet(_bytes_per_packet);
         q_free_packets.push(cp);
     }
 }
 
-chameleon_stream::~chameleon_stream()
+chameleon_rx_stream::~chameleon_rx_stream()
 {
     while (!q_free_packets.empty()) {
         chameleon_packet *pk = q_free_packets.front();
@@ -76,22 +102,25 @@ chameleon_stream::~chameleon_stream()
         q_sample_packets.pop();
         free(pk);
     }
+    if (_socket_fd >= 0) {
+        close(_socket_fd);
+    }
 }
 
-size_t chameleon_stream::get_num_channels() const
+size_t chameleon_rx_stream::get_num_channels() const
 {
     return _nChans;
 }
 
-size_t chameleon_stream::get_max_num_samps() const
+size_t chameleon_rx_stream::get_max_num_samps() const
 {
-    return max_sample_per_packet;
+    return _max_samples_per_packet;
 }
 
-size_t chameleon_stream::get_packet_data(size_t n_samples,
-                                         chameleon_data_type *buff,
-                                         uhd::rx_metadata_t& metadata,
-                                         uint64_t timeout_ms)
+size_t chameleon_rx_stream::get_packet_data(size_t n_samples,
+                                            chameleon_data_type *buff,
+                                            uhd::rx_metadata_t& metadata,
+                                            uint64_t timeout_ms)
 {
     std::lock_guard<std::mutex> stream_lock(mtx_stream);
     size_t n = 0;
@@ -119,8 +148,7 @@ size_t chameleon_stream::get_packet_data(size_t n_samples,
             metadata.out_of_sequence = (!_first_packet) && expected != seq;
             if (metadata.out_of_sequence) {
                 metadata.error_code = uhd::rx_metadata_t::ERROR_CODE_OVERFLOW;
-                // TODO - add logging
-                printf("Previous seq:%x Current:%x missing:%d count:%d\n",
+                fprintf(stderr, "Previous seq:%x Current:%x missing:%d count:%d\n",
                        _previous_seq, seq, seq - _previous_seq, count);
             }
             _first_packet = false;
@@ -146,8 +174,8 @@ size_t chameleon_stream::get_packet_data(size_t n_samples,
     return n;
 }
 
-size_t chameleon_stream::recv(const buffs_type& buffs, const size_t nsamps_per_buff, uhd::rx_metadata_t& metadata,
-                              const double timeout, const bool one_packet)
+size_t chameleon_rx_stream::recv(const buffs_type& buffs, const size_t nsamps_per_buff, uhd::rx_metadata_t& metadata,
+                                 const double timeout, const bool one_packet)
 {
     int err = 0;
     size_t n_samples = 0;
@@ -173,7 +201,7 @@ size_t chameleon_stream::recv(const buffs_type& buffs, const size_t nsamps_per_b
     return n_samples;
 }
 
-void chameleon_stream::receive_thread_func(const receive_thread_context *rtc)
+void chameleon_rx_stream::receive_thread_func(const receive_thread_context *rtc)
 {
     sockaddr_in server_addr{};
     socklen_t len;
@@ -207,7 +235,7 @@ void chameleon_stream::receive_thread_func(const receive_thread_context *rtc)
     }
 }
 
-void chameleon_stream::issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd)
+void chameleon_rx_stream::issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd)
 {
     switch (stream_cmd.stream_mode) {
         case uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS : start_stream(); break;
@@ -219,41 +247,28 @@ void chameleon_stream::issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd)
     }
 }
 
-void chameleon_stream::start_stream()
+void chameleon_rx_stream::start_stream()
 {
     _first_packet = true;
     _receive_thread_context.run = true;
     _recv_thread = std::thread([=] { receive_thread_func(&_receive_thread_context); });
 
-#if IMPLEMENTED_CMD_PORT
-    chameleon_fw_cmd_stream stream_cmd(_chanMask, true);
-    auto request = chameleon_fw_comms(CHAMELEON_FW_COMMS_FLAGS_WRITE, CHAMELEON_FW_COMMS_CMD_STREAM_CMD, stream_cmd);
+    std::unique_ptr<chameleon_fw_cmd> stream_cmd(
+            new chameleon_fw_cmd_stream(_chanMask, true, _vita_ip_str.c_str(), _vita_port, _fft_size, _fft_avg));
+    chameleon_fw_comms request(std::move(stream_cmd));
     _commander.send_request(request);
-#else
-    /* For now, you just send the radio 'anything' and it goes */
-    std::string ipAddr = _commander.getIP();
-    sockaddr_in radio_addr{};
-    radio_addr.sin_addr.s_addr = inet_addr(ipAddr.c_str());
-    radio_addr.sin_port = htons(vita_port);
-
-    uint8_t go[] = {0x67,0x6F};
-    int n = sendto(_socket_fd, go, sizeof(go), MSG_CONFIRM,
-                   (const struct sockaddr *) &radio_addr, sizeof(radio_addr));
-    if (n != sizeof(go)) {
-        THROW_SOCKET_ERROR();
-    }
-#endif
 }
 
-void chameleon_stream::stop_stream()
+void chameleon_rx_stream::stop_stream()
 {
-#if IMPLEMENTED_CMD_PORT
-    chameleon_fw_cmd_stream stream_cmd(_chanMask, false);
-    auto request = chameleon_fw_comms(CHAMELEON_FW_COMMS_FLAGS_WRITE, CHAMELEON_FW_COMMS_CMD_STREAM_CMD, stream_cmd);
-    _commander.send_request(request);
-#endif
     _receive_thread_context.run = false;
     _recv_thread.join();
+
+    std::unique_ptr<chameleon_fw_cmd> stream_cmd(
+            new chameleon_fw_cmd_stream(false));
+    chameleon_fw_comms request(std::move(stream_cmd));
+    _commander.send_request(request);
+
     std::lock_guard<std::mutex> free_lock(mtx_free_queue);
     std::lock_guard<std::mutex> sample_lock(mtx_sample_queue);
     while(!q_sample_packets.empty()) {
@@ -262,7 +277,7 @@ void chameleon_stream::stop_stream()
     }
 }
 
-void chameleon_stream::open_socket() {
+void chameleon_rx_stream::open_socket() {
     int err = 0;
     int sock_fd = -1;
 
@@ -281,8 +296,8 @@ void chameleon_stream::open_socket() {
     if (!err) {
         sockaddr_in local_addr{};
         local_addr.sin_family = AF_INET;
-        local_addr.sin_port = htons(vita_port);
-        local_addr.sin_addr.s_addr = INADDR_ANY;
+        local_addr.sin_port = htons(_vita_port);
+        local_addr.sin_addr.s_addr = _vita_ip;
         err = bind(sock_fd, (const struct sockaddr *) &local_addr, sizeof(local_addr));
         if (err < 0) {
             perror("bind failed");

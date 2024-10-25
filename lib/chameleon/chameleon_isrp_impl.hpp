@@ -24,6 +24,7 @@ public:
     uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t& args) override;
     uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t& args) override;
     uhd::tune_result_t     set_rx_freq(const uhd::tune_request_t& tune_request, size_t chan) override;
+    void                   set_rx_gain(double gain, const std::string& name, size_t chan) override;
 
 private:
     uhd::device::sptr _dev;

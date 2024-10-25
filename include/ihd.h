@@ -8,6 +8,6 @@
 #define IHD_H
 #include "version.h"
 #include "ipsolon_isrp.hpp"
-#include "ipsolon_stream.hpp"
+#include "ipsolon_rx_stream.hpp"
 
 #endif //IHD_H
