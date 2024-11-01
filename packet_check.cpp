@@ -118,7 +118,10 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         bytes += n;
         packets++;
     }
-    printf("packets:%lu bytes:%lu errors:%lu\n", packets, bytes, errors);
+    bytes *= 4; /* bytes = samples * 4 */
+    bytes += 16 * packets; /* Account for CHDR */
+    double megabits_per_second = (((double)bytes / total_time) / (1024*1024)) * 8;
+    printf("packets:%lu bytes:%lu Mb/s:%f errors:%lu\n", packets, bytes, megabits_per_second, errors);
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
     rx_stream->issue_stream_cmd(stream_cmd);
 

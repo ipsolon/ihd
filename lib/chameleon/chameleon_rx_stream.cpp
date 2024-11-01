@@ -207,13 +207,21 @@ void chameleon_rx_stream::receive_thread_func(const receive_thread_context *rtc)
     socklen_t len;
 
     while(rtc->run) {
+        chameleon_packet *cp = nullptr;
         std::unique_lock<std::mutex> lock_free(*rtc->mtx_free);
-        (*rtc->cv_free).wait(lock_free, [&rtc] { return !rtc->q_free->empty(); });
-        auto cp = rtc->q_free->front();
+        auto now = std::chrono::system_clock::now();
+        auto then = now + std::chrono::milliseconds(100);
+        bool ret = false;
+        do {
+            ret = (*rtc->cv_free).wait_until(lock_free, then, [&rtc] { return !rtc->q_free->empty(); });
+        } while (!ret && rtc->run);   // While timed out and predicate false and still running
+        if (ret) {                    // Did not time out and predicate is true
+            cp = rtc->q_free->front();
+        }
         lock_free.unlock();
 
         ssize_t n = 0;
-        while (n == 0 && rtc->run) {
+        while (n == 0 && rtc->run && cp != nullptr) {
             n = recvfrom(rtc->socket_fd, cp->getPacketMem(), cp->getPacketSize(), 0,
                          (struct sockaddr *) &server_addr,&len);
             if (n > 0) {

@@ -35,8 +35,8 @@ namespace ihd {
 
     class chameleon_fw_cmd_tune : public chameleon_fw_cmd {
     public:
-        chameleon_fw_cmd_tune(size_t c, uint64_t f) :
-            chameleon_fw_cmd("set_freq"),
+        chameleon_fw_cmd_tune(size_t c, uint64_t f, bool rx) :
+            chameleon_fw_cmd(rx ? "set_rx_freq":"set_tx_freq"),
             chan(c), freq(f) {}
 
         const char *to_command_string() override {
