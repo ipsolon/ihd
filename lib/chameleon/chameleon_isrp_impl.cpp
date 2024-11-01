@@ -25,12 +25,12 @@ uhd::tx_streamer::sptr chameleon_isrp_impl::get_tx_stream(const uhd::stream_args
     return _dev->get_tx_stream(args);
 }
 
-uhd::tune_result_t chameleon_isrp_impl::set_rx_freq(const uhd::tune_request_t& tune_request, size_t chan)
+uhd::tune_result_t chameleon_isrp_impl::set_freq(const uhd::tune_request_t& tune_request, size_t chan, bool rx)
 {
     const int rx_set_freq_timeout_ms = 5000;
     uhd::tune_result_t tr{};
     std::unique_ptr<chameleon_fw_cmd> tune_cmd(
-            new chameleon_fw_cmd_tune(chan, static_cast<uint64_t>(tune_request.rf_freq)));
+            new chameleon_fw_cmd_tune(chan, static_cast<uint64_t>(tune_request.rf_freq), rx));
 
     chameleon_fw_comms request(std::move(tune_cmd));
 
@@ -40,7 +40,22 @@ uhd::tune_result_t chameleon_isrp_impl::set_rx_freq(const uhd::tune_request_t& t
     return tr;
 }
 
+uhd::tune_result_t chameleon_isrp_impl::set_rx_freq(const uhd::tune_request_t& tune_request, size_t chan)
+{
+    return set_freq(tune_request, chan, true);
+}
+
+uhd::tune_result_t chameleon_isrp_impl::set_tx_freq(const uhd::tune_request_t& tune_request, size_t chan)
+{
+    return set_freq(tune_request, chan, false);
+}
+
 void chameleon_isrp_impl::set_rx_gain(double gain, const std::string& name, size_t chan)
+{
+    THROW_NOT_IMPLEMENTED_ERROR();
+}
+
+void chameleon_isrp_impl::set_tx_gain(double gain, const std::string& name, size_t chan)
 {
     THROW_NOT_IMPLEMENTED_ERROR();
 }
