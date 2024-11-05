@@ -19,6 +19,8 @@
 
 using namespace ihd;
 
+const std::string chameleon_rx_stream::DEFAULT_VITA_IP_STR = "0.0.0.0";
+
 chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr) :
     _nChans(stream_cmd.channels.size()),
     _commander(device_addr),

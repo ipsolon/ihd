@@ -37,7 +37,7 @@ public:
     void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd) override;
 
 private:
-    static constexpr char     DEFAULT_VITA_IP_STR[] = "0.0.0.0";
+    static const std::string  DEFAULT_VITA_IP_STR;
     static constexpr uint32_t DEFAULT_VITA_IP     = INADDR_ANY;
     static constexpr uint32_t DEFAULT_VITA_PORT   = 9090;
     std::string _vita_ip_str;

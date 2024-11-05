@@ -26,15 +26,15 @@ public:
 
     class stream_type {
     public:
-        static inline const std::string STREAM_FORMAT_KEY = "stream_format";
-        static inline const std::string IQ_STREAM         = "IQ";
-        static inline const std::string FFT_STREAM        = "FFT";
+        static const std::string STREAM_FORMAT_KEY;
+        static const std::string IQ_STREAM;
+        static const std::string FFT_STREAM;
 
-        static inline const std::string STREAM_DEST_IP_KEY   = "IP";
-        static inline const std::string STREAM_DEST_PORT_KEY = "PORT";
+        static const std::string STREAM_DEST_IP_KEY;
+        static const std::string STREAM_DEST_PORT_KEY;
 
-        static inline const std::string FFT_AVG_COUNT_KEY  = "FFT_AVERAGE_COUNT";
-        static inline const std::string FFT_SIZE_KEY       = "FFT_SIZE";
+        static const std::string FFT_AVG_COUNT_KEY;
+        static const std::string FFT_SIZE_KEY;
 
         explicit stream_type(const std::string& st)
         {
