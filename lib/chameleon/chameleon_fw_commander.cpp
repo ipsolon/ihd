@@ -10,7 +10,7 @@
 #include "chameleon_fw_common.hpp"
 
 namespace ihd {
-    std::atomic<size_t> chameleon_fw_commander::_seq = 1;
+    static std::atomic<size_t> _seq(1);
 
     chameleon_fw_commander::chameleon_fw_commander(uhd::device_addr_t  da) : _dev_addr(std::move(da))
     {

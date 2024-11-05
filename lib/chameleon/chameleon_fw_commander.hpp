@@ -20,7 +20,6 @@ public:
     const char *getIP();
 private:
     uhd::transport::udp_simple::sptr _udp_cmd_port{};
-    static std::atomic<size_t> _seq;
     uhd::device_addr_t _dev_addr;
 };
 
