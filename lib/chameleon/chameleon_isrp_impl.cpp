@@ -5,6 +5,7 @@
 */
 #include "chameleon_isrp_impl.hpp"
 #include "chameleon_fw_common.hpp"
+#include "chameleon_jammer_block_ctrl.hpp"
 
 using namespace ihd;
 
@@ -58,4 +59,9 @@ void chameleon_isrp_impl::set_rx_gain(double gain, const std::string& name, size
 void chameleon_isrp_impl::set_tx_gain(double gain, const std::string& name, size_t chan)
 {
     THROW_NOT_IMPLEMENTED_ERROR();
+}
+
+ipsolon_block_ctrl::sptr chameleon_isrp_impl::get_block_ctrl(const block_id_t &block_id) {
+    // Only one right now.
+    return std::make_shared<ihd::chameleon_jammer_block_ctrl>();
 }

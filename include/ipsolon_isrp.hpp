@@ -8,8 +8,10 @@
 #define MULTI_ISRP_HPP
 
 #include <uhd/usrp/multi_usrp.hpp>
+
 #include "exception.hpp"
 #include "ipsolon_chdr_header.h"
+#include "ipsolon_block_ctrl.hpp"
 
 namespace ihd {
 
@@ -28,6 +30,16 @@ public:
      * \throws uhd::index_error fewer devices found than expected
      */
     static sptr make(const uhd::device_addr_t& dev_addr);
+
+    /*! \brief Returns a block controller class for a control block.
+     *
+     * If the given block ID is not valid (i.e. such a block does not exist
+     * on this device), it will throw a uhd::lookup_error.
+     *
+     * \param block_id TBD
+     * \note this access is not thread safe if performed during block enumeration
+     */
+    virtual ipsolon_block_ctrl::sptr get_block_ctrl(const ihd::block_id_t &block_id) = 0;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"

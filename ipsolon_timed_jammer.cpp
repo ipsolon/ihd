@@ -4,7 +4,7 @@
 #include <iostream>
 #include "safe_main.hpp"
 
-#define COMPILE_JAMMER 0
+#define COMPILE_JAMMER 1
 #if     COMPILE_JAMMER == 0
 int IHD_SAFE_MAIN(int argc, char *argv[]) {
     printf("Not implemented");
@@ -24,7 +24,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
 #include <uhd/convert.hpp>
 
 #include "ihd.h"
-#include "ipsolon_timed_jammer_block_ctrl.hpp"
+#include "chameleon_jammer_block_ctrl.hpp"
 
 uhd::convert::converter::~converter() = default;
 
@@ -81,12 +81,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
 
     po::options_description desc("Allowed options") ;
     desc.add_options()
-            ("help",                                                                                                                "Help message")
-            ("freq",        po::value<float>(&freq)->default_value(2.45e9),                                                         "RF Center Frequency")
-            ("gain",        po::value<float>(&gain)->default_value(10.0),                                                           "TX Gain")
-            ("time",        po::value<float>(&time)->default_value(10.0),                                                           "Sleep time")
-            ("file",        po::value<std::string>(&fname)->default_value(""),                                                      "File to save looped back samples from")
-            ("n",           po::value<uint32_t>(&nsamps)->default_value(1000000),                                                   "Number of samples to read in file mode")
+            ("help",                                                              "Help message")
+            ("freq",        po::value<float>(&freq)->default_value(2.45e9),       "RF Center Frequency")
+            ("gain",        po::value<float>(&gain)->default_value(10.0),         "TX Gain")
+            ("time",        po::value<float>(&time)->default_value(10.0),         "Sleep time")
+            ("file",        po::value<std::string>(&fname)->default_value(""),    "File to save looped back samples from")
+            ("n",           po::value<uint32_t>(&nsamps)->default_value(1000000), "Number of samples to read in file mode")
             ("args", po::value<std::string>(&isrp_args)->default_value("addr=192.168.30.2,second_addr=192.168.40.2"), "UHD Device Arguments")
             ;
 
@@ -105,11 +105,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
         printf("Creating USRP with: %s\n", isrp_args.c_str() ) ;
         auto isrp = ihd::ipsolon_isrp::make(isrp_args);
 
-        auto ctrl_jammer = isrp->get_block_ctrl<citadel::rfnoc::timed_jammer_block_ctrl>(uhd::rfnoc::block_id_t(0, "CitadelTimedJammer")) ;
-
+        auto ctrl_jammer = isrp->get_block_ctrl(ihd::block_id_t(0)) ;
+#if 0
         auto blockid_radio  = ctrl_radio->get_block_id() ;
-        auto blockid_jammer = ctrl_jammer->get_block_id() ;
-
+#endif
+        auto blockid_jammer = ctrl_jammer->get_block_id();
+#if 0
         // Initialize bank A
         std::map<uint32_t, std::complex<float>> init ;
         for(uint32_t idx = 0 ; idx < 4096 ; idx++) {
@@ -257,8 +258,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
                 fclose( fout ) ;
             }
         }
+#endif
     }
-
     return EXIT_SUCCESS ;
 }
 #endif
