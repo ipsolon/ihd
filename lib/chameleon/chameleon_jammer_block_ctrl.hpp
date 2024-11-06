@@ -10,8 +10,9 @@
 #include <ccomplex>
 #include <map>
 #include <vector>
+#include <uhd/device.hpp>
 
-#include "ipsolon_tx_stream.h"
+#include "ipsolon_tx_stream.hpp"
 #include "ipsolon_block_ctrl.hpp"
 
 namespace ihd {
@@ -49,13 +50,10 @@ namespace ihd {
         static const uint32_t CMD_STOP = 0xffffffff;
 
         // Methods
-        bool overflow() {return false;} // Not implemented
 
         explicit chameleon_jammer_block_ctrl();
 
         virtual ~chameleon_jammer_block_ctrl() = default;
-
-        void clear_overflow() {} // Not implemented
 
         void set_streamer(uhd::tx_streamer::sptr stream);
 

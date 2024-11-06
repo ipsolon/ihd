@@ -3,6 +3,8 @@
 //
 #include "chameleon_jammer_block_ctrl.hpp"
 
+#include <utility>
+
 using namespace ihd;
 
 const uint32_t chameleon_jammer_block_ctrl::ID = 0;
@@ -48,7 +50,7 @@ void chameleon_jammer_block_ctrl::convert_config(jammer_config_t &config, std::v
 
 // Give the streamer to the object to be able to use it
 void chameleon_jammer_block_ctrl::set_streamer(uhd::tx_streamer::sptr stream) {
-    this->stream = stream;
+    this->stream = std::move(stream);
 }
 
 // Send the config down to the device

@@ -12,6 +12,7 @@
 #include "exception.hpp"
 #include "ipsolon_chdr_header.h"
 #include "ipsolon_block_ctrl.hpp"
+#include "chameleon_jammer_block_ctrl.hpp"
 
 namespace ihd {
 
@@ -39,7 +40,20 @@ public:
      * \param block_id TBD
      * \note this access is not thread safe if performed during block enumeration
      */
-    virtual ipsolon_block_ctrl::sptr get_block_ctrl(const ihd::block_id_t &block_id) = 0;
+    template <typename T>
+    std::shared_ptr<T> get_block_ctrl(const ihd::block_id_t &block_id) {
+        // Only one right now.
+        return std::make_shared<ihd::chameleon_jammer_block_ctrl>();
+    }
+
+    /*! Get the current time in the timekeeper registers.
+     *
+     * Note that there is a non-deterministic delay between the time the
+     * register is read and the time the function value is returned.
+     * To get the time with respect to a tick edge, use get_time_last_pps().
+     * \return A timespec representing current radio time
+     */
+    virtual uhd::time_spec_t get_time_now() = 0;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"

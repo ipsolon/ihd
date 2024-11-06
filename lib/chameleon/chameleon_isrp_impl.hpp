@@ -27,8 +27,7 @@ public:
     uhd::tune_result_t     set_tx_freq(const uhd::tune_request_t& tune_request, size_t chan) override;
     void                   set_rx_gain(double gain, const std::string& name, size_t chan) override;
     void                   set_tx_gain(double gain, const std::string& name, size_t chan) override;
-
-    ipsolon_block_ctrl::sptr get_block_ctrl(const ihd::block_id_t &block_id);
+    uhd::time_spec_t       get_time_now() override;
 
 private:
     uhd::tune_result_t     set_freq(const uhd::tune_request_t& tune_request, size_t chan, bool rx);

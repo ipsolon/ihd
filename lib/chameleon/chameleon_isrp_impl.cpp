@@ -61,7 +61,7 @@ void chameleon_isrp_impl::set_tx_gain(double gain, const std::string& name, size
     THROW_NOT_IMPLEMENTED_ERROR();
 }
 
-ipsolon_block_ctrl::sptr chameleon_isrp_impl::get_block_ctrl(const block_id_t &block_id) {
-    // Only one right now.
-    return std::make_shared<ihd::chameleon_jammer_block_ctrl>();
+uhd::time_spec_t chameleon_isrp_impl::get_time_now() {
+    return {};
 }
+

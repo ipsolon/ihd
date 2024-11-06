@@ -8,6 +8,7 @@
 #include "ipsolon_isrp.hpp"
 #include "chameleon_device.hpp"
 #include "chameleon_isrp_impl.hpp"
+#include "chameleon_jammer_block_ctrl.hpp"
 
 using namespace ihd;
 
