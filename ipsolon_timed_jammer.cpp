@@ -28,7 +28,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     // Options
     float freq;
     float gain;
-    uint32_t nsamps;
     std::string isrp_args;
 
     po::options_description desc("Allowed options");
@@ -36,8 +35,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
             ("help", "Help message")
             ("freq", po::value<float>(&freq)->default_value(2.45e9), "RF Center Frequency")
             ("gain", po::value<float>(&gain)->default_value(10.0), "TX Gain")
-            ("n", po::value<uint32_t>(&nsamps)->default_value(1000000), "Number of samples to read in file mode")
-            ("args", po::value<std::string>(&isrp_args)->default_value("addr=10.75.42.208"),
+            ("args", po::value<std::string>(&isrp_args)->default_value("addr=192.168.0.100"),
              "UHD Device Arguments");
 
     po::variables_map vm;
@@ -53,16 +51,15 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
 
     auto ctrl_jammer = isrp->get_block_ctrl<ihd::chameleon_jammer_block_ctrl>(ihd::block_id_t(0));
     ihd::block_id_t blockid_jammer = ctrl_jammer->get_block_id();
-    // Initialize bank A
+
+    // Initialize both banks with zeros
     std::map<uint32_t, std::complex<float>> init;
     for (uint32_t idx = 0; idx < 4096; idx++) {
         init[idx] = std::complex<float>(0.0f, 0.0f);
     }
-
     std::vector<float> centers;
     centers.push_back(0.0f);
 
-    printf("Streaming Jammer -> Radio\n");
     // Setting TX Frequency and Gain setting
     uhd::tune_request_t tune_request{};
     tune_request.rf_freq = freq;
@@ -91,7 +88,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     ctrl_jammer->set_streamer(tx_stream);
 
     ihd::jammer_config_t zeroize;
-
     ihd::jammer_config_t a;
     ihd::jammer_config_t b;
 
@@ -106,35 +102,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     ctrl_jammer->send_config(zeroize);
     zeroize.bank = ihd::BANK_B;
     ctrl_jammer->send_config(zeroize);
-#if ORIGINAL_EXAMPLE
-    // A Configuration
-    a.bank = ihd::BANK_A;
-    a.dwell = 1;
-    a.fm_max_dev = 0.0138f;
-    a.fm_ddang = 0.0035f;
-    centers.clear();
-    centers.push_back(-.7854);
-    centers.push_back(-.0314);
-    centers.push_back(.7854);
-    a.centers = centers;
-    a.phasors.clear();
-    init.clear();
-    init[1802] = std::complex<float>(855.4326 / 855.0, 0);
-    init[1843] = std::complex<float>(8.3058e2 / 855.0, 2.0472e2 / 855.0);
-    init[1884] = std::complex<float>(4.8594e2 / 855.0, 7.0401e2 / 855.0);
-    init[1925] = std::complex<float>(-4.8594e2 / 855.0, 7.0401e2 / 855.0);
-    init[1966] = std::complex<float>(-6.4030e2 / 855.0, -5.6726e2 / 855.0);
-    init[2007] = std::complex<float>(8.3058e2 / 855.0, -2.0472e2 / 855.0);
-    init[2048] = std::complex<float>(-6.4030e2 / 855.0, 5.6726e2 / 855.0);
-    init[2089] = std::complex<float>(6.4030e2 / 855.0, -5.6726e2 / 855.0);
-    init[2130] = std::complex<float>(-8.3058e2 / 855.0, 2.0472e2 / 855.0);
-    init[2171] = std::complex<float>(6.4030e2 / 855.0, 5.6726e2 / 855.0);
-    init[2212] = std::complex<float>(4.8594e2 / 855.0, -7.0401e2 / 855.0);
-    init[2253] = std::complex<float>(-4.8594e2 / 855.0, -7.0401e2 / 855.0);
-    init[2294] = std::complex<float>(-8.3058e2 / 855.0, -2.0472e2 / 855.0);
 
-    a.phasors = init;
-#else
+    // Bank A - Titan example
     std::vector<int>  indices = {
             3824, 3840, 3856, 3872, 3888,
             3904, 3920, 3936, 3952, 3968,
@@ -174,9 +143,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
             -8.589114e-01, 0.000000e+00, 8.589114e-01
     };
 
-#endif
-
-    // B Configuration
+    // Bank B - Citadel example
     b.bank = ihd::BANK_B;
     b.dwell = 10;
     b.fm_max_dev = 0.0f;
@@ -195,7 +162,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     auto radio_time = isrp->get_time_now();
     auto time = radio_time + uhd::time_spec_t(1.0);
 
-    for (uint32_t i = 0; i < 100000; i++) {
+    for (uint32_t i = 0; i < 100; i++) {
         printf("Jamming from bank A\n");
         ctrl_jammer->start(ihd::BANK_A, time);
         time += uhd::time_spec_t(4096.0 * a.dwell / 200.0e6 + 0.1e-6); // 20 usecs
