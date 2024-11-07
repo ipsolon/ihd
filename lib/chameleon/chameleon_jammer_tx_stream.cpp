@@ -21,7 +21,9 @@ size_t ihd::chameleon_jammer_tx_stream::get_max_num_samps(void) const {
 
 size_t ihd::chameleon_jammer_tx_stream::send(const uhd::tx_streamer::buffs_type &buffs, const size_t nsamps_per_buff,
                                              const uhd::tx_metadata_t &metadata, const double timeout) {
-    size_t ret = _udp_cmd_port->send(boost::asio::buffer(buffs[0], nsamps_per_buff));
+    size_t s = nsamps_per_buff * sizeof(uint32_t);
+    auto *v = (std::vector<uint32_t> *) buffs[0];
+    size_t ret = _udp_cmd_port->send(boost::asio::buffer(v, s));
     return ret;
 }
 

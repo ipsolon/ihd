@@ -64,7 +64,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
 
     printf("Streaming Jammer -> Radio\n");
     // Setting TX Frequency and Gain setting
-    isrp->set_tx_freq(freq, 0);
+    uhd::tune_request_t tune_request{};
+    tune_request.rf_freq = freq;
+    size_t chan = 1;
+    isrp->set_tx_freq(tune_request, chan);
 #if 0 // TODO - Implement set_gain and get tx freq
     isrp->uhd::usrp::multi_usrp::set_tx_gain(gain, 0);
     printf("Actual frequency: %14.8f\n", isrp->get_tx_freq(0));
@@ -103,7 +106,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     ctrl_jammer->send_config(zeroize);
     zeroize.bank = ihd::BANK_B;
     ctrl_jammer->send_config(zeroize);
-
+#if ORIGINAL_EXAMPLE
     // A Configuration
     a.bank = ihd::BANK_A;
     a.dwell = 1;
@@ -131,6 +134,47 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     init[2294] = std::complex<float>(-8.3058e2 / 855.0, -2.0472e2 / 855.0);
 
     a.phasors = init;
+#else
+    std::vector<int>  indices = {
+            3824, 3840, 3856, 3872, 3888,
+            3904, 3920, 3936, 3952, 3968,
+            3984, 4000, 4016, 4032, 4048,
+            4064, 4080,    0,   16,   32,
+              48,   64,   80,   96,  112,
+             128,  144,  160,  176,  192,
+             208,  224,  240,  256,  272
+    };
+    std::vector<float> real_parts = {
+            1.243725e-01,  1.238718e-01,  1.164418e-01,  8.594916e-02, 1.669492e-02,
+            -7.754496e-02, -1.238718e-01, -3.843320e-02,  1.067674e-01, 6.851641e-02,
+            -1.120557e-01, -1.669492e-02,  1.164418e-01, -1.067674e-01, 3.843320e-02,
+            2.767547e-02, -6.851641e-02,  8.594916e-02, -8.594916e-02, 6.851641e-02,
+            -2.767547e-02, -3.843320e-02,  1.067674e-01, -1.164418e-01, 1.669492e-02,
+            1.120557e-01, -6.851641e-02, -1.067674e-01,  3.843320e-02, 1.238718e-01,
+            7.754496e-02, -1.669492e-02, -8.594916e-02, -1.164418e-01, -1.238718e-01
+    };
+    std::vector<float> imag_parts = {
+            0.000000e+00,  1.114866e-02,  4.370135e-02,  8.989577e-02,  1.232469e-01,
+            9.723830e-02, -1.114866e-02, -1.182852e-01, -6.379054e-02,  1.037979e-01,
+            5.396319e-02, -1.232469e-01,  4.370135e-02,  6.379054e-02, -1.182852e-01,
+            1.212542e-01, -1.037979e-01,  8.989577e-02, -8.989577e-02,  1.037979e-01,
+            -1.212542e-01,  1.182852e-01, -6.379054e-02, -4.370135e-02,  1.232469e-01,
+            -5.396319e-02, -1.037979e-01,  6.379054e-02,  1.182852e-01,  1.114866e-02,
+            -9.723830e-02, -1.232469e-01, -8.989577e-02, -4.370135e-02, -1.114866e-02
+    };
+    a.bank = ihd::BANK_A;
+    a.dwell = 1;
+    a.fm_ddang = 1.640625e-06;
+    a.fm_max_dev = 1.953125e-03;
+    a.phasors.clear();
+    for (int i = 0; i < indices.size(); i++) {
+        a.phasors[indices[i]] = std::complex<float>(real_parts[i], imag_parts[i]);
+    }
+    a.centers = {
+            -8.589114e-01, 0.000000e+00, 8.589114e-01
+    };
+
+#endif
 
     // B Configuration
     b.bank = ihd::BANK_B;
@@ -155,8 +199,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
         printf("Jamming from bank A\n");
         ctrl_jammer->start(ihd::BANK_A, time);
         time += uhd::time_spec_t(4096.0 * a.dwell / 200.0e6 + 0.1e-6); // 20 usecs
+        usleep(200000);
         printf("Jamming from bank B\n");
         ctrl_jammer->start(ihd::BANK_B, time);
+        usleep(200000);
         time += uhd::time_spec_t(4096.0 * b.dwell / 200.0e6 + 0.1e-6); // 204 usecs
     }
 
