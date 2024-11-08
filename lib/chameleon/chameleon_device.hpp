@@ -20,6 +20,9 @@ public:
     bool recv_async_msg(uhd::async_metadata_t& async_metadata, double timeout) override;
 
     static uhd::device::sptr chameleon_make(const uhd::device_addr_t& device_addr);
+    const uhd::device_addr_t &get_device_addr() const {
+        return _device_addr;
+    }
 
 private:
     uhd::device_addr_t _device_addr;

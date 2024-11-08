@@ -6,6 +6,7 @@
 #include "chameleon_device.hpp"
 
 #include <ipsolon_rx_stream.hpp>
+#include <ipsolon_tx_stream.hpp>
 #include <utility>
 
 #include "exception.hpp"
@@ -19,7 +20,9 @@ uhd::rx_streamer::sptr ihd::chameleon_device::get_rx_stream(const uhd::stream_ar
     return ipsolon_rx_stream::make(args, _device_addr);
 }
 
-uhd::tx_streamer::sptr ihd::chameleon_device::get_tx_stream(const uhd::stream_args_t& args) { THROW_NOT_IMPLEMENTED_ERROR(); }
+uhd::tx_streamer::sptr ihd::chameleon_device::get_tx_stream(const uhd::stream_args_t& args) {
+    return ipsolon_tx_stream::make(args, _device_addr);
+}
 
 bool ihd::chameleon_device::recv_async_msg(uhd::async_metadata_t& async_metadata, double timeout) { THROW_NOT_IMPLEMENTED_ERROR(); }
 

@@ -8,8 +8,11 @@
 #define MULTI_ISRP_HPP
 
 #include <uhd/usrp/multi_usrp.hpp>
+
 #include "exception.hpp"
 #include "ipsolon_chdr_header.h"
+#include "ipsolon_block_ctrl.hpp"
+#include "chameleon_jammer_block_ctrl.hpp"
 
 namespace ihd {
 
@@ -28,6 +31,29 @@ public:
      * \throws uhd::index_error fewer devices found than expected
      */
     static sptr make(const uhd::device_addr_t& dev_addr);
+
+    /*! \brief Returns a block controller class for a control block.
+     *
+     * If the given block ID is not valid (i.e. such a block does not exist
+     * on this device), it will throw a uhd::lookup_error.
+     *
+     * \param block_id TBD
+     * \note this access is not thread safe if performed during block enumeration
+     */
+    template <typename T>
+    std::shared_ptr<T> get_block_ctrl(const ihd::block_id_t &block_id) {
+        // Only one right now.
+        return std::make_shared<ihd::chameleon_jammer_block_ctrl>();
+    }
+
+    /*! Get the current time in the timekeeper registers.
+     *
+     * Note that there is a non-deterministic delay between the time the
+     * register is read and the time the function value is returned.
+     * To get the time with respect to a tick edge, use get_time_last_pps().
+     * \return A timespec representing current radio time
+     */
+    virtual uhd::time_spec_t get_time_now() = 0;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"

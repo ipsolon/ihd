@@ -5,6 +5,7 @@
 */
 #include "chameleon_isrp_impl.hpp"
 #include "chameleon_fw_common.hpp"
+#include "chameleon_jammer_block_ctrl.hpp"
 
 using namespace ihd;
 
@@ -59,3 +60,8 @@ void chameleon_isrp_impl::set_tx_gain(double gain, const std::string& name, size
 {
     THROW_NOT_IMPLEMENTED_ERROR();
 }
+
+uhd::time_spec_t chameleon_isrp_impl::get_time_now() {
+    return {};
+}
+
