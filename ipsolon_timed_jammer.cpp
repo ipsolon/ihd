@@ -145,14 +145,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
 
     // Bank B - Citadel example
     b.bank = ihd::BANK_B;
-    b.dwell = 10;
-    b.fm_max_dev = 0.0f;
-    b.fm_ddang = 0.0f;
-    b.centers = centers;
+    b.dwell = 1;
+    b.fm_ddang = 1.640625e-06;
+    b.fm_max_dev = 1.953125e-03;
     b.phasors.clear();
-    b.phasors[0] = std::complex<float>(0.25f, 0.0f);
-    b.phasors[409] = std::complex<float>(0.0f, 0.25f);
-    b.phasors[612] = std::complex<float>(0.25f, 0.25f);
+    for (int i = 0; i < indices.size(); i++) {
+        b.phasors[indices[i]] = std::complex<float>(real_parts[i], imag_parts[i]);
+    }
+    b.centers = {-8.589114e-01};
 
     // Write configurations
     ctrl_jammer->send_config(a);
@@ -162,14 +162,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     auto radio_time = isrp->get_time_now();
     auto time = radio_time + uhd::time_spec_t(1.0);
 
-    for (uint32_t i = 0; i < 100; i++) {
+    for (uint32_t i = 0; i < 1000; i++) {
         printf("Jamming from bank A\n");
         ctrl_jammer->start(ihd::BANK_A, time);
         time += uhd::time_spec_t(4096.0 * a.dwell / 200.0e6 + 0.1e-6); // 20 usecs
-        usleep(200000);
+        usleep(2000000);
         printf("Jamming from bank B\n");
         ctrl_jammer->start(ihd::BANK_B, time);
-        usleep(200000);
+        usleep(2000000);
         time += uhd::time_spec_t(4096.0 * b.dwell / 200.0e6 + 0.1e-6); // 204 usecs
     }
 
