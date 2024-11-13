@@ -41,7 +41,7 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
         THROW_VALUE_NOT_SUPPORTED_ERROR(stream_cmd.args.to_string());
     }
     for(const size_t& chan : stream_cmd.channels) {
-        _chanMask |= 1 << chan; /* Channels indexed at zero */
+        _chanMask |= 1 << (chan - 1); /* Channels indexed at 1 */
     }
     std::string type_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY];
     stream_type st(type_str);

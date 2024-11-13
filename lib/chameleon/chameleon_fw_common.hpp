@@ -67,7 +67,8 @@ namespace ihd {
         const char *to_command_string() override {
             std::stringstream ss;
             if (_enable) {
-                ss << _cmd << "_start ip=" << _ip_addr << ", port=" << _port << ", fft_size="
+                ss << _cmd << "_start " << "chan_mask=" << _chan_mask << ", ip=" << _ip_addr
+                   << ", port=" << _port << ", fft_size="
                    << _fft_size << ", avg=" << _avg;
             } else {
                 ss << _cmd << "_stop";
