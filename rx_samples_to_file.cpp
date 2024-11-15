@@ -82,8 +82,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     if (!vm["freq"].defaulted()) {
         uhd::tune_request_t tune_request{};
         tune_request.rf_freq = freq;
-        size_t chan = 0;
-        isrp->set_rx_freq(tune_request, chan);
+        isrp->set_rx_freq(tune_request, channel);
     }
 
     /************************************************************************
