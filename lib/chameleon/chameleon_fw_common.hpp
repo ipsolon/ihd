@@ -59,19 +59,19 @@ namespace ihd {
                 _chan_mask(chan_mask),_enable(enable), _ip_addr(ip), _port(port),
                 _fft_size(size), _avg(avg) {}
 
-        explicit chameleon_fw_cmd_stream(bool enable) :
+        explicit chameleon_fw_cmd_stream(bool enable, uint32_t chan_mask) :
                 chameleon_fw_cmd(_cmd_str),
-                _chan_mask(0), _enable(enable), _ip_addr(), _port(0),
+                _chan_mask(chan_mask), _enable(enable), _ip_addr(), _port(0),
                 _fft_size(0), _avg(0) {}
 
         const char *to_command_string() override {
             std::stringstream ss;
             if (_enable) {
-                ss << _cmd << "_start " << "chan_mask=" << _chan_mask << ", ip=" << _ip_addr
+                ss << _cmd << "_start chan_mask=" << _chan_mask << ", ip=" << _ip_addr
                    << ", port=" << _port << ", fft_size="
                    << _fft_size << ", avg=" << _avg;
             } else {
-                ss << _cmd << "_stop";
+                ss << _cmd << "_stop chan_mask=" << _chan_mask;
             }
             _command_string = ss.str();
             return _command_string.c_str();
@@ -91,7 +91,7 @@ namespace ihd {
         chameleon_fw_comms(uint32_t sequence, std::unique_ptr<chameleon_fw_cmd> command) :
                 _sequence(sequence), _command(std::move(command)), _result(NONE) {}
 
-        chameleon_fw_comms(std::unique_ptr<chameleon_fw_cmd> command) :
+        explicit chameleon_fw_comms(std::unique_ptr<chameleon_fw_cmd> command) :
                 _sequence(0), _command(std::move(command)), _result(NONE) {}
 
         virtual ~chameleon_fw_comms() = default;
@@ -101,7 +101,7 @@ namespace ihd {
 
         void setSequence(uint32_t sequence);
         std::string getCommandString();
-        std::vector<std::string> tokenize(const std::string str, const std::regex re);
+        std::vector<std::string> tokenize(std::string str, std::regex re);
         void setResponse(const char *response);
         void setResponseTimedout();
 

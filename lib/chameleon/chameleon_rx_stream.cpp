@@ -275,7 +275,7 @@ void chameleon_rx_stream::stop_stream()
     _recv_thread.join();
 
     std::unique_ptr<chameleon_fw_cmd> stream_cmd(
-            new chameleon_fw_cmd_stream(false));
+            new chameleon_fw_cmd_stream(false, _chanMask));
     chameleon_fw_comms request(std::move(stream_cmd));
     _commander.send_request(request);
 
