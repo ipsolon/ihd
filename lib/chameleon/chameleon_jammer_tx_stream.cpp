@@ -7,8 +7,17 @@
 ihd::chameleon_jammer_tx_stream::chameleon_jammer_tx_stream(const uhd::stream_args_t &stream_cmd,
                                                             const uhd::device_addr_t &device_addr) {
     printf("ip addr:%s port:%d\n", device_addr["addr"].c_str(), DEFAULT_JAMMER_PORT);
-    _udp_cmd_port = uhd::transport::udp_simple::make_connected(device_addr["addr"],
-                                                               std::to_string(DEFAULT_JAMMER_PORT));
+    std::string port = std::to_string(DEFAULT_JAMMER_PORT);
+    switch (stream_cmd.channels[0]) {
+        case 2:
+            port = std::to_string(JAMMER_PORT_TX1);
+            break;
+        case 1:
+        default:
+             port = std::to_string(JAMMER_PORT_TX2);
+             break;
+    }
+    _udp_cmd_port = uhd::transport::udp_simple::make_connected(device_addr["addr"], port);
 }
 
 size_t ihd::chameleon_jammer_tx_stream::get_num_channels(void) const {

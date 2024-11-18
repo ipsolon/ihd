@@ -26,6 +26,8 @@ public:
 
 private:
     static constexpr uint32_t DEFAULT_JAMMER_PORT = 0x6d6a; // jm (jammer)
+    static constexpr uint32_t JAMMER_PORT_TX1 = 0x6d6a;
+    static constexpr uint32_t JAMMER_PORT_TX2 = JAMMER_PORT_TX1 + 1;
     uhd::transport::udp_simple::sptr _udp_cmd_port{};
 };
 
