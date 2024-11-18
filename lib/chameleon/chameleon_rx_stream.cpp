@@ -41,7 +41,7 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
         THROW_VALUE_NOT_SUPPORTED_ERROR(stream_cmd.args.to_string());
     }
     for(const size_t& chan : stream_cmd.channels) {
-        _chanMask |= 1 << chan; /* Channels indexed at zero */
+        _chanMask |= 1 << (chan - 1); /* Channels indexed at 1 */
     }
     std::string type_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY];
     stream_type st(type_str);
@@ -275,7 +275,7 @@ void chameleon_rx_stream::stop_stream()
     _recv_thread.join();
 
     std::unique_ptr<chameleon_fw_cmd> stream_cmd(
-            new chameleon_fw_cmd_stream(false));
+            new chameleon_fw_cmd_stream(false, _chanMask));
     chameleon_fw_comms request(std::move(stream_cmd));
     _commander.send_request(request);
 

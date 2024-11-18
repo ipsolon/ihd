@@ -24,19 +24,20 @@ void print_help_message() {
 
 int UHD_SAFE_MAIN(int argc, char *argv[]) {
     uhd::set_thread_priority_safe();
-
     // Options
     float freq;
     float gain;
     std::string isrp_args;
+    size_t channel;
 
     po::options_description desc("Allowed options");
     desc.add_options()
             ("help", "Help message")
             ("freq", po::value<float>(&freq)->default_value(2.45e9), "RF Center Frequency")
             ("gain", po::value<float>(&gain)->default_value(10.0), "TX Gain")
+            ("channel", po::value<size_t>(&channel)->default_value(1), "which channel to use")
             ("args", po::value<std::string>(&isrp_args)->default_value("addr=192.168.0.100"),
-             "UHD Device Arguments");
+                    "UHD Device Arguments");
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -63,9 +64,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     // Setting TX Frequency and Gain setting
     uhd::tune_request_t tune_request{};
     tune_request.rf_freq = freq;
-    size_t chan = 1;
-    isrp->set_tx_freq(tune_request, chan);
-#if 0 // TODO - Implement set_gain and get tx freq
+    isrp->set_tx_freq(tune_request, channel);
+#if 0 // TODO - Implement set_gain
     isrp->uhd::usrp::multi_usrp::set_tx_gain(gain, 0);
     printf("Actual frequency: %14.8f\n", isrp->get_tx_freq(0));
 #endif
