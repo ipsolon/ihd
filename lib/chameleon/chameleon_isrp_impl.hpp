@@ -30,7 +30,7 @@ public:
     uhd::time_spec_t       get_time_now() override;
 
 private:
-    uhd::tune_result_t     set_freq(const uhd::tune_request_t& tune_request, size_t chan, bool rx);
+    uhd::tune_result_t     set_freq(const uhd::tune_request_t& tune_request, size_t chan);
     uhd::device::sptr _dev;
     chameleon_fw_commander _commander;
 };
