@@ -61,11 +61,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     std::vector<float> centers;
     centers.push_back(0.0f);
 
+#if 0 // TODO - Implement set_gain
     // Setting TX Frequency and Gain setting
     uhd::tune_request_t tune_request{};
     tune_request.rf_freq = freq;
     isrp->set_tx_freq(tune_request, channel);
-#if 0 // TODO - Implement set_gain
     isrp->uhd::usrp::multi_usrp::set_tx_gain(gain, 0);
     printf("Actual frequency: %14.8f\n", isrp->get_tx_freq(0));
 #endif
@@ -81,7 +81,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     uhd::device_addr_t target;
     target["block_id"] = blockid_jammer.to_string();
     stream_args.args = target;
-    stream_args.channels = std::vector<size_t>(1);
+
+    std::vector<size_t> channel_nums;
+    channel_nums.push_back(channel);
+    stream_args.channels = channel_nums;
     auto tx_stream = isrp->get_tx_stream(stream_args);
 
     // Pass the TX stream over to the jammer
@@ -162,7 +165,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     auto radio_time = isrp->get_time_now();
     auto time = radio_time + uhd::time_spec_t(1.0);
 
-    for (uint32_t i = 0; i < 1000; i++) {
+    for (uint32_t i = 0; i < 10; i++) {
         printf("Jamming from bank A\n");
         ctrl_jammer->start(ihd::BANK_A, time);
         time += uhd::time_spec_t(4096.0 * a.dwell / 200.0e6 + 0.1e-6); // 20 usecs

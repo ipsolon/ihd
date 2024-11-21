@@ -10,11 +10,11 @@ ihd::chameleon_jammer_tx_stream::chameleon_jammer_tx_stream(const uhd::stream_ar
     std::string port = std::to_string(DEFAULT_JAMMER_PORT);
     switch (stream_cmd.channels[0]) {
         case 2:
-            port = std::to_string(JAMMER_PORT_TX1);
+            port = std::to_string(JAMMER_PORT_TX2);
             break;
         case 1:
         default:
-             port = std::to_string(JAMMER_PORT_TX2);
+             port = std::to_string(JAMMER_PORT_TX1);
              break;
     }
     _udp_cmd_port = uhd::transport::udp_simple::make_connected(device_addr["addr"], port);
