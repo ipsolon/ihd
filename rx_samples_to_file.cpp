@@ -26,7 +26,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     std::cout << "Revision: " << ihd::get_version_string() << std::endl;
     std::string file, args;
     size_t total_num_samps, channel;
-    double freq, total_time;
+    double freq, total_time, gain;
     uhd::rx_metadata_t md;
 
     std::string dest_ip;
@@ -39,6 +39,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         ("help", "help message")
         ("file", po::value<std::string>(&file)->default_value("isrp_samples.dat"), "name of the file to write binary samples to")
         ("duration", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
+        ("gain", po::value<double>(&gain)->default_value(0), "set RX gain")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
         ("freq", po::value<double>(&freq)->default_value(DEFAULT_FREQ), "RF center frequency in Hz")
         ("channel", po::value<size_t>(&channel)->default_value(1), "which channel to use")
@@ -83,6 +84,10 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         uhd::tune_request_t tune_request{};
         tune_request.rf_freq = freq;
         isrp->set_rx_freq(tune_request, channel);
+    }
+
+    if (!vm["gain"].defaulted()) {
+        isrp->uhd::usrp::multi_usrp::set_rx_gain(gain, channel);
     }
 
     /************************************************************************

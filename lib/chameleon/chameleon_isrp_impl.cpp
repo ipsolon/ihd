@@ -53,7 +53,13 @@ uhd::tune_result_t chameleon_isrp_impl::set_tx_freq(const uhd::tune_request_t& t
 
 void chameleon_isrp_impl::set_rx_gain(double gain, const std::string& name, size_t chan)
 {
-    THROW_NOT_IMPLEMENTED_ERROR();
+    const int rx_set_gain_timeout_ms = 5000;
+    std::unique_ptr<chameleon_fw_cmd> gain_cmd(new chameleon_fw_cmd_gain(chan, gain));
+
+    chameleon_fw_comms request(std::move(gain_cmd));
+
+    // send request
+    _commander.send_request(request, rx_set_gain_timeout_ms);
 }
 
 void chameleon_isrp_impl::set_tx_gain(double gain, const std::string& name, size_t chan)
