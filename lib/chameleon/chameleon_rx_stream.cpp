@@ -293,10 +293,11 @@ void chameleon_rx_stream::stop_stream()
 void chameleon_rx_stream::open_socket() {
     int err = 0;
     int sock_fd = -1;
+    // Just in case. close an "open socket"
     if (_socket_fd > -1)
     {
-        _socket_fd = -1;
         close(_socket_fd);
+        _socket_fd = -1;
     }
     // Creating socket file descriptor
     err = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
