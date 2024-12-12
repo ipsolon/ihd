@@ -51,6 +51,24 @@ namespace ihd {
         uint64_t freq{};
     };
 
+    class chameleon_fw_cmd_gain : public chameleon_fw_cmd {
+    public:
+        chameleon_fw_cmd_gain(size_t c, double g) :
+            chameleon_fw_cmd("gain_set"),
+            chan(c), gain(g) {}
+
+        const char *to_command_string() override {
+            std::stringstream ss;
+            ss << _cmd << " chan=" << chan << "," " gain=" << gain;
+            _command_string = ss.str();
+            return _command_string.c_str();
+        }
+
+    private:
+        size_t chan{};
+        double gain{};
+    };
+
     class chameleon_fw_cmd_stream : public chameleon_fw_cmd {
     public:
         explicit chameleon_fw_cmd_stream(uint32_t chan_mask, bool enable, const char *ip, uint16_t port,
