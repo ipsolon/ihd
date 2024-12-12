@@ -54,6 +54,7 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
                 THROW_SOCKET_ERROR();
             }
         }
+        
         if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY)) {
             std::string port_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY];
             _vita_port = std::stoul(port_str, nullptr, 0);
@@ -203,7 +204,7 @@ size_t chameleon_rx_stream::recv(const buffs_type& buffs, const size_t nsamps_pe
     return n_samples;
 }
 
-void chameleon_rx_stream::receive_thread_func(const receive_thread_context *rtc)
+void chameleon_rx_stream::receive_thread_func(receive_thread_context *rtc)
 {
     sockaddr_in server_addr{};
     socklen_t len;
@@ -285,12 +286,18 @@ void chameleon_rx_stream::stop_stream()
         q_free_packets.push(q_sample_packets.front());
         q_sample_packets.pop();
     }
+    close(_socket_fd);
+    _socket_fd = -1;
 }
 
 void chameleon_rx_stream::open_socket() {
     int err = 0;
     int sock_fd = -1;
-
+    if (_socket_fd > -1)
+    {
+        _socket_fd = -1;
+        close(_socket_fd);
+    }
     // Creating socket file descriptor
     err = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (err < 0) {
@@ -301,6 +308,13 @@ void chameleon_rx_stream::open_socket() {
         err = setsockopt(sock_fd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof broadcast);
         if (err) {
             perror("setsockopt failed");
+        }
+    }
+
+    if (!err) {
+        err = setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &_vita_port_timeout, sizeof(_vita_port_timeout));
+        if (err < 0) {
+            perror("Socket SO_REUSEADDR set error");
         }
     }
     if (!err) {

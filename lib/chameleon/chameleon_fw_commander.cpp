@@ -17,6 +17,7 @@ namespace ihd {
         _udp_cmd_port = uhd::transport::udp_simple::make_connected(_dev_addr["addr"],
                                                                    std::to_string(CHAMELEON_FW_COMMS_UDP_PORT));
     }
+
     int chameleon_fw_commander::send_request(chameleon_fw_comms &request, int timeout_ms) const
     {
         int err = 0;
@@ -31,19 +32,16 @@ namespace ihd {
             // Send passed and the caller wants to wait for a response
             char response[CHAMELEON_FW_CMD_MAX_SIZE] = {0};
             // TODO - check in a loop to make sure it the response this is looking for (somehow)
-            try {
-                ret = _udp_cmd_port->recv(boost::asio::buffer(response), ((double) timeout_ms / 1000.0));
-                if (!ret) { // Timeout
-                    request.setResponseTimedout();
-                    err = -1;
-                } else {
-                    request.setResponse(response);
-                }
-            } catch (const std::exception& e) {
-                std::cerr << "Error: " << e.what() << std::endl;
-            } catch (...) {
-                std::cerr << "Error: unknown exception" << std::endl;
-            }                                                         \
+            // JMP 12/11/2024 - JUST allow the exception to be thrown - let caller handle the error
+            ret = _udp_cmd_port->recv(boost::asio::buffer(response), ((double) timeout_ms / 1000.0));
+            if (!ret) { // Timeout
+                request.setResponseTimedout();
+                err = -1;
+                // TODO fix this in the caller - i.e. handle err == -1 in caller
+                throw std::runtime_error("TIMED OUT command");
+            } else {
+                request.setResponse(response);
+            }
         }
         return err;
     }
