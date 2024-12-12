@@ -105,7 +105,7 @@ private:
 
     void open_socket();
 
-    static void receive_thread_func(const receive_thread_context_t *rtc);
+    static void receive_thread_func(receive_thread_context_t *rtc);
     size_t get_packet_data(size_t n, chameleon_data_type *buff, uhd::rx_metadata_t& metadata, uint64_t timeout_ms);
 };
 
