@@ -31,8 +31,6 @@ namespace ihd {
         } else if (timeout_ms > 0) {
             // Send passed and the caller wants to wait for a response
             char response[CHAMELEON_FW_CMD_MAX_SIZE] = {0};
-            // TODO - check in a loop to make sure it the response this is looking for (somehow)
-            // JMP 12/11/2024 - JUST allow the exception to be thrown - let caller handle the error
             ret = _udp_cmd_port->recv(boost::asio::buffer(response), ((double) timeout_ms / 1000.0));
             if (!ret) { // Timeout
                 request.setResponseTimedout();
