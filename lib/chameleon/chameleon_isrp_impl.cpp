@@ -37,6 +37,11 @@ uhd::tune_result_t chameleon_isrp_impl::set_freq(const uhd::tune_request_t& tune
 
     // send request
     _commander.send_request(request, rx_set_freq_timeout_ms);
+
+    std::cout << "set_freq response: " << std::endl;
+    for (const auto& token : request.getResponse()) {
+        std::cout << token << std::endl;
+    }
     // TODO implement tune result
     return tr;
 }

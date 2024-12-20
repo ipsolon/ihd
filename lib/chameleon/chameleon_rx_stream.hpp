@@ -44,6 +44,7 @@ private:
     std::string _vita_ip_str;
     in_addr_t _vita_ip;
     uint16_t _vita_port;
+    uint32_t _stream_id;
 
     static constexpr uint32_t DEFAULT_FFT_SIZE = 256;
     static constexpr uint32_t DEFAULT_FFT_AVG  = 105;

@@ -89,7 +89,7 @@ namespace ihd {
     private:
         std::string m_data_type;
         uint32_t m_fft_size;
-        uint8_t m_avg;
+        uint16_t m_avg;
         uint16_t m_packet_size;
         size_t m_chan;
     };
@@ -117,19 +117,19 @@ namespace ihd {
 
     class chameleon_fw_stream_start : public chameleon_fw_cmd {
     public:
-        explicit chameleon_fw_stream_start(const size_t chan) :
+        explicit chameleon_fw_stream_start(const size_t id) :
             chameleon_fw_cmd("stream_start"),
-            m_chan(chan) {}
+            m_stream_id(id) {}
 
         const char *to_command_string() override {
             std::stringstream ss;
-            ss << _cmd << " id=" << m_chan;
+            ss << _cmd << " id=" << m_stream_id;
             _command_string = ss.str();
             return _command_string.c_str();
         }
 
     private:
-        size_t m_chan;
+        size_t m_stream_id;
     };
 
     class chameleon_fw_stream_stop : public chameleon_fw_cmd {
@@ -201,7 +201,7 @@ namespace ihd {
         std::string getCommandString();
         static std::vector<std::string> tokenize(const std::string& str, const std::regex& re);
         void setResponse(const char *response);
-        void setResponseTimedout();
+        void setResponseTimedOut();
 
         enum Result {
             NONE, /* No result/response yet (default value) */
@@ -209,11 +209,14 @@ namespace ihd {
             NAK,
             ERROR /* Invalid response, timeout, etc. */
         };
+        Result getResult() const { return _result; }
+        std::vector<std::string> getResponse() const { return _response; }
 
     private:
         uint32_t _sequence{};
         std::unique_ptr<chameleon_fw_cmd> _command{};
         Result _result;
+        std::vector<std::string> _response;
 
         static const char *ACK_STR;
         static const char *NCK_STR;

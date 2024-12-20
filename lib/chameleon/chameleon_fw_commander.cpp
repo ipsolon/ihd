@@ -38,7 +38,7 @@ namespace ihd {
             char response[CHAMELEON_FW_CMD_MAX_SIZE] = {0};
             ret = _udp_cmd_port->recv(boost::asio::buffer(response), ((double) timeout_ms / 1000.0));
             if (!ret) { // Timeout
-                request.setResponseTimedout();
+                request.setResponseTimedOut();
                 err = -1;
                 // TODO fix this in the caller - i.e. handle err == -1 in caller
                 throw std::runtime_error("TIMED OUT command");

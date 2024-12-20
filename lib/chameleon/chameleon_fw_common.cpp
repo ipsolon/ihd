@@ -54,8 +54,10 @@ void chameleon_fw_comms::setResponse(const char *response) {
 
     const std::regex comma_regx(R"([,]+)");
     const std::regex space_regx(R"([\s]+)");
-    const std::vector <std::string> tokenized = tokenize(std::string(response), comma_regx);
 
+    std::cout << "setResponse: " << response << std::endl;
+    const std::vector <std::string> tokenized = tokenize(std::string(response), comma_regx);
+    _response = tokenized;
     if (tokenized.empty()) {
         err = -1;
     } else {
@@ -111,7 +113,7 @@ void chameleon_fw_comms::setResponse(const char *response) {
     }
 }
 
-void chameleon_fw_comms::setResponseTimedout() {
+void chameleon_fw_comms::setResponseTimedOut() {
     printf("Timeout waiting for response\n");
     _result = Result::ERROR;
 }
