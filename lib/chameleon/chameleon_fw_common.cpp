@@ -4,6 +4,7 @@
 * SPDX-License-Identifier: GPL-3.0-or-later
 */
 #include "chameleon_fw_common.hpp"
+#include <iostream>
 
 namespace ihd {
 
@@ -35,13 +36,13 @@ std::string chameleon_fw_comms::getCommandString() {
 * @param re
 * @return std::vector<std::string>
 */
-std::vector <std::string> chameleon_fw_comms::tokenize(const std::string str, const std::regex re) {
+std::vector <std::string> chameleon_fw_comms::tokenize(const std::string& str, const std::regex& re) {
     std::sregex_token_iterator it{str.begin(), str.end(), re, -1};
     std::vector <std::string> tokenized{it, {}};
     // Additional check to remove empty strings
     tokenized.erase(
             std::remove_if(tokenized.begin(), tokenized.end(), [](std::string const &s) {
-                               return s.size() == 0;
+                               return s.empty();
                            }
             ), tokenized.end());
     return tokenized;
@@ -67,9 +68,9 @@ void chameleon_fw_comms::setResponse(const char *response) {
         }
     }
     if (!err && tokenized.size() > 1) {
-        auto command_str = tokenized[1];
+        const auto& command_str = tokenized[1];
         const std::vector <std::string> cmd_tokenized = tokenize(std::string(command_str), space_regx);
-        if (cmd_tokenized.size() == 0) {
+        if (cmd_tokenized.empty()) {
             err = -1;
         }  else {
             const char *cmd = nullptr;

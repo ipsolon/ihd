@@ -101,6 +101,13 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     if (vm.count("fft")) {
         stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
                          ihd::ipsolon_rx_stream::stream_type::FFT_STREAM;
+    }
+    else {
+        stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
+                         ihd::ipsolon_rx_stream::stream_type::PSD_STREAM;
+    }
+    if (!vm.count("iq"))
+    {
         stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] =
                          dest_ip;
         stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] =

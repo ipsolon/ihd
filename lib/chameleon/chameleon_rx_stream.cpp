@@ -7,28 +7,30 @@
 #include <iostream>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <linux/if_packet.h>
 
 #include <uhd/transport/udp_simple.hpp>
 
 #include "chameleon_fw_common.hpp"
 #include "chameleon_rx_stream.hpp"
 #include "chameleon_packet.hpp"
-
-#define IMPLEMENTED_CMD_PORT 0 /* Command server not yet implemented */
+#include <exception.hpp>
 
 using namespace ihd;
 
 const std::string chameleon_rx_stream::DEFAULT_VITA_IP_STR = "0.0.0.0";
+// change FFT_STREAM to PSD_STREAM
+//const std::string DEFAULT_STREAM_TYPE = "psd";
+//const std::string DEFAULT_STREAM_TYPE = ihd::ipsolon_rx_stream::stream_type::FFT_STREAM;
+const std::string DEFAULT_STREAM_TYPE = FFT_STREAM;
 
 chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr) :
     _nChans(stream_cmd.channels.size()),
     _commander(device_addr),
-    _chanMask(0),
     _receive_thread_context{},
     _current_packet(nullptr),
     _socket_fd(-1),
     _vita_ip(DEFAULT_VITA_IP),
+    _stream_type(ihd::ipsolon_rx_stream::stream_type::PSD_STREAM),
     _vita_ip_str(DEFAULT_VITA_IP_STR),
     _vita_port(DEFAULT_VITA_PORT),
     _fft_size(DEFAULT_FFT_SIZE),
@@ -44,8 +46,11 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
         _chanMask |= 1 << (chan - 1); /* Channels indexed at 1 */
     }
     std::string type_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY];
+    std::cout << "BEFORE stream type = " << type_str << std::endl;
     stream_type st(type_str);
-    if (st.modeEquals(stream_type::FFT_STREAM)) {
+    _stream_type = st;
+    if ((_stream_type.modeEquals(stream_type::PSD_STREAM)) ||
+         (_stream_type.modeEquals(stream_type::FFT_STREAM))) {
         printf("Create FFT stream\n");
         if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY)) {
             _vita_ip_str.assign(stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY]);
@@ -264,20 +269,56 @@ void chameleon_rx_stream::start_stream()
     _receive_thread_context.run = true;
     _recv_thread = std::thread([=] { receive_thread_func(&_receive_thread_context); });
 
+#if 1
+    // Issue stream_rx_cfg - returns Stream id
+    std::string stream_type_str = (_stream_type.modeEquals(stream_type::PSD_STREAM)) ?
+                                    ipsolon_rx_stream::stream_type::PSD_STREAM :
+                                    ipsolon_rx_stream::stream_type::IQ_STREAM;
+
+    std::cout << "SEND rx_cfg_set" << std::endl;
+    std::unique_ptr<chameleon_fw_cmd> rx_cfg_set_cmd(new chameleon_fw_rx_cfg_set(_chanMask, stream_type_str,
+                                                                    _fft_size, _fft_avg));
+    chameleon_fw_comms chameleon_fw_rx_cfg_set(std::move(rx_cfg_set_cmd));
+    _commander.send_request(chameleon_fw_rx_cfg_set);
+
+    std::cout << "SEND stream_rx_cfg" << std::endl;
+    // Issue stream_rx_cfg - returns Stream id
+    std::unique_ptr<chameleon_fw_cmd> stream_rx_cfg(new chameleon_fw_stream_rx_cfg(_chanMask, _vita_ip_str, _vita_port));
+    chameleon_fw_comms stream_rx_cfg_request(std::move(stream_rx_cfg));
+    _commander.send_request(stream_rx_cfg_request);
+
+    // Issue stream_start command
+    // TODO _chanMask needs to be the stream id returned from stream_rx_cfg
+    std::unique_ptr<chameleon_fw_cmd> stream_start(new chameleon_fw_stream_start(_chanMask));
+    chameleon_fw_comms stream_start_request(std::move(stream_start));
+#else
+    std::cout << "SEND STREAM Command" << std::endl;
     std::unique_ptr<chameleon_fw_cmd> stream_cmd(
-            new chameleon_fw_cmd_stream(_chanMask, true, _vita_ip_str.c_str(), _vita_port, _fft_size, _fft_avg));
+            new chameleon_fw_cmd_stream(_chanMask, true, _vita_ip_str.c_str(),
+                                        _vita_port, _fft_size, _fft_avg));
     chameleon_fw_comms request(std::move(stream_cmd));
     _commander.send_request(request);
+#endif
+
 }
+
+// MAYBE - how is the channel passed in associated with a stream?
+//void chameleon_rx_stream::issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, size_t chan) {
+//}
 
 void chameleon_rx_stream::stop_stream()
 {
     _receive_thread_context.run = false;
     _recv_thread.join();
 
-    std::unique_ptr<chameleon_fw_cmd> stream_cmd(
-            new chameleon_fw_cmd_stream(false, _chanMask));
-    chameleon_fw_comms request(std::move(stream_cmd));
+    //std::unique_ptr<chameleon_fw_cmd> stream_cmd(
+    //        new chameleon_fw_cmd_stream(false, _chanMask));
+    //chameleon_fw_comms request(std::move(stream_cmd));
+    //_commander.send_request(request);
+
+    std::unique_ptr<chameleon_fw_cmd> stream_stop_cmd(
+            new chameleon_fw_stream_stop(_chanMask));
+    chameleon_fw_comms request(std::move(stream_stop_cmd));
     _commander.send_request(request);
 
     std::lock_guard<std::mutex> free_lock(mtx_free_queue);
