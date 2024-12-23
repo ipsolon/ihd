@@ -21,7 +21,7 @@ void chameleon_fw_comms::setSequence(uint32_t sequence) {
     _sequence = sequence;
 }
 
-std::string chameleon_fw_comms::getCommandString() {
+std::string chameleon_fw_comms::getCommandString() const {
     std::stringstream ss;
     if (_sequence > 0) {
         ss << _sequence << " ";

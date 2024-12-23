@@ -23,7 +23,7 @@ class chameleon_packet;
 
 class chameleon_rx_stream : public ipsolon_rx_stream {
 public:
-    static const size_t default_timeout = 5;
+    static constexpr size_t default_timeout = 5;
     typedef std::complex<int16_t> chameleon_data_type;
 
     explicit chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr);

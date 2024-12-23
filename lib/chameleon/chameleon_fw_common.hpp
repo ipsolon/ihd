@@ -198,7 +198,7 @@ namespace ihd {
         uint32_t getSequence() const;
 
         void setSequence(uint32_t sequence);
-        std::string getCommandString();
+        std::string getCommandString() const;
         static std::vector<std::string> tokenize(const std::string& str, const std::regex& re);
         void setResponse(const char *response);
         void setResponseTimedOut();
