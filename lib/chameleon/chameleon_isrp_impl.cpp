@@ -6,6 +6,7 @@
 #include "chameleon_isrp_impl.hpp"
 #include "chameleon_fw_common.hpp"
 #include "chameleon_jammer_block_ctrl.hpp"
+#include "debug.hpp"
 
 using namespace ihd;
 
@@ -38,9 +39,9 @@ uhd::tune_result_t chameleon_isrp_impl::set_freq(const uhd::tune_request_t& tune
     // send request
     _commander.send_request(request, rx_set_freq_timeout_ms);
 
-    std::cout << "set_freq response: " << std::endl;
+   dbprintf("set_freq response: \n");
     for (const auto& token : request.getResponse()) {
-        std::cout << token << std::endl;
+        dbprintf("%s\n",token.c_str());
     }
     // TODO implement tune result
     return tr;

@@ -4,6 +4,7 @@
 * SPDX-License-Identifier: GPL-3.0-or-later
 */
 #include "chameleon_fw_common.hpp"
+#include "debug.hpp"
 #include <iostream>
 
 namespace ihd {
@@ -55,7 +56,7 @@ void chameleon_fw_comms::setResponse(const char *response) {
     const std::regex comma_regx(R"([,]+)");
     const std::regex space_regx(R"([\s]+)");
 
-    std::cout << "setResponse: " << response << std::endl;
+    dbprintf("setResponse: %s\n", response);
     const std::vector <std::string> tokenized = tokenize(std::string(response), comma_regx);
     _response = tokenized;
     if (tokenized.empty()) {
@@ -90,7 +91,7 @@ void chameleon_fw_comms::setResponse(const char *response) {
                     } catch(...) {
                         err = -1;
                         std::exception_ptr p = std::current_exception();
-                        std::cout << (p ? p.__cxa_exception_type()->name() : "null") << std::endl;
+                        dbfprintf(stderr, "%s\n",(p ? p.__cxa_exception_type()->name() : "null"));
                     }
                 }
             } else {

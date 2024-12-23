@@ -8,6 +8,7 @@
 
 #include <utility>
 #include "chameleon_fw_common.hpp"
+#include "debug.hpp"
 
 // TODO REMOVE DEBUG!
 #include <iostream>
@@ -29,9 +30,8 @@ namespace ihd {
         request.setSequence(_seq++);
         std::string str = request.getCommandString();
         ret = _udp_cmd_port->send(boost::asio::buffer(str.c_str(), str.length()));
-        std::cout << "Sent command: " << str << " returned: " << ret << std::endl;
         if (ret != str.length()) {
-            std::cout << "FAILED" << std::endl;
+            dbfprintf(stderr, "_udp_cmd_port->send FAILED ret: %lu\n",ret);
             err = -1;
         } else if (timeout_ms > 0) {
             // Send passed and the caller wants to wait for a response
