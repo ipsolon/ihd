@@ -11,9 +11,6 @@
 #include <set>
 #include "ipsolon_chdr_header.h"
 
-// REMOVE
-#include <iostream>
-
 namespace ihd {
 
 class ipsolon_rx_stream : public uhd::rx_streamer {
@@ -52,7 +49,7 @@ public:
             return _stream_mode_str;
         }
 
-        bool modeEquals(const std::string& mode) {
+        bool modeEquals(const std::string& mode) const {
             return mode == _stream_mode_str;
         }
 

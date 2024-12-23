@@ -10,9 +10,6 @@
 #include "chameleon_fw_common.hpp"
 #include "debug.hpp"
 
-// TODO REMOVE DEBUG!
-#include <iostream>
-
 namespace ihd {
     static std::atomic<size_t> _seq(1);
 
