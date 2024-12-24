@@ -48,7 +48,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         ("fft_size", po::value<uint32_t>(&fft_size)->default_value(256), "FFT size (256, 512, 1024, 2048 or 4096")
         ("fft_avg", po::value<uint32_t>(&fft_avg)->default_value(105), "FFT averaging count")
         ("args", po::value<std::string>(&args)->default_value(""), "ISRP device address args")
-        ("fft","Stream FFTs (versus an I/Q stream)")
+        ("psd","Stream PSD (versus an I/Q stream)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -98,16 +98,10 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     channel_nums.push_back(channel);
     stream_args.channels = channel_nums;
 
-    if (vm.count("fft")) {
-        stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
-                         ihd::ipsolon_rx_stream::stream_type::FFT_STREAM;
-    }
-    else {
+    if (vm.count("psd")) {
         stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
                          ihd::ipsolon_rx_stream::stream_type::PSD_STREAM;
-    }
-    if (!vm.count("iq"))
-    {
+
         stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] =
                          dest_ip;
         stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] =

@@ -29,8 +29,6 @@ public:
         static const std::string STREAM_FORMAT_KEY;
         static const std::string IQ_STREAM;
         static const std::string PSD_STREAM;
-        static const std::string FFT_STREAM;
-
         static const std::string STREAM_DEST_IP_KEY;
         static const std::string STREAM_DEST_PORT_KEY;
 
@@ -54,7 +52,7 @@ public:
         }
 
     private:
-        std::set<std::string> _modes { IQ_STREAM, PSD_STREAM, FFT_STREAM};
+        std::set<std::string> _modes { IQ_STREAM, PSD_STREAM};
         std::string _stream_mode_str;
     };
 
