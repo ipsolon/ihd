@@ -12,7 +12,6 @@
 #include <iostream>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
-#include <utility>
 #include <thread>
 
 #include "safe_main.hpp"
