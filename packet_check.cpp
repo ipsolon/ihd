@@ -120,6 +120,13 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
                 << std::endl;
         return ~0;
     }
+    if (vm["args"].defaulted()) {
+        std::cout
+            << std::endl
+            << "ERROR 'args' is a mandatory parameter please specify the chameleon ip address, e.g. args=addr=10.75.42.209 "
+            << std::endl
+            << boost::format("IHD RX samples to file %s") % desc << std::endl;
+    }
 
     /************************************************************************
      * Create device and block controls
