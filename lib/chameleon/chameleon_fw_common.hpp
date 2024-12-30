@@ -8,7 +8,6 @@
 #define CHAMELEON_FW_COMMON_H
 
 #include <sstream>
-#include <iostream>
 #include <regex>
 #include <string>
 #include <utility>
@@ -25,7 +24,7 @@ namespace ihd {
 
         virtual ~chameleon_fw_cmd() = default;
 
-        const char *getCommand() {return _cmd;}
+        const char *getCommand() const {return _cmd;}
 
     protected:
         const char *_cmd{};
@@ -67,6 +66,87 @@ namespace ihd {
     private:
         size_t chan{};
         double gain{};
+    };
+
+    class chameleon_fw_rx_cfg_set : public chameleon_fw_cmd {
+    public:
+        chameleon_fw_rx_cfg_set(const size_t chan, std::string   data_type, const uint32_t fft_size,
+                                const uint8_t avg, const uint16_t packet_size=0) :
+            chameleon_fw_cmd("rx_cfg_set"),
+            m_data_type(std::move(data_type)),
+            m_fft_size(fft_size),
+            m_avg(avg),
+            m_packet_size(packet_size),
+            m_chan(chan) {}
+
+        const char *to_command_string() override {
+            std::stringstream ss;
+            ss << _cmd << " chan=" << m_chan << ", type=" << m_data_type << ", fft_size=" << m_fft_size << ", avg=" << m_avg;
+            _command_string = ss.str();
+            return _command_string.c_str();
+        }
+
+    private:
+        std::string m_data_type;
+        uint32_t m_fft_size;
+        uint16_t m_avg;
+        uint16_t m_packet_size;
+        size_t m_chan;
+    };
+
+    class chameleon_fw_stream_rx_cfg : public chameleon_fw_cmd {
+    public:
+        chameleon_fw_stream_rx_cfg(const size_t chan_mask, std::string    ip, const uint16_t port) :
+            chameleon_fw_cmd("stream_rx_cfg"),
+            m_dest_port(port),
+            m_dest_ip_address(std::move(ip)),
+            m_chan_mask(chan_mask) {}
+
+        const char *to_command_string() override {
+            std::stringstream ss;
+            ss << _cmd << " chan_mask=" << m_chan_mask << ", ip=" << m_dest_ip_address << ", port=" << m_dest_port;
+            _command_string = ss.str();
+            return _command_string.c_str();
+        }
+
+    private:
+        uint16_t m_dest_port;
+        std::string m_dest_ip_address;
+        size_t m_chan_mask;
+    };
+
+    class chameleon_fw_stream_start : public chameleon_fw_cmd {
+    public:
+        explicit chameleon_fw_stream_start(const size_t id) :
+            chameleon_fw_cmd("stream_start"),
+            m_stream_id(id) {}
+
+        const char *to_command_string() override {
+            std::stringstream ss;
+            ss << _cmd << " id=" << m_stream_id;
+            _command_string = ss.str();
+            return _command_string.c_str();
+        }
+
+    private:
+        size_t m_stream_id;
+    };
+
+    class chameleon_fw_stream_stop : public chameleon_fw_cmd {
+    public:
+        explicit chameleon_fw_stream_stop(const size_t chan) :
+            chameleon_fw_cmd("stream_stop"),
+            m_chan(chan) {}
+
+        const char *to_command_string() override {
+            std::stringstream ss;
+            ss << _cmd << " id=" << m_chan;
+            _command_string = ss.str();
+            return _command_string.c_str();
+        }
+
+    private:
+        size_t m_chan;
     };
 
     class chameleon_fw_cmd_stream : public chameleon_fw_cmd {
@@ -118,10 +198,10 @@ namespace ihd {
         uint32_t getSequence() const;
 
         void setSequence(uint32_t sequence);
-        std::string getCommandString();
-        std::vector<std::string> tokenize(std::string str, std::regex re);
+        std::string getCommandString() const;
+        static std::vector<std::string> tokenize(const std::string& str, const std::regex& re);
         void setResponse(const char *response);
-        void setResponseTimedout();
+        void setResponseTimedOut();
 
         enum Result {
             NONE, /* No result/response yet (default value) */
@@ -129,11 +209,14 @@ namespace ihd {
             NAK,
             ERROR /* Invalid response, timeout, etc. */
         };
+        Result getResult() const { return _result; }
+        std::vector<std::string> getResponse() const { return _response; }
 
     private:
         uint32_t _sequence{};
         std::unique_ptr<chameleon_fw_cmd> _command{};
         Result _result;
+        std::vector<std::string> _response;
 
         static const char *ACK_STR;
         static const char *NCK_STR;

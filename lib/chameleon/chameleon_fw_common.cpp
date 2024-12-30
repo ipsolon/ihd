@@ -4,6 +4,8 @@
 * SPDX-License-Identifier: GPL-3.0-or-later
 */
 #include "chameleon_fw_common.hpp"
+#include "debug.hpp"
+#include <iostream>
 
 namespace ihd {
 
@@ -19,7 +21,7 @@ void chameleon_fw_comms::setSequence(uint32_t sequence) {
     _sequence = sequence;
 }
 
-std::string chameleon_fw_comms::getCommandString() {
+std::string chameleon_fw_comms::getCommandString() const {
     std::stringstream ss;
     if (_sequence > 0) {
         ss << _sequence << " ";
@@ -35,13 +37,13 @@ std::string chameleon_fw_comms::getCommandString() {
 * @param re
 * @return std::vector<std::string>
 */
-std::vector <std::string> chameleon_fw_comms::tokenize(const std::string str, const std::regex re) {
+std::vector <std::string> chameleon_fw_comms::tokenize(const std::string& str, const std::regex& re) {
     std::sregex_token_iterator it{str.begin(), str.end(), re, -1};
     std::vector <std::string> tokenized{it, {}};
     // Additional check to remove empty strings
     tokenized.erase(
             std::remove_if(tokenized.begin(), tokenized.end(), [](std::string const &s) {
-                               return s.size() == 0;
+                               return s.empty();
                            }
             ), tokenized.end());
     return tokenized;
@@ -53,8 +55,10 @@ void chameleon_fw_comms::setResponse(const char *response) {
 
     const std::regex comma_regx(R"([,]+)");
     const std::regex space_regx(R"([\s]+)");
-    const std::vector <std::string> tokenized = tokenize(std::string(response), comma_regx);
 
+    dbprintf("setResponse: %s\n", response);
+    const std::vector <std::string> tokenized = tokenize(std::string(response), comma_regx);
+    _response = tokenized;
     if (tokenized.empty()) {
         err = -1;
     } else {
@@ -67,9 +71,9 @@ void chameleon_fw_comms::setResponse(const char *response) {
         }
     }
     if (!err && tokenized.size() > 1) {
-        auto command_str = tokenized[1];
+        const auto& command_str = tokenized[1];
         const std::vector <std::string> cmd_tokenized = tokenize(std::string(command_str), space_regx);
-        if (cmd_tokenized.size() == 0) {
+        if (cmd_tokenized.empty()) {
             err = -1;
         }  else {
             const char *cmd = nullptr;
@@ -87,7 +91,7 @@ void chameleon_fw_comms::setResponse(const char *response) {
                     } catch(...) {
                         err = -1;
                         std::exception_ptr p = std::current_exception();
-                        std::cout << (p ? p.__cxa_exception_type()->name() : "null") << std::endl;
+                        dbfprintf(stderr, "%s\n",(p ? p.__cxa_exception_type()->name() : "null"));
                     }
                 }
             } else {
@@ -110,7 +114,7 @@ void chameleon_fw_comms::setResponse(const char *response) {
     }
 }
 
-void chameleon_fw_comms::setResponseTimedout() {
+void chameleon_fw_comms::setResponseTimedOut() {
     printf("Timeout waiting for response\n");
     _result = Result::ERROR;
 }

@@ -134,8 +134,10 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
      * Get Rx Stream
      ***********************************************************************/
     uhd::stream_args_t stream_args("sc16", "sc16");
+
     stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
-                     ihd::ipsolon_rx_stream::stream_type::FFT_STREAM;
+                 ihd::ipsolon_rx_stream::stream_type::PSD_STREAM;
+
     stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] = dest_ip;
     stream_args.args[ihd::ipsolon_rx_stream::stream_type::FFT_SIZE_KEY] = std::to_string(fft_size);
     stream_args.args[ihd::ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY] = std::to_string(fft_avg);

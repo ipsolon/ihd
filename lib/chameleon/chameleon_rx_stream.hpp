@@ -16,7 +16,6 @@
 
 #include "ipsolon_rx_stream.hpp"
 #include "ipsolon_chdr_header.h"
-#include "exception.hpp"
 
 namespace ihd {
 
@@ -24,7 +23,7 @@ class chameleon_packet;
 
 class chameleon_rx_stream : public ipsolon_rx_stream {
 public:
-    static const size_t default_timeout = 5;
+    static constexpr size_t default_timeout = 5;
     typedef std::complex<int16_t> chameleon_data_type;
 
     explicit chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr);
@@ -32,17 +31,20 @@ public:
 
     [[nodiscard]] size_t get_num_channels() const override;
     [[nodiscard]] size_t get_max_num_samps() const override;
-    size_t recv(const buffs_type& buffs, const size_t nsamps_per_buff, uhd::rx_metadata_t& metadata,
-        const double timeout, const bool one_packet) override;
+    size_t recv(const buffs_type& buffs, size_t nsamps_per_buff, uhd::rx_metadata_t& metadata,
+        double timeout, bool one_packet) override;
     void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd) override;
 
 private:
     static const std::string  DEFAULT_VITA_IP_STR;
     static constexpr uint32_t DEFAULT_VITA_IP     = INADDR_ANY;
     static constexpr uint32_t DEFAULT_VITA_PORT   = 9090;
+
+    stream_type _stream_type;
     std::string _vita_ip_str;
     in_addr_t _vita_ip;
     uint16_t _vita_port;
+    uint32_t _stream_id{};
 
     static constexpr uint32_t DEFAULT_FFT_SIZE = 256;
     static constexpr uint32_t DEFAULT_FFT_AVG  = 105;

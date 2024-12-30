@@ -7,32 +7,31 @@
 #include <iostream>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <linux/if_packet.h>
 
 #include <uhd/transport/udp_simple.hpp>
 
 #include "chameleon_fw_common.hpp"
 #include "chameleon_rx_stream.hpp"
 #include "chameleon_packet.hpp"
-
-#define IMPLEMENTED_CMD_PORT 0 /* Command server not yet implemented */
+#include <exception.hpp>
+#include "debug.hpp"
 
 using namespace ihd;
 
 const std::string chameleon_rx_stream::DEFAULT_VITA_IP_STR = "0.0.0.0";
 
 chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr) :
-    _nChans(stream_cmd.channels.size()),
-    _commander(device_addr),
-    _chanMask(0),
-    _receive_thread_context{},
-    _current_packet(nullptr),
-    _socket_fd(-1),
-    _vita_ip(DEFAULT_VITA_IP),
+    _stream_type(ihd::ipsolon_rx_stream::stream_type::PSD_STREAM),
     _vita_ip_str(DEFAULT_VITA_IP_STR),
+    _vita_ip(DEFAULT_VITA_IP),
     _vita_port(DEFAULT_VITA_PORT),
     _fft_size(DEFAULT_FFT_SIZE),
-    _fft_avg(DEFAULT_FFT_AVG)
+    _fft_avg(DEFAULT_FFT_AVG),
+    _nChans(stream_cmd.channels.size()),
+    _commander(device_addr),
+    _socket_fd(-1),
+    _current_packet(nullptr),
+    _receive_thread_context{}
 {
     if(stream_cmd.cpu_format != "sc16") {
         THROW_VALUE_NOT_SUPPORTED_ERROR(stream_cmd.args.to_string());
@@ -45,7 +44,8 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
     }
     std::string type_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY];
     stream_type st(type_str);
-    if (st.modeEquals(stream_type::FFT_STREAM)) {
+    _stream_type = st;
+    if (_stream_type.modeEquals(stream_type::PSD_STREAM)) {
         printf("Create FFT stream\n");
         if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY)) {
             _vita_ip_str.assign(stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY]);
@@ -57,18 +57,18 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
         
         if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY)) {
             std::string port_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY];
-            _vita_port = std::stoul(port_str, nullptr, 0);
+            _vita_port = std::stoul(port_str, nullptr, 10);
         }
         if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::FFT_SIZE_KEY)) {
             std::string fft_size = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_SIZE_KEY];
-            _fft_size = std::strtol(fft_size.c_str(), nullptr, 0);
+            _fft_size = std::strtol(fft_size.c_str(), nullptr, 10);
         }
         if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY)) {
             std::string fft_avg = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY];
-            _fft_avg = std::strtol(fft_avg.c_str(), nullptr, 0);
+            _fft_avg = std::strtol(fft_avg.c_str(), nullptr, 10);
         }
     } else {
-        printf("Create IQ stream\n");
+        dbprintf("Create IQ stream\n");
     }
     open_socket();
 
@@ -184,7 +184,7 @@ size_t chameleon_rx_stream::recv(const buffs_type& buffs, const size_t nsamps_pe
     size_t n_samples = 0;
 
     /* FIXME - do a proper C++ cast here */
-    auto *output_array = (chameleon_data_type *)(buffs[0]);
+    auto *output_array = static_cast<chameleon_data_type *>(buffs[0]);
     if(output_array == nullptr) {
         THROW_TYPE_ERROR();
     }
@@ -216,7 +216,7 @@ void chameleon_rx_stream::receive_thread_func(receive_thread_context *rtc)
         auto then = now + std::chrono::milliseconds(100);
         bool ret = false;
         do {
-            ret = (*rtc->cv_free).wait_until(lock_free, then, [&rtc] { return !rtc->q_free->empty(); });
+            ret = rtc->cv_free->wait_until(lock_free, then, [&rtc] { return !rtc->q_free->empty(); });
         } while (!ret && rtc->run);   // While timed out and predicate false and still running
         if (ret) {                    // Did not time out and predicate is true
             cp = rtc->q_free->front();
@@ -226,7 +226,7 @@ void chameleon_rx_stream::receive_thread_func(receive_thread_context *rtc)
         ssize_t n = 0;
         while (n == 0 && rtc->run && cp != nullptr) {
             n = recvfrom(rtc->socket_fd, cp->getPacketMem(), cp->getPacketSize(), 0,
-                         (struct sockaddr *) &server_addr,&len);
+                         reinterpret_cast<struct sockaddr *>(&server_addr),&len);
             if (n > 0) {
                 lock_free.lock();
                 rtc->q_free->pop();
@@ -238,9 +238,9 @@ void chameleon_rx_stream::receive_thread_func(receive_thread_context *rtc)
                 rtc->cv_samples->notify_one();
 
             } else if (n < 0) {
-                std::cout << "Receive error." << " errno:" << errno << ":" << strerror(errno) << std::endl;
+                dbfprintf(stderr, "Receive error. errno: %d\n",errno);
             } else { // is zero
-                std::cout << "Receive timeout" << std::endl;
+                dbfprintf(stderr,"Receive timeout\n");
             }
         }
     }
@@ -264,10 +264,45 @@ void chameleon_rx_stream::start_stream()
     _receive_thread_context.run = true;
     _recv_thread = std::thread([=] { receive_thread_func(&_receive_thread_context); });
 
-    std::unique_ptr<chameleon_fw_cmd> stream_cmd(
-            new chameleon_fw_cmd_stream(_chanMask, true, _vita_ip_str.c_str(), _vita_port, _fft_size, _fft_avg));
-    chameleon_fw_comms request(std::move(stream_cmd));
-    _commander.send_request(request);
+    // Issue stream_rx_cfg - returns Stream id
+    std::string stream_type_str = (_stream_type.modeEquals(stream_type::PSD_STREAM)) ?
+                                    ipsolon_rx_stream::stream_type::PSD_STREAM :
+                                    ipsolon_rx_stream::stream_type::IQ_STREAM;
+
+    dbprintf("SEND rx_cfg_set nChans = %lu _chanMask 0x%X\n",_nChans,_chanMask);
+
+    for (int i = 0; i<_nChans; i++) {
+        size_t chan_num = 0;
+        chan_num = _chanMask & (1 << i);
+        if (chan_num) {
+            std::unique_ptr<chameleon_fw_cmd> rx_cfg_set_cmd(new chameleon_fw_rx_cfg_set(chan_num, stream_type_str,
+                                                                        _fft_size, _fft_avg));
+            chameleon_fw_comms chameleon_fw_rx_cfg_set(std::move(rx_cfg_set_cmd));
+            _commander.send_request(chameleon_fw_rx_cfg_set);
+        }
+    }
+
+    // Issue stream_rx_cfg - returns Stream id
+    std::unique_ptr<chameleon_fw_cmd> stream_rx_cfg(new chameleon_fw_stream_rx_cfg(_chanMask, _vita_ip_str, _vita_port));
+    chameleon_fw_comms stream_rx_cfg_request(std::move(stream_rx_cfg));
+    _commander.send_request(stream_rx_cfg_request);
+    // Get stream id from response
+    _stream_id = 0;
+    for (const auto& resp_parm : stream_rx_cfg_request.getResponse()) {
+        size_t id_indx = resp_parm.find("id=");
+        if (id_indx != std::string::npos) {
+            std::string id_str = resp_parm.substr(id_indx+3);
+            _stream_id = std::stoul(id_str);
+        }
+    }
+
+    // Issue stream_start command
+    if (_stream_id) {
+        std::unique_ptr<chameleon_fw_cmd> stream_start(new chameleon_fw_stream_start(_stream_id));
+        chameleon_fw_comms stream_start_request(std::move(stream_start));
+        _commander.send_request(stream_start_request);
+    }
+
 }
 
 void chameleon_rx_stream::stop_stream()
@@ -275,10 +310,13 @@ void chameleon_rx_stream::stop_stream()
     _receive_thread_context.run = false;
     _recv_thread.join();
 
-    std::unique_ptr<chameleon_fw_cmd> stream_cmd(
-            new chameleon_fw_cmd_stream(false, _chanMask));
-    chameleon_fw_comms request(std::move(stream_cmd));
+    std::unique_ptr<chameleon_fw_cmd> stream_stop_cmd(
+            new chameleon_fw_stream_stop(_stream_id));
+    chameleon_fw_comms request(std::move(stream_stop_cmd));
     _commander.send_request(request);
+
+    // Check ACK/NACK
+    _stream_id = 0;
 
     std::lock_guard<std::mutex> free_lock(mtx_free_queue);
     std::lock_guard<std::mutex> sample_lock(mtx_sample_queue);
@@ -323,7 +361,7 @@ void chameleon_rx_stream::open_socket() {
         local_addr.sin_family = AF_INET;
         local_addr.sin_port = htons(_vita_port);
         local_addr.sin_addr.s_addr = _vita_ip;
-        err = bind(sock_fd, (const struct sockaddr *) &local_addr, sizeof(local_addr));
+        err = bind(sock_fd, reinterpret_cast<const struct sockaddr *>(&local_addr), sizeof(local_addr));
         if (err < 0) {
             perror("bind failed");
         }

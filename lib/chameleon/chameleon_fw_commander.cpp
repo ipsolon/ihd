@@ -8,6 +8,7 @@
 
 #include <utility>
 #include "chameleon_fw_common.hpp"
+#include "debug.hpp"
 
 namespace ihd {
     static std::atomic<size_t> _seq(1);
@@ -27,15 +28,14 @@ namespace ihd {
         std::string str = request.getCommandString();
         ret = _udp_cmd_port->send(boost::asio::buffer(str.c_str(), str.length()));
         if (ret != str.length()) {
+            dbfprintf(stderr, "_udp_cmd_port->send FAILED ret: %lu\n",ret);
             err = -1;
         } else if (timeout_ms > 0) {
             // Send passed and the caller wants to wait for a response
             char response[CHAMELEON_FW_CMD_MAX_SIZE] = {0};
-            ret = _udp_cmd_port->recv(boost::asio::buffer(response), ((double) timeout_ms / 1000.0));
+            ret = _udp_cmd_port->recv(boost::asio::buffer(response), (static_cast<double>(timeout_ms) / 1000.0));
             if (!ret) { // Timeout
-                request.setResponseTimedout();
-                err = -1;
-                // TODO fix this in the caller - i.e. handle err == -1 in caller
+                request.setResponseTimedOut();
                 throw std::runtime_error("TIMED OUT command");
             } else {
                 request.setResponse(response);
