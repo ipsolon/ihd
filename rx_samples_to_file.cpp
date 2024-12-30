@@ -91,74 +91,10 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     try {
         isrp = ihd::ipsolon_isrp::make(args);
 
-    if (!vm["freq"].defaulted()) {
-        uhd::tune_request_t tune_request{};
-        tune_request.rf_freq = freq;
-        isrp->set_rx_freq(tune_request, channel);
-    }
-
-    if (!vm["gain"].defaulted()) {
-        isrp->uhd::usrp::multi_usrp::set_rx_gain(gain, channel);
-    }
-
-    /************************************************************************
-     * Get Rx Stream
-     ***********************************************************************/
-    uhd::stream_args_t stream_args("sc16", "sc16");
-    std::vector<size_t> channel_nums;
-    channel_nums.push_back(channel);
-    stream_args.channels = channel_nums;
-
-    if (vm.count(ihd::ipsolon_rx_stream::stream_type::PSD_STREAM)) {
-        stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
-                         ihd::ipsolon_rx_stream::stream_type::PSD_STREAM;
-    }
-    if (!vm.count(ihd::ipsolon_rx_stream::stream_type::IQ_STREAM))
-    {
-        stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] =
-                         dest_ip;
-        stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] =
-                         std::to_string(dest_port);
-        stream_args.args[ihd::ipsolon_rx_stream::stream_type::FFT_SIZE_KEY] =
-                         std::to_string(fft_size);
-        stream_args.args[ihd::ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY] =
-                         std::to_string(fft_avg);
-
-    } else {
-        stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
-                ihd::ipsolon_rx_stream::stream_type::IQ_STREAM;
-        fprintf(stderr, "Error: IQ Stream not implemented\n");
-        exit(1);
-    }
-
-    auto rx_stream = isrp->get_rx_stream(stream_args);
-    if (vm["nsamps"].defaulted()) {
-        total_num_samps = rx_stream->get_max_num_samps() * 100;
-    }
-    /************************************************************************
-     * Start the stream
-     ***********************************************************************/
-    uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-    rx_stream->issue_stream_cmd(stream_cmd);
-
-    /************************************************************************
-    * Allocate buffers
-    ***********************************************************************/
-    std::vector<std::complex<int16_t>*> buffs(NUMBER_OF_CHANNELS);
-    size_t spb = rx_stream->get_max_num_samps();
-    std::complex<int16_t> p[spb];
-    buffs[0] = p;
-
-    /************************************************************************
-     * Receive Data
-     ***********************************************************************/
-    size_t sample_iterations = total_num_samps / spb;
-    int err = 0;
-    size_t out_of_sequence_packets = 0;
-    for (size_t i = 0; i < sample_iterations && !err; i++) {
-        size_t n = rx_stream->recv(buffs, spb, md, 5);
-        if (md.out_of_sequence) {
-            out_of_sequence_packets++;
+        if (!vm["freq"].defaulted()) {
+            uhd::tune_request_t tune_request{};
+            tune_request.rf_freq = freq;
+            isrp->set_rx_freq(tune_request, channel);
         }
 
         if (!vm["gain"].defaulted()) {
@@ -173,10 +109,12 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         channel_nums.push_back(channel);
         stream_args.channels = channel_nums;
 
-        if (stream_type == "psd") {
+        if (vm.count(ihd::ipsolon_rx_stream::stream_type::PSD_STREAM)) {
             stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
                              ihd::ipsolon_rx_stream::stream_type::PSD_STREAM;
-
+        }
+        if (!vm.count(ihd::ipsolon_rx_stream::stream_type::IQ_STREAM))
+        {
             stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] =
                              dest_ip;
             stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] =
@@ -186,7 +124,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
             stream_args.args[ihd::ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY] =
                              std::to_string(fft_avg);
 
-        } else if (stream_type == "iq") {
+        } else {
             stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
                     ihd::ipsolon_rx_stream::stream_type::IQ_STREAM;
             fprintf(stderr, "Error: IQ Stream not implemented\n");
@@ -222,28 +160,92 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
             if (md.out_of_sequence) {
                 out_of_sequence_packets++;
             }
-            if (!n) {
-                fprintf(stderr, "*** No bytes received:\n%s\n***\n", md.to_pp_string(false).c_str());
-                err = -1;
-            }
-            size_t ws = n *  ihd::ipsolon_rx_stream::BYTES_PER_IQ_PAIR;
-            ssize_t w = write(fd, buffs[0], ws);
-            if (w != ws) {
-                fprintf(stderr, "Write failed. Request %lu bytes written, write returned:%lu. %s\n",
-                        n, w, strerror(errno));
-            }
-        }
-        stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
-        rx_stream->issue_stream_cmd(stream_cmd);
-        close(fd);
 
-        if (out_of_sequence_packets) {
-            fprintf(stderr, "*** Out of sequence packets:%zu\n", out_of_sequence_packets);
+            if (!vm["gain"].defaulted()) {
+                isrp->uhd::usrp::multi_usrp::set_rx_gain(gain, channel);
+            }
+
+            /************************************************************************
+             * Get Rx Stream
+             ***********************************************************************/
+            uhd::stream_args_t stream_args("sc16", "sc16");
+            std::vector<size_t> channel_nums;
+            channel_nums.push_back(channel);
+            stream_args.channels = channel_nums;
+
+            if (stream_type == "psd") {
+                stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
+                                 ihd::ipsolon_rx_stream::stream_type::PSD_STREAM;
+
+                stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] =
+                                 dest_ip;
+                stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] =
+                                 std::to_string(dest_port);
+                stream_args.args[ihd::ipsolon_rx_stream::stream_type::FFT_SIZE_KEY] =
+                                 std::to_string(fft_size);
+                stream_args.args[ihd::ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY] =
+                                 std::to_string(fft_avg);
+
+            } else if (stream_type == "iq") {
+                stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
+                        ihd::ipsolon_rx_stream::stream_type::IQ_STREAM;
+                fprintf(stderr, "Error: IQ Stream not implemented\n");
+                exit(1);
+            }
+
+            auto rx_stream = isrp->get_rx_stream(stream_args);
+            if (vm["nsamps"].defaulted()) {
+                total_num_samps = rx_stream->get_max_num_samps() * 100;
+            }
+            /************************************************************************
+             * Start the stream
+             ***********************************************************************/
+            uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+            rx_stream->issue_stream_cmd(stream_cmd);
+
+            /************************************************************************
+            * Allocate buffers
+            ***********************************************************************/
+            std::vector<std::complex<int16_t>*> buffs(NUMBER_OF_CHANNELS);
+            size_t spb = rx_stream->get_max_num_samps();
+            std::complex<int16_t> p[spb];
+            buffs[0] = p;
+
+            /************************************************************************
+             * Receive Data
+             ***********************************************************************/
+            size_t sample_iterations = total_num_samps / spb;
+            int err = 0;
+            size_t out_of_sequence_packets = 0;
+            for (size_t i = 0; i < sample_iterations && !err; i++) {
+                size_t n = rx_stream->recv(buffs, spb, md, 5);
+                if (md.out_of_sequence) {
+                    out_of_sequence_packets++;
+                }
+                if (!n) {
+                    fprintf(stderr, "*** No bytes received:\n%s\n***\n", md.to_pp_string(false).c_str());
+                    err = -1;
+                }
+                size_t ws = n *  ihd::ipsolon_rx_stream::BYTES_PER_IQ_PAIR;
+                ssize_t w = write(fd, buffs[0], ws);
+                if (w != ws) {
+                    fprintf(stderr, "Write failed. Request %lu bytes written, write returned:%lu. %s\n",
+                            n, w, strerror(errno));
+                }
+            }
+            stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
+            rx_stream->issue_stream_cmd(stream_cmd);
+            close(fd);
+
+            if (out_of_sequence_packets) {
+                fprintf(stderr, "*** Out of sequence packets:%zu\n", out_of_sequence_packets);
+            }
+            return(0);
         }
-        return(0);
     }
     catch (const std::exception &exc) {
         printf("EXCEPTION: %s",exc.what());
         exit(-1);
     }
+    return 0;
 }
