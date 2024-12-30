@@ -5,7 +5,6 @@
 */
 #include "ipsolon_rx_stream.hpp"
 #include "chameleon_rx_stream.hpp"
-#include "exception.hpp"
 
 using namespace ihd;
 
