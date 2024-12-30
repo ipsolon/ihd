@@ -45,6 +45,8 @@ private:
     in_addr_t _vita_ip;
     uint16_t _vita_port;
     uint32_t _stream_id{};
+    uint32_t _packet_size;
+    static constexpr uint32_t DEFAULT_PACKET_SIZE  = 8192;
 
     static constexpr uint32_t DEFAULT_FFT_SIZE = 256;
     static constexpr uint32_t DEFAULT_FFT_AVG  = 105;

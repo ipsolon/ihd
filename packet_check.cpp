@@ -108,7 +108,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
             ("fft_avg", po::value<uint32_t>(&fft_avg)->default_value(105), "FFT averaging count")
             ("args", po::value<std::string>(&args)->default_value(""), "ISRP device address args")
             ("stream_type",po::value<std::string>(&stream_type)->default_value("psd"), "Stream type - (psd or iq)")
-            ("packet_size",po::value<uint32_t>(&fft_avg)->default_value(8192), "Packet size for iq stream type")
+            ("packet_size",po::value<uint32_t>(&packet_size)->default_value(8192), "Packet size for iq stream type")
             ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -143,7 +143,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
      * Get Rx Stream
      ***********************************************************************/
     uhd::stream_args_t stream_args("sc16", "sc16");
-    if (vm.count(ihd::ipsolon_rx_stream::stream_type::PSD_STREAM)) {
+    if (stream_type == ihd::ipsolon_rx_stream::stream_type::PSD_STREAM) {
         stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
                          ihd::ipsolon_rx_stream::stream_type::PSD_STREAM;
         stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] =
@@ -155,7 +155,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         stream_args.args[ihd::ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY] =
                          std::to_string(fft_avg);
     }
-    else if (vm.count(ihd::ipsolon_rx_stream::stream_type::IQ_STREAM))
+    else if (stream_type == ihd::ipsolon_rx_stream::stream_type::IQ_STREAM)
     {
         stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
                   ihd::ipsolon_rx_stream::stream_type::IQ_STREAM;

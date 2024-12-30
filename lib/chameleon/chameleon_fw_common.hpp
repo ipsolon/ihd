@@ -12,6 +12,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "debug.hpp"
 
 #define CHAMELEON_FW_COMMS_UDP_PORT  64000
 #define CHAMELEON_FW_CMD_MAX_SIZE     9000
@@ -34,7 +35,7 @@ namespace ihd {
 
     class chameleon_fw_cmd_tune : public chameleon_fw_cmd {
     public:
-        chameleon_fw_cmd_tune(size_t c, uint64_t f) :
+        chameleon_fw_cmd_tune(std::size_t c, uint64_t f) :
             chameleon_fw_cmd("freq_set"),
             chan(c), freq(f) {}
 
@@ -46,13 +47,13 @@ namespace ihd {
         }
 
     private:
-        size_t chan{};
+        std::size_t chan{};
         uint64_t freq{};
     };
 
     class chameleon_fw_cmd_gain : public chameleon_fw_cmd {
     public:
-        chameleon_fw_cmd_gain(size_t c, double g) :
+        chameleon_fw_cmd_gain(std::size_t c, double g) :
             chameleon_fw_cmd("gain_set"),
             chan(c), gain(g) {}
 
@@ -64,13 +65,13 @@ namespace ihd {
         }
 
     private:
-        size_t chan{};
+        std::size_t chan{};
         double gain{};
     };
 
     class chameleon_fw_rx_cfg_set : public chameleon_fw_cmd {
     public:
-        chameleon_fw_rx_cfg_set(const size_t chan, std::string   data_type, const uint32_t fft_size,
+        chameleon_fw_rx_cfg_set(const std::size_t chan, std::string   data_type, const uint32_t fft_size,
                                 const uint8_t avg, const uint16_t packet_size=0) :
             chameleon_fw_cmd("rx_cfg_set"),
             m_data_type(std::move(data_type)),
@@ -81,22 +82,33 @@ namespace ihd {
 
         const char *to_command_string() override {
             std::stringstream ss;
-            ss << _cmd << " chan=" << m_chan << ", type=" << m_data_type << ", fft_size=" << m_fft_size << ", avg=" << m_avg;
+            if (m_data_type == "psd") {
+                ss << _cmd << " chan=" << m_chan << ", type=" << m_data_type << ", fft_size=" << m_fft_size << ", avg=" << m_avg;
+            }
+            else if (m_data_type == "iq")
+            {
+               ss << _cmd << " chan=" << m_chan << ", type=" << m_data_type << ", packet_size=" << m_packet_size;
+            }
+            else
+            {
+                dbfprintf(stderr,"Invalid stream type. Defaulting to psd");
+                ss << _cmd << " chan=" << m_chan << ", type=psd, fft_size=" << m_fft_size << ", avg=" << m_avg;
+            }
             _command_string = ss.str();
             return _command_string.c_str();
         }
- 
-    private:
+
+        private:
         std::string m_data_type;
         uint32_t m_fft_size;
         uint16_t m_avg;
         uint16_t m_packet_size;
-        size_t m_chan;
+        std::size_t m_chan;
     };
 
     class chameleon_fw_stream_rx_cfg : public chameleon_fw_cmd {
     public:
-        chameleon_fw_stream_rx_cfg(const size_t chan_mask, std::string    ip, const uint16_t port) :
+        chameleon_fw_stream_rx_cfg(const std::size_t chan_mask, std::string    ip, const uint16_t port) :
             chameleon_fw_cmd("stream_rx_cfg"),
             m_dest_port(port),
             m_dest_ip_address(std::move(ip)),
@@ -112,12 +124,12 @@ namespace ihd {
     private:
         uint16_t m_dest_port;
         std::string m_dest_ip_address;
-        size_t m_chan_mask;
+        std::size_t m_chan_mask;
     };
 
     class chameleon_fw_stream_start : public chameleon_fw_cmd {
     public:
-        explicit chameleon_fw_stream_start(const size_t id) :
+        explicit chameleon_fw_stream_start(const std::size_t id) :
             chameleon_fw_cmd("stream_start"),
             m_stream_id(id) {}
 
@@ -129,12 +141,12 @@ namespace ihd {
         }
 
     private:
-        size_t m_stream_id;
+        std::size_t m_stream_id;
     };
 
     class chameleon_fw_stream_stop : public chameleon_fw_cmd {
     public:
-        explicit chameleon_fw_stream_stop(const size_t chan) :
+        explicit chameleon_fw_stream_stop(const std::size_t chan) :
             chameleon_fw_cmd("stream_stop"),
             m_chan(chan) {}
 
@@ -146,7 +158,7 @@ namespace ihd {
         }
 
     private:
-        size_t m_chan;
+        std::size_t m_chan;
     };
 
     class chameleon_fw_cmd_stream : public chameleon_fw_cmd {
@@ -221,6 +233,6 @@ namespace ihd {
         static const char *ACK_STR;
         static const char *NCK_STR;
     };
-}
+};
 
 #endif //CHAMELEON_FW_COMMON_H

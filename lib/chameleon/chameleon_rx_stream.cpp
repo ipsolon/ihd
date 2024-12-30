@@ -25,6 +25,7 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
     _vita_ip_str(DEFAULT_VITA_IP_STR),
     _vita_ip(DEFAULT_VITA_IP),
     _vita_port(DEFAULT_VITA_PORT),
+    _packet_size(DEFAULT_PACKET_SIZE),
     _fft_size(DEFAULT_FFT_SIZE),
     _fft_avg(DEFAULT_FFT_AVG),
     _nChans(stream_cmd.channels.size()),
@@ -45,20 +46,20 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
     std::string type_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY];
     stream_type st(type_str);
     _stream_type = st;
+    if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY)) {
+        _vita_ip_str.assign(stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY]);
+        int err = inet_pton(AF_INET, _vita_ip_str.c_str(), &_vita_ip);
+        if (err != 1) {
+            THROW_SOCKET_ERROR();
+        }
+    }
+
+    if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY)) {
+        std::string port_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY];
+        _vita_port = std::stoul(port_str, nullptr, 10);
+    }
     if (_stream_type.modeEquals(stream_type::PSD_STREAM)) {
-        printf("Create FFT stream\n");
-        if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY)) {
-            _vita_ip_str.assign(stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY]);
-            int err = inet_pton(AF_INET, _vita_ip_str.c_str(), &_vita_ip);
-            if (err != 1) {
-                THROW_SOCKET_ERROR();
-            }
-        }
-        
-        if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY)) {
-            std::string port_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY];
-            _vita_port = std::stoul(port_str, nullptr, 10);
-        }
+        dbprintf("Create FFT stream\n");
         if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::FFT_SIZE_KEY)) {
             std::string fft_size = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_SIZE_KEY];
             _fft_size = std::strtol(fft_size.c_str(), nullptr, 10);
@@ -69,6 +70,10 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
         }
     } else {
         dbprintf("Create IQ stream\n");
+        if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::PACKET_SIZE_KEY)) {
+            std::string packet_size = stream_cmd.args[ipsolon_rx_stream::stream_type::PACKET_SIZE_KEY];
+            _packet_size = std::strtol(packet_size.c_str(), nullptr, 10);
+        }
     }
     open_socket();
 
