@@ -85,7 +85,7 @@ namespace ihd {
             _command_string = ss.str();
             return _command_string.c_str();
         }
-
+ 
     private:
         std::string m_data_type;
         uint32_t m_fft_size;
