@@ -46,6 +46,7 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
     stream_type st(type_str);
     _stream_type = st;
     if (_stream_type.modeEquals(stream_type::PSD_STREAM)) {
+        printf("Create FFT stream\n");
         if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY)) {
             _vita_ip_str.assign(stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY]);
             int err = inet_pton(AF_INET, _vita_ip_str.c_str(), &_vita_ip);
