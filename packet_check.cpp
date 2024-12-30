@@ -90,11 +90,12 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     size_t chan_mask;
     uint32_t total_time;
 
-
     std::string dest_ip;
     uint16_t dest_port;
     uint32_t fft_size;
     uint32_t fft_avg;
+    uint32_t packet_size;
+    std::string stream_type;
 
     po::options_description desc("Allowed options");
     desc.add_options()
@@ -106,6 +107,8 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
             ("fft_size", po::value<uint32_t>(&fft_size)->default_value(256), "FFT size (256, 512, 1024, 2048 or 4096")
             ("fft_avg", po::value<uint32_t>(&fft_avg)->default_value(105), "FFT averaging count")
             ("args", po::value<std::string>(&args)->default_value(""), "ISRP device address args")
+            ("stream_type",po::value<std::string>(&stream_type)->default_value("psd"), "Stream type - (psd or iq)")
+            ("packet_size",po::value<uint32_t>(&fft_avg)->default_value(8192), "Packet size for iq stream type")
             ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -140,13 +143,34 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
      * Get Rx Stream
      ***********************************************************************/
     uhd::stream_args_t stream_args("sc16", "sc16");
-
-    stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
-                 ihd::ipsolon_rx_stream::stream_type::PSD_STREAM;
-
-    stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] = dest_ip;
-    stream_args.args[ihd::ipsolon_rx_stream::stream_type::FFT_SIZE_KEY] = std::to_string(fft_size);
-    stream_args.args[ihd::ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY] = std::to_string(fft_avg);
+    if (vm.count(ihd::ipsolon_rx_stream::stream_type::PSD_STREAM)) {
+        stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
+                         ihd::ipsolon_rx_stream::stream_type::PSD_STREAM;
+        stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] =
+                        dest_ip;
+        stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] =
+                         std::to_string(dest_port);
+        stream_args.args[ihd::ipsolon_rx_stream::stream_type::FFT_SIZE_KEY] =
+                         std::to_string(fft_size);
+        stream_args.args[ihd::ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY] =
+                         std::to_string(fft_avg);
+    }
+    else if (vm.count(ihd::ipsolon_rx_stream::stream_type::IQ_STREAM))
+    {
+        stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
+                  ihd::ipsolon_rx_stream::stream_type::IQ_STREAM;
+        stream_args.args[ihd::ipsolon_rx_stream::stream_type::PACKET_SIZE_KEY] =
+                         packet_size;
+        stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] =
+                         dest_ip;
+        stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] =
+                         std::to_string(dest_port);
+    }
+    else
+    {
+        fprintf(stderr, "Error: Invalid stream_type\n");
+        exit(1);
+    }
 
     std::vector<std::thread *> thread_vector;
     std::vector<RxStream *> stream_vector;
