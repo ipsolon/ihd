@@ -271,15 +271,16 @@ void chameleon_rx_stream::start_stream()
 
     dbprintf("SEND rx_cfg_set nChans = %lu _chanMask 0x%X\n",_nChans,_chanMask);
 
-    for (int i = 0; i<_nChans; i++) {
-        size_t chan_num = 0;
-        chan_num = _chanMask & (1 << i);
-        if (chan_num) {
+    size_t chan_num = 1;
+    for (int i = 0; i<MAX_RX_CHANNELS; i++) {
+        size_t chan_enabled = _chanMask & (1 << i);
+        if (chan_enabled) {
             std::unique_ptr<chameleon_fw_cmd> rx_cfg_set_cmd(new chameleon_fw_rx_cfg_set(chan_num, stream_type_str,
                                                                         _fft_size, _fft_avg));
             chameleon_fw_comms chameleon_fw_rx_cfg_set(std::move(rx_cfg_set_cmd));
             _commander.send_request(chameleon_fw_rx_cfg_set);
         }
+        ++chan_num;
     }
 
     // Issue stream_rx_cfg - returns Stream id
