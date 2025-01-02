@@ -18,6 +18,7 @@ class ipsolon_rx_stream : public uhd::rx_streamer {
 public:
     ipsolon_rx_stream() = default;
 
+    static constexpr size_t MAX_RX_CHANNELS = 4;
     static constexpr size_t BYTES_PER_SAMPLE = 2;
     static constexpr size_t PACKET_HEADER_SIZE = (chdr_header::CHDR_W + sizeof(uint64_t)); /* CHDR + timestamp */
     static constexpr size_t BYTES_PER_IQ_PAIR  = (BYTES_PER_SAMPLE * 2);
