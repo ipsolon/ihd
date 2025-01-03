@@ -23,7 +23,7 @@ class chameleon_packet;
 
 class chameleon_rx_stream : public ipsolon_rx_stream {
 public:
-    static constexpr size_t default_timeout = 5;
+    static constexpr size_t default_timeout = 30;
     typedef std::complex<int16_t> chameleon_data_type;
 
     explicit chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr);
@@ -47,6 +47,7 @@ private:
     uint32_t _stream_id{};
     uint32_t _packet_size;
     static constexpr uint32_t DEFAULT_PACKET_SIZE  = 8192;
+    static constexpr uint32_t DEFAULT_IQ_BUFFER_MEM_SIZE = 0x28C58000;
 
     static constexpr uint32_t DEFAULT_FFT_SIZE = 256;
     static constexpr uint32_t DEFAULT_FFT_AVG  = 105;
@@ -57,7 +58,7 @@ private:
     size_t _bytes_per_packet;
     size_t _max_samples_per_packet;
 
-    static constexpr size_t buffer_mem_size = (4 * 1024 * 1024); /* The memory allocated to store received UDP packets */
+    size_t _buffer_mem_size = (4 * 1024 * 1024); /* The memory allocated to store received UDP packets */
     size_t _buffer_packet_cnt;
 
     timeval _vita_port_timeout = {default_timeout, 0};

@@ -16,10 +16,13 @@
 
 #include "safe_main.hpp"
 #include "ihd.h"
+#include "debug.hpp"
 
 namespace po = boost::program_options;
 
 #define NUMBER_OF_CHANNELS          1 /* We are limited to a single channel per stream right now */
+// FIXME
+#define PACKET_LIMIT_KLUDGE 83499
 
 class RxStream {
 public:
@@ -56,23 +59,28 @@ public:
         uint64_t errors = 0;
         uint64_t packets = 0;
         uint64_t bytes = 0;
-        while (std::chrono::high_resolution_clock::now() - startTime < duration) {
+        while ((std::chrono::high_resolution_clock::now() - startTime < duration) && (packets < PACKET_LIMIT_KLUDGE)) {
             size_t n = rx_stream->recv(buffs, spb, md, 5);
             if (md.out_of_sequence) {
-                //fprintf(stderr, "*** OUT OF SEQUENCE PACKET:\n%s\n***\n", md.to_pp_string(false).c_str());
+                fprintf(stderr, "*** OUT OF SEQUENCE PACKET:\n%s\n***\n", md.to_pp_string(false).c_str());
                 errors++;
             }
             if (!n) {
                 fprintf(stderr, "*** No bytes received:\n%s\n***\n", md.to_pp_string(false).c_str());
                 errors++;
+            } else {
+                packets++;
             }
             bytes += n;
-            packets++;
         }
+        auto finishTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::high_resolution_clock::now() - startTime);
         bytes *= 4; /* bytes = samples * 4 */
         bytes += 16 * packets; /* Account for CHDR */
+        double seconds =  (double)(finishTime.count()) / 1000.0;
         double megabits_per_second = (((double)bytes / total_time) / (1024*1024)) * 8;
-        printf("packets:%lu bytes:%lu Mb/s:%f errors:%lu\n", packets, bytes, megabits_per_second, errors);
+        printf("RESULT duration ms:%ld packets:%lu bytes:%lu Mb/s:%f errors:%lu\n",
+                       finishTime.count(), packets, bytes, megabits_per_second, errors);
         stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
         rx_stream->issue_stream_cmd(stream_cmd);
     }
@@ -100,7 +108,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     po::options_description desc("Allowed options");
     desc.add_options()
             ("help", "help message")
-            ("duration", po::value<uint32_t>(&total_time)->default_value(10), "total number of seconds to receive")
+            ("duration", po::value<uint32_t>(&total_time)->default_value(30), "total number of seconds to receive")
             ("chan_mask", po::value<size_t>(&chan_mask)->default_value(1), "channel mask (chan 1 = 0x1, chan 2 = 0x2, chan 1 & 2 = 0x3)")
             ("dest_ip", po::value<std::string>(&dest_ip)->default_value("0.0.0.0"), "destination IP address")
             ("dest_port", po::value<uint16_t>(&dest_port)->default_value(9090), "destination port")
@@ -108,7 +116,6 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
             ("fft_avg", po::value<uint32_t>(&fft_avg)->default_value(105), "FFT averaging count")
             ("args", po::value<std::string>(&args)->default_value(""), "ISRP device address args")
             ("stream_type",po::value<std::string>(&stream_type)->default_value("psd"), "Stream type - (psd or iq)")
-            ("packet_size",po::value<uint32_t>(&packet_size)->default_value(8192), "Packet size for iq stream type")
             ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -159,8 +166,6 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     {
         stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
                   ihd::ipsolon_rx_stream::stream_type::IQ_STREAM;
-        stream_args.args[ihd::ipsolon_rx_stream::stream_type::PACKET_SIZE_KEY] =
-                         packet_size;
         stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] =
                          dest_ip;
         stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] =

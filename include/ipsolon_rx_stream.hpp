@@ -38,9 +38,6 @@ public:
         static const std::string FFT_AVG_COUNT_KEY;
         static const std::string FFT_SIZE_KEY;
 
-        // iq stream parameter
-        static const std::string PACKET_SIZE_KEY;
-
         explicit stream_type(const std::string& st)
         {
             if (_modes.find(st) == _modes.end()) {

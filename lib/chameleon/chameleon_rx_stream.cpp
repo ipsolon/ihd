@@ -19,6 +19,8 @@
 using namespace ihd;
 
 const std::string chameleon_rx_stream::DEFAULT_VITA_IP_STR = "0.0.0.0";
+//FIXME - create a new stream class
+//#define DEFAULT_PACKET_SIZE 8192
 
 chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr) :
     _stream_type(ihd::ipsolon_rx_stream::stream_type::PSD_STREAM),
@@ -70,10 +72,7 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
         }
     } else {
         dbprintf("Create IQ stream\n");
-        if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::PACKET_SIZE_KEY)) {
-            std::string packet_size = stream_cmd.args[ipsolon_rx_stream::stream_type::PACKET_SIZE_KEY];
-            _packet_size = std::strtol(packet_size.c_str(), nullptr, 10);
-        }
+        _packet_size = DEFAULT_PACKET_SIZE;
     }
     open_socket();
 
@@ -86,9 +85,15 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
     _receive_thread_context.cv_samples = &cv_sample_queue;
     _receive_thread_context.socket_fd = _socket_fd;
 
-    _bytes_per_packet = (_fft_size * BYTES_PER_IQ_PAIR) + PACKET_HEADER_SIZE;
+    // FIXME this is for iq
+    _bytes_per_packet = DEFAULT_PACKET_SIZE;
+    _buffer_mem_size = DEFAULT_IQ_BUFFER_MEM_SIZE;
+    if (_stream_type.modeEquals(stream_type::PSD_STREAM)) {
+        _bytes_per_packet = (_fft_size * BYTES_PER_IQ_PAIR) + PACKET_HEADER_SIZE;
+        _buffer_mem_size = (4 * 1024 * 1024); /* The memory allocated to store received UDP packets */
+    }
     _max_samples_per_packet = (_bytes_per_packet - PACKET_HEADER_SIZE) / BYTES_PER_IQ_PAIR;
-    _buffer_packet_cnt = buffer_mem_size / _max_samples_per_packet;
+    _buffer_packet_cnt = _buffer_mem_size / _max_samples_per_packet;
 
     /* Fill the free queue */
     std::lock_guard<std::mutex> lock(mtx_free_queue);
@@ -281,7 +286,7 @@ void chameleon_rx_stream::start_stream()
         size_t chan_enabled = _chanMask & (1 << i);
         if (chan_enabled) {
             std::unique_ptr<chameleon_fw_cmd> rx_cfg_set_cmd(new chameleon_fw_rx_cfg_set(chan_num, stream_type_str,
-                                                                        _fft_size, _fft_avg));
+                                                                        _fft_size, _fft_avg,_packet_size));
             chameleon_fw_comms chameleon_fw_rx_cfg_set(std::move(rx_cfg_set_cmd));
             _commander.send_request(chameleon_fw_rx_cfg_set);
         }

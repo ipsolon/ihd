@@ -15,6 +15,7 @@
 
 #include "safe_main.hpp"
 #include "ihd.h"
+#include "debug.hpp"
 
 namespace po = boost::program_options;
 
@@ -40,7 +41,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     desc.add_options()
         ("help", "help message")
         ("file", po::value<std::string>(&file)->default_value("isrp_samples.dat"), "name of the file to write binary samples to")
-        ("duration", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
+        ("duration", po::value<double>(&total_time)->default_value(30), "total number of seconds to receive")
         ("gain", po::value<double>(&gain)->default_value(0), "set RX gain")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
         ("freq", po::value<double>(&freq)->default_value(DEFAULT_FREQ), "RF center frequency in Hz")
@@ -51,7 +52,6 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         ("fft_avg", po::value<uint32_t>(&fft_avg)->default_value(105), "FFT averaging count")
         ("args",po::value<std::string>(&args)->default_value(""), "ISRP device address args")
         ("stream_type",po::value<std::string>(&stream_type)->default_value("psd"), "Stream type - (psd or iq)")
-        ("packet_size",po::value<uint32_t>(&fft_avg)->default_value(8192), "Packet size for iq stream type")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -93,15 +93,13 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     try {
         isrp = ihd::ipsolon_isrp::make(args);
 
-        if (!vm["freq"].defaulted()) {
-            uhd::tune_request_t tune_request{};
-            tune_request.rf_freq = freq;
-            isrp->set_rx_freq(tune_request, channel);
-        }
+        // set the frequency
+        uhd::tune_request_t tune_request{};
+        tune_request.rf_freq = freq;
+        isrp->set_rx_freq(tune_request, channel);
 
-        if (!vm["gain"].defaulted()) {
-            isrp->uhd::usrp::multi_usrp::set_rx_gain(gain, channel);
-        }
+        // set the gain
+        isrp->uhd::usrp::multi_usrp::set_rx_gain(gain, channel);
 
         /************************************************************************
          * Get Rx Stream
@@ -126,8 +124,6 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         } else if (stream_type == ihd::ipsolon_rx_stream::stream_type::IQ_STREAM) {
             stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
                       ihd::ipsolon_rx_stream::stream_type::IQ_STREAM;
-            stream_args.args[ihd::ipsolon_rx_stream::stream_type::PACKET_SIZE_KEY] =
-                             std::to_string(packet_size);
             stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] =
                              dest_ip;
             stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] =
@@ -163,55 +159,31 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         size_t sample_iterations = total_num_samps / spb;
         int err = 0;
         size_t out_of_sequence_packets = 0;
+        dbprintf("receiving data sample_iterations = %lu\n",sample_iterations);
         for (size_t i = 0; i < sample_iterations && !err; i++) {
             size_t n = rx_stream->recv(buffs, spb, md, 5);
             if (md.out_of_sequence) {
                 out_of_sequence_packets++;
             }
-
-            if (!vm["gain"].defaulted()) {
-                isrp->uhd::usrp::multi_usrp::set_rx_gain(gain, channel);
+            if (!n) {
+                fprintf(stderr, "*** No bytes received:\n%s\n***\n", md.to_pp_string(false).c_str());
+                err = -1;
             }
-
-            /************************************************************************
-            * Allocate buffers
-            ***********************************************************************/
-            std::vector<std::complex<int16_t>*> buffs(NUMBER_OF_CHANNELS);
-            size_t spb = rx_stream->get_max_num_samps();
-            std::complex<int16_t> p[spb];
-            buffs[0] = p;
-
-            /************************************************************************
-             * Receive Data
-             ***********************************************************************/
-            size_t sample_iterations = total_num_samps / spb;
-            int err = 0;
-            size_t out_of_sequence_packets = 0;
-            for (size_t i = 0; i < sample_iterations && !err; i++) {
-                size_t n = rx_stream->recv(buffs, spb, md, 5);
-                if (md.out_of_sequence) {
-                    out_of_sequence_packets++;
-                }
-                if (!n) {
-                    fprintf(stderr, "*** No bytes received:\n%s\n***\n", md.to_pp_string(false).c_str());
-                    err = -1;
-                }
-                size_t ws = n *  ihd::ipsolon_rx_stream::BYTES_PER_IQ_PAIR;
-                ssize_t w = write(fd, buffs[0], ws);
-                if (w != ws) {
-                    fprintf(stderr, "Write failed. Request %lu bytes written, write returned:%lu. %s\n",
-                            n, w, strerror(errno));
-                }
+            size_t ws = n *  ihd::ipsolon_rx_stream::BYTES_PER_IQ_PAIR;
+            ssize_t w = write(fd, buffs[0], ws);
+            if (w != ws) {
+                fprintf(stderr, "Write failed. Request %lu bytes written, write returned:%lu. %s\n",
+                        n, w, strerror(errno));
             }
-            stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
-            rx_stream->issue_stream_cmd(stream_cmd);
-            close(fd);
-
-            if (out_of_sequence_packets) {
-                fprintf(stderr, "*** Out of sequence packets:%zu\n", out_of_sequence_packets);
-            }
-            return(0);
         }
+        stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
+        rx_stream->issue_stream_cmd(stream_cmd);
+        close(fd);
+
+        if (out_of_sequence_packets) {
+            fprintf(stderr, "*** Out of sequence packets:%zu\n", out_of_sequence_packets);
+        }
+
     }
     catch (const std::exception &exc) {
         printf("EXCEPTION: %s",exc.what());

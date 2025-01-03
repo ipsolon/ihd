@@ -11,7 +11,6 @@ using namespace ihd;
 const std::string ipsolon_rx_stream::stream_type::PSD_STREAM = "psd";
 const std::string ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY = "stream_format";
 const std::string ipsolon_rx_stream::stream_type::IQ_STREAM         = "iq";
-const std::string ipsolon_rx_stream::stream_type::PACKET_SIZE_KEY   = "PACKET_SIZE";
 
 const std::string ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY   = "IP";
 const std::string ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY = "PORT";
