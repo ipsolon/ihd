@@ -12,6 +12,12 @@ ihd::chameleon_jammer_tx_stream::chameleon_jammer_tx_stream(const uhd::stream_ar
         case 2:
             port = std::to_string(JAMMER_PORT_TX2);
             break;
+	case 3:
+            port = std::to_string(JAMMER_PORT_TX2+1);
+            break;
+        case 4:
+            port = std::to_string(JAMMER_PORT_TX3+1);
+            break;    
         case 1:
         default:
              port = std::to_string(JAMMER_PORT_TX1);
