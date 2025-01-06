@@ -324,7 +324,8 @@ void chameleon_rx_stream::stop_stream()
     std::unique_ptr<chameleon_fw_cmd> stream_stop_cmd(
             new chameleon_fw_stream_stop(_stream_id));
     chameleon_fw_comms request(std::move(stream_stop_cmd));
-    _commander.send_request(request);
+    // The response takes a LONG time so set timeout to 30 seconds
+    _commander.send_request(request, 30000);
 
     // Check ACK/NACK
     _stream_id = 0;

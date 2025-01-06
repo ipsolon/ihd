@@ -36,7 +36,7 @@ namespace ihd {
             ret = _udp_cmd_port->recv(boost::asio::buffer(response), (static_cast<double>(timeout_ms) / 1000.0));
             if (!ret) { // Timeout
                 request.setResponseTimedOut();
-                dbprintf("timeout response = %s\n",response);
+                dbprintf("timeout for %s\n",str.c_str());
                 err = -1;
             } else {
                 request.setResponse(response);
