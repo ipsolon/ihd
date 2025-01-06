@@ -179,7 +179,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
 
     std::vector<std::thread *> thread_vector;
     std::vector<RxStream *> stream_vector;
-    int chan = 0;
+    int chan = 1;
     while(chan_mask != 0) {
         if ((1 << (chan - 1)) & chan_mask) {
             stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] = std::to_string(dest_port);
@@ -187,10 +187,13 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
             auto *thread_obj = new std::thread(&RxStream::stream_run, rxStream);
             thread_vector.push_back(thread_obj);
             stream_vector.push_back(rxStream);
-            chan_mask &= ~chan;
+            chan_mask &= ~( 1 >> (chan-1));
             dest_port++;
         }
         chan++;
+        if (chan > 4) {
+            chan_mask = 0;
+        }
     }
     for (auto t : thread_vector) {
         t->join();
