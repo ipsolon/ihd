@@ -22,7 +22,7 @@ namespace po = boost::program_options;
 
 #define NUMBER_OF_CHANNELS          1 /* We are limited to a single channel per stream right now */
 // FIXME
-#define PACKET_LIMIT_KLUDGE 83499
+#define TEMP_PACKET_LIMIT 83499
 
 class RxStream {
 public:
@@ -59,7 +59,7 @@ public:
         uint64_t errors = 0;
         uint64_t packets = 0;
         uint64_t bytes = 0;
-        while ((std::chrono::high_resolution_clock::now() - startTime < duration) && (packets < PACKET_LIMIT_KLUDGE)) {
+        while ((std::chrono::high_resolution_clock::now() - startTime < duration) && (packets < TEMP_PACKET_LIMIT)) {
             size_t n = rx_stream->recv(buffs, spb, md, 5);
             if (md.out_of_sequence) {
                 fprintf(stderr, "*** OUT OF SEQUENCE PACKET:\n%s\n***\n", md.to_pp_string(false).c_str());
