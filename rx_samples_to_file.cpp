@@ -176,20 +176,6 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
             if (md.out_of_sequence) {
                 out_of_sequence_packets++;
             }
-            if (!n) {
-                fprintf(stderr, "*** No bytes received:\n%s\n***\n", md.to_pp_string(false).c_str());
-                err = -1;
-            }
-            size_t ws = n *  ihd::ipsolon_rx_stream::BYTES_PER_IQ_PAIR;
-            ssize_t w = write(fd, buffs[0], ws);
-            if (w != ws) {
-                fprintf(stderr, "Write failed. Request %lu bytes written, write returned:%lu. %s\n",
-                        n, w, strerror(errno));
-            }
-        }
-        stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
-        rx_stream->issue_stream_cmd(stream_cmd);
-        close(fd);
 
         if (out_of_sequence_packets) {
             fprintf(stderr, "*** Out of sequence packets:%zu\n", out_of_sequence_packets);
