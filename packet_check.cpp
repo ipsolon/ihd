@@ -16,13 +16,10 @@
 
 #include "safe_main.hpp"
 #include "ihd.h"
-#include "debug.hpp"
 
 namespace po = boost::program_options;
 
 #define NUMBER_OF_CHANNELS          1 /* We are limited to a single channel per stream right now */
-// FIXME
-#define TEMP_PACKET_LIMIT 83499
 
 class RxStream {
 public:
@@ -33,16 +30,11 @@ public:
         rx_stream = isrp->get_rx_stream(stream_args);
     }
 
+    // Start a threads to receive iq/psd data - one for each channel enabled in the chan_mask
+    virtual void run_loop() = 0;
+
     void stream_run() {
-        uhd::rx_metadata_t md;
         std::cout << "Run stream for channel:" << channel << std::endl;
-        /************************************************************************
-         * Allocate buffers
-         ***********************************************************************/
-        std::vector<std::complex<int16_t>*> buffs(NUMBER_OF_CHANNELS);
-        size_t spb = rx_stream->get_max_num_samps();
-        std::complex<int16_t> p[spb];
-        buffs[0] = p;
 
         /************************************************************************
          * Start the stream
@@ -53,12 +45,93 @@ public:
         /************************************************************************
          * Receive Data
          ***********************************************************************/
+	run_loop();
+        stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
+        rx_stream->issue_stream_cmd(stream_cmd);
+    }
+private:
+    uhd::stream_args_t stream_args{};
+    size_t channel{};
+protected:
+    uint32_t total_time{};
+    uhd::rx_streamer::sptr rx_stream{};
+};
+
+class RxStreamPsd : public RxStream {
+public:
+    RxStreamPsd(size_t chan, ihd::ipsolon_isrp::sptr &isrp, uint32_t tt, uhd::stream_args_t &stream_args)
+        : RxStream(chan, isrp, tt, stream_args) {
+    }
+    virtual ~RxStreamPsd() = default;
+
+private:
+    void run_loop() override {
+
+        uhd::rx_metadata_t md;
+        /************************************************************************
+         * Allocate buffers
+         ***********************************************************************/
+        std::vector<std::complex<int16_t>*> buffs(NUMBER_OF_CHANNELS);
+        size_t spb = rx_stream->get_max_num_samps();
+        std::complex<int16_t> p[spb];
+        buffs[0] = p;
         auto startTime = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::seconds(total_time);
 
         uint64_t errors = 0;
         uint64_t packets = 0;
         uint64_t bytes = 0;
+        while (std::chrono::high_resolution_clock::now() - startTime < duration) {
+            size_t n = rx_stream->recv(buffs, spb, md, 5);
+            if (md.out_of_sequence) {
+                fprintf(stderr, "*** OUT OF SEQUENCE PACKET:\n%s\n***\n", md.to_pp_string(false).c_str());
+                errors++;
+            }
+            if (!n) {
+                fprintf(stderr, "*** No bytes received:\n%s\n***\n", md.to_pp_string(false).c_str());
+                errors++;
+            } else {
+                packets++;
+            }
+            bytes += n;
+        }
+        auto finishTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::high_resolution_clock::now() - startTime);
+        bytes *= 4; /* bytes = samples * 4 */
+        bytes += 16 * packets; /* Account for CHDR */
+        double megabits_per_second = (((double)bytes / total_time) / (1024*1024)) * 8;
+        printf("RESULT duration ms:%ld packets:%lu bytes:%lu Mb/s:%f errors:%lu\n",
+                       finishTime.count(), packets, bytes, megabits_per_second, errors);
+    }
+
+};
+
+class RxStreamIq : public RxStream {
+public:
+    RxStreamIq(size_t chan, ihd::ipsolon_isrp::sptr &isrp, uint32_t tt, uhd::stream_args_t &stream_args)
+        : RxStream(chan, isrp, tt, stream_args) {
+    }
+
+    virtual ~RxStreamIq() = default;
+
+private:
+    void run_loop() override {
+
+        uhd::rx_metadata_t md;
+        /************************************************************************
+         * Allocate buffers
+         ***********************************************************************/
+        std::vector<std::complex<int16_t>*> buffs(NUMBER_OF_CHANNELS);
+        size_t spb = rx_stream->get_max_num_samps();
+        std::complex<int16_t> p[spb];
+        buffs[0] = p;
+        auto startTime = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::seconds(total_time);
+
+        uint64_t errors = 0;
+        uint64_t packets = 0;
+        uint64_t bytes = 0;
+        // FIXME - TEMP_PACKET_LIMIT is temporary until udp keeps up with dma
         while ((std::chrono::high_resolution_clock::now() - startTime < duration) && (packets < TEMP_PACKET_LIMIT)) {
             size_t n = rx_stream->recv(buffs, spb, md, 5);
             if (md.out_of_sequence) {
@@ -77,19 +150,12 @@ public:
                 std::chrono::high_resolution_clock::now() - startTime);
         bytes *= 4; /* bytes = samples * 4 */
         bytes += 16 * packets; /* Account for CHDR */
-        double seconds =  (double)(finishTime.count()) / 1000.0;
         double megabits_per_second = (((double)bytes / total_time) / (1024*1024)) * 8;
         printf("RESULT duration ms:%ld packets:%lu bytes:%lu Mb/s:%f errors:%lu\n",
                        finishTime.count(), packets, bytes, megabits_per_second, errors);
-        stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
-        rx_stream->issue_stream_cmd(stream_cmd);
     }
-private:
-    uhd::rx_streamer::sptr rx_stream{};
-    uhd::stream_args_t stream_args{};
-    size_t channel{};
-    uint32_t total_time{};
 };
+
 
 int IHD_SAFE_MAIN(int argc, char *argv[])
 {
@@ -102,7 +168,6 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     uint16_t dest_port;
     uint32_t fft_size;
     uint32_t fft_avg;
-    uint32_t packet_size;
     std::string stream_type;
 
     po::options_description desc("Allowed options");
@@ -180,21 +245,32 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
     std::vector<std::thread *> thread_vector;
     std::vector<RxStream *> stream_vector;
     int chan = 1;
+
     while(chan_mask != 0) {
-        if ((1 << (chan - 1)) & chan_mask) {
+        size_t current_mask = 1 << (chan -1);
+        if (current_mask & chan_mask) {
             stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] = std::to_string(dest_port);
-            auto *rxStream = new RxStream(chan, isrp, total_time, stream_args);
-            auto *thread_obj = new std::thread(&RxStream::stream_run, rxStream);
+            std::thread *thread_obj;
+            RxStream *rxStream;
+            if (stream_type == ihd::ipsolon_rx_stream::stream_type::PSD_STREAM) {
+               rxStream = new RxStreamPsd(chan, isrp, total_time, stream_args);
+               thread_obj = new std::thread(&RxStream::stream_run, rxStream);
+            } else
+            {
+               rxStream = new RxStreamIq(chan, isrp, total_time, stream_args);
+               thread_obj = new std::thread(&RxStream::stream_run, rxStream);
+	    }
             thread_vector.push_back(thread_obj);
             stream_vector.push_back(rxStream);
-            chan_mask &= ~( 1 >> (chan-1));
+            chan_mask &= ~(current_mask);
             dest_port++;
         }
         chan++;
-        if (chan > 4) {
+        if (chan > ihd::ipsolon_rx_stream::MAX_RX_CHANNELS) {
             chan_mask = 0;
         }
     }
+
     for (auto t : thread_vector) {
         t->join();
         free(t);
