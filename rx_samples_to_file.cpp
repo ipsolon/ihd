@@ -21,6 +21,8 @@ namespace po = boost::program_options;
 
 #define NUMBER_OF_CHANNELS          1 /* We are limited to a single channel right now */
 #define DEFAULT_FREQ       2400000000.0
+#define DEFAULT_FFT_AVG    120
+#define DEFAULT_FFT_SIZE   256
 
 int IHD_SAFE_MAIN(int argc, char *argv[])
 {
@@ -43,13 +45,13 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
         ("file", po::value<std::string>(&file)->default_value("isrp_samples.dat"), "name of the file to write binary samples to")
         ("duration", po::value<double>(&total_time)->default_value(30), "total number of seconds to receive")
         ("gain", po::value<double>(&gain)->default_value(0), "set RX gain")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
+        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive.")
         ("freq", po::value<double>(&freq)->default_value(DEFAULT_FREQ), "RF center frequency in Hz")
         ("channel", po::value<size_t>(&channel)->default_value(1), "which channel to use")
         ("dest_ip", po::value<std::string>(&dest_ip)->default_value("0.0.0.0"), "Destination IP address")
         ("dest_port", po::value<uint16_t>(&dest_port)->default_value(9090), "Destination port")
-        ("fft_size", po::value<uint32_t>(&fft_size)->default_value(256), "FFT size (256, 512, 1024, 2048 or 4096")
-        ("fft_avg", po::value<uint32_t>(&fft_avg)->default_value(105), "FFT averaging count")
+        ("fft_size", po::value<uint32_t>(&fft_size)->default_value(DEFAULT_FFT_SIZE), "FFT size (256, 512, 1024, 2048 or 4096")
+        ("fft_avg", po::value<uint32_t>(&fft_avg)->default_value(DEFAULT_FFT_AVG), "FFT averaging count")
         ("args",po::value<std::string>(&args)->default_value(""), "ISRP device address args")
         ("stream_type",po::value<std::string>(&stream_type)->default_value("psd"), "Stream type - (psd or iq)")
     ;
