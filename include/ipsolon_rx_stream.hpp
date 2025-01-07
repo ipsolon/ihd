@@ -12,55 +12,53 @@
 #include "ipsolon_chdr_header.h"
 
 namespace ihd {
-
-class ipsolon_rx_stream : public uhd::rx_streamer {
-
-public:
-    ipsolon_rx_stream() = default;
-
-    static constexpr size_t MAX_RX_CHANNELS = 4;
-    static constexpr size_t BYTES_PER_SAMPLE = 2;
-    static constexpr size_t PACKET_HEADER_SIZE = (chdr_header::CHDR_W + sizeof(uint64_t)); /* CHDR + timestamp */
-    static constexpr size_t BYTES_PER_IQ_PAIR  = (BYTES_PER_SAMPLE * 2);
-
-    typedef std::shared_ptr<ipsolon_rx_stream> sptr;
-
-    class stream_type {
+    class ipsolon_rx_stream : public uhd::rx_streamer {
     public:
-        static const std::string STREAM_FORMAT_KEY;
-        static const std::string IQ_STREAM;
-        static const std::string PSD_STREAM;
+        ipsolon_rx_stream() = default;
 
-        static const std::string STREAM_DEST_IP_KEY;
-        static const std::string STREAM_DEST_PORT_KEY;
+        static constexpr size_t MAX_RX_CHANNELS = 4;
+        static constexpr size_t BYTES_PER_SAMPLE = 2;
+        static constexpr size_t PACKET_HEADER_SIZE = (chdr_header::CHDR_W + sizeof(uint64_t)); /* CHDR + timestamp */
+        static constexpr size_t BYTES_PER_IQ_PAIR = (BYTES_PER_SAMPLE * 2);
 
-        static const std::string FFT_AVG_COUNT_KEY;
-        static const std::string FFT_SIZE_KEY;
+        typedef std::shared_ptr<ipsolon_rx_stream> sptr;
 
-        explicit stream_type(const std::string& st)
-        {
-            if (_modes.find(st) == _modes.end()) {
-                throw uhd::key_error("Invalid stream mode:" + st);
+        class stream_type {
+        public:
+            static const std::string STREAM_FORMAT_KEY;
+            static const std::string IQ_STREAM;
+            static const std::string PSD_STREAM;
+
+            static const std::string STREAM_DEST_IP_KEY;
+            static const std::string STREAM_DEST_PORT_KEY;
+
+            // psd stream parameters
+            static const std::string FFT_AVG_COUNT_KEY;
+            static const std::string FFT_SIZE_KEY;
+
+            explicit stream_type(const std::string &st) {
+                if (_modes.find(st) == _modes.end()) {
+                    throw uhd::key_error("Invalid stream mode:" + st);
+                }
+                _stream_mode_str = st;
+            };
+
+            [[nodiscard]]
+            const std::string &getStreamMode() const {
+                return _stream_mode_str;
             }
-            _stream_mode_str = st;
+
+            bool modeEquals(const std::string &mode) const {
+                return mode == _stream_mode_str;
+            }
+
+        private:
+            std::set<std::string> _modes{IQ_STREAM, PSD_STREAM};
+            std::string _stream_mode_str;
         };
-        [[nodiscard]]
-        const std::string &getStreamMode() const {
-            return _stream_mode_str;
-        }
 
-        bool modeEquals(const std::string& mode) const {
-            return mode == _stream_mode_str;
-        }
-
-    private:
-        std::set<std::string> _modes { IQ_STREAM, PSD_STREAM};
-        std::string _stream_mode_str;
+        static sptr make(const uhd::stream_args_t &stream_cmd, const uhd::device_addr_t &_device_addr);
     };
-
-    static sptr make(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& _device_addr);
-};
-
 } // ihd
 
 #endif //IPSOLON_STREAM_HPP
