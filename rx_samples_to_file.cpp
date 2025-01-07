@@ -80,7 +80,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
                                         S_IWGRP | S_IROTH | S_IWOTH);
     if (fd < 0) {
         perror("File Open error");
-        exit(fd);
+        return -1;
     }
 
     /************************************************************************
@@ -191,6 +191,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
 
         if (out_of_sequence_packets) {
             fprintf(stderr, "*** Out of sequence packets:%zu\n", out_of_sequence_packets);
+            return -1;
         }
 
     }
