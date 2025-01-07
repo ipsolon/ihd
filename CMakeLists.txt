@@ -35,7 +35,8 @@ target_link_libraries(rx_samples_to_file -luhd ${Boost_LIBRARIES})
 target_link_libraries(packet_check -luhd ${Boost_LIBRARIES})
 target_link_libraries(ipsolon_timed_jammer -luhd ${Boost_LIBRARIES})
 
-add_library(ihd SHARED ${LIB_FILES})
+add_library(ihd SHARED ${LIB_FILES}
+        include/debug.hpp)
 
 install(TARGETS ihd
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

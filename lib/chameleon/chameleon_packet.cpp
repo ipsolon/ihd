@@ -6,6 +6,7 @@
 
 #include "chameleon_packet.hpp"
 #include "chameleon_rx_stream.hpp"
+#include <exception.hpp>
 
 using namespace ihd;
 
@@ -37,14 +38,14 @@ chdr_header chameleon_packet::getCHDR() const
         return chdr_header(0);
     } else {
         return chdr_header(
-                (uint64_t) _packet_mem[0] |
-                (uint64_t) _packet_mem[1] << 8 |
-                (uint64_t) _packet_mem[2] << 16 |
-                (uint64_t) _packet_mem[3] << 24 |
-                (uint64_t) _packet_mem[4] << 32 |
-                (uint64_t) _packet_mem[5] << 40 |
-                (uint64_t) _packet_mem[6] << 48 |
-                (uint64_t) _packet_mem[7] << 56);
+                static_cast<uint64_t>(_packet_mem[0]) |
+                static_cast<uint64_t>(_packet_mem[1]) << 8 |
+                static_cast<uint64_t>(_packet_mem[2]) << 16 |
+                static_cast<uint64_t>(_packet_mem[3]) << 24 |
+                static_cast<uint64_t>(_packet_mem[4]) << 32 |
+                static_cast<uint64_t>(_packet_mem[5]) << 40 |
+                static_cast<uint64_t>(_packet_mem[6]) << 48 |
+                static_cast<uint64_t>(_packet_mem[7]) << 56);
     }
 }
 
@@ -54,14 +55,14 @@ uint64_t chameleon_packet::getTimestamp() const
     if(_packet_mem == nullptr) {
         return 0;
     } else {
-        return (uint64_t) _packet_mem[0] |
-               (uint64_t) _packet_mem[1] << 8 |
-               (uint64_t) _packet_mem[2] << 16 |
-               (uint64_t) _packet_mem[3] << 24 |
-               (uint64_t) _packet_mem[4] << 32 |
-               (uint64_t) _packet_mem[5] << 40 |
-               (uint64_t) _packet_mem[6] << 48 |
-               (uint64_t) _packet_mem[7] << 56;;
+        return static_cast<uint64_t>(_packet_mem[0]) |
+               static_cast<uint64_t>(_packet_mem[1]) << 8 |
+               static_cast<uint64_t>(_packet_mem[2]) << 16 |
+               static_cast<uint64_t>(_packet_mem[3]) << 24 |
+               static_cast<uint64_t>(_packet_mem[4]) << 32 |
+               static_cast<uint64_t>(_packet_mem[5]) << 40 |
+               static_cast<uint64_t>(_packet_mem[6]) << 48 |
+               static_cast<uint64_t>(_packet_mem[7]) << 56;;
     }
 }
 

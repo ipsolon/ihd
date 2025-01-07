@@ -5,13 +5,12 @@
 */
 #include "ipsolon_rx_stream.hpp"
 #include "chameleon_rx_stream.hpp"
-#include "exception.hpp"
 
 using namespace ihd;
 
-const std::string ipsolon_rx_stream::stream_type::FFT_STREAM = "FFT";
+const std::string ipsolon_rx_stream::stream_type::PSD_STREAM = "psd";
 const std::string ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY = "stream_format";
-const std::string ipsolon_rx_stream::stream_type::IQ_STREAM         = "IQ";
+const std::string ipsolon_rx_stream::stream_type::IQ_STREAM         = "iq";
 
 const std::string ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY   = "IP";
 const std::string ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY = "PORT";
