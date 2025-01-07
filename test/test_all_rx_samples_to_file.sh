@@ -13,7 +13,6 @@ ret_code=$?
 if [ $ret_code != 0 ]; then let "errors=errors+1";  echo -e "***ERROR1\n\n"; fi
 ls -al isrp_samples.dat
 FILESIZE=$(stat -c%s "$FILENAME")
-echo "FILESIZE FFT FILE $FILESIZE SHOULD BE $FILE_SIZE_256_FFT"
 if [[ $FILESIZE != $FILE_SIZE_256_FFT ]]; then let "file_size_errors=file_size_errors+1"; echo -e "\n***ERROR file size ${FILESIZE} ne fft size ${FFT_FILES_256_FFT}\n\n"; fi
 
 echo -e "\n\n\n***** psd fft_size=256 channel = 2"
@@ -23,7 +22,6 @@ ret_code=$?
 if [ $ret_code != 0 ]; then let "errors=errors+1"; echo -e "***ERROR3\n\n"; fi
 ls -al isrp_samples.dat
 FILESIZE=$(stat -c%s "$FILENAME")
-echo "FILESIZE = ${FILESIZE}"
 if [[ $FILESIZE != $FILE_SIZE_256_FFT ]]; then let "file_size_errors=file_size_errors+1"; echo -e "\n***ERROR file size ${FILESIZE} ne fft size ${FFT_FILES_256_FFT}\n\n"; fi
 
 echo -e "\n\n\n***** psd fft_size=256 channel = 3"
