@@ -1,11 +1,6 @@
 #!/bin/bash 
-#if [ $# -eq 0 ];`
-#then
+// FIXME - make functions maybe pass in NUM_SAMPS and calculate file size
 let "NUM_SAMPS=100000"
-#fi
-#if [ $#1 -eq 1 ];
-#    let "NUM_SAMPS=$1";
-#fi
 
 let "FILE_SIZE_256_FFT=399360"
 FILENAME=isrp_samples.dat
