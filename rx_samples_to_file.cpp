@@ -128,6 +128,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
                              dest_ip;
             stream_args.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] =
                              std::to_string(dest_port);
+
         }
         else
         {
@@ -137,8 +138,16 @@ int IHD_SAFE_MAIN(int argc, char *argv[])
 
         auto rx_stream = isrp->get_rx_stream(stream_args);
         if (vm["nsamps"].defaulted()) {
-            total_num_samps = rx_stream->get_max_num_samps() * 100;
+            if (stream_type == ihd::ipsolon_rx_stream::stream_type::IQ_STREAM) {
+                // FIXME Temporary set total_num_samps to current max limit
+                total_num_samps = rx_stream->get_max_num_samps() * TEMP_PACKET_LIMIT;     
+            }
+            else {
+                total_num_samps = rx_stream->get_max_num_samps() * 100;
+            }
+
         }
+
         /************************************************************************
          * Start the stream
          ***********************************************************************/

@@ -19,8 +19,8 @@
 using namespace ihd;
 
 const std::string chameleon_rx_stream::DEFAULT_VITA_IP_STR = "0.0.0.0";
-//FIXME - create a new stream class
-//#define DEFAULT_PACKET_SIZE 8192
+//FIXME - need to figure out buffer sizes
+#define PSD_STREAM_BUFFER_SIZE  (4 * 1024 * 1024) 
 
 chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr) :
     _stream_type(ihd::ipsolon_rx_stream::stream_type::PSD_STREAM),
@@ -73,6 +73,7 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
     } else {
         dbprintf("Create IQ stream\n");
         _packet_size = DEFAULT_PACKET_SIZE;
+        _vita_port_timeout = {0, 500000};;
     }
     open_socket();
 
@@ -90,7 +91,8 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, c
     _buffer_mem_size = DEFAULT_IQ_BUFFER_MEM_SIZE;
     if (_stream_type.modeEquals(stream_type::PSD_STREAM)) {
         _bytes_per_packet = (_fft_size * BYTES_PER_IQ_PAIR) + PACKET_HEADER_SIZE;
-        _buffer_mem_size = (4 * 1024 * 1024); /* The memory allocated to store received UDP packets */
+        // FIXME - fix buffering? Need to speed up udp
+        _buffer_mem_size = (PSD_STREAM_BUFFER_SIZE); /* The memory allocated to store received UDP packets */
     }
     _max_samples_per_packet = (_bytes_per_packet - PACKET_HEADER_SIZE) / BYTES_PER_IQ_PAIR;
     _buffer_packet_cnt = _buffer_mem_size / _max_samples_per_packet;
@@ -247,10 +249,8 @@ void chameleon_rx_stream::receive_thread_func(receive_thread_context *rtc)
                 rtc->q_samples->push(cp);
                 rtc->cv_samples->notify_one();
 
-            } else if (n < 0) {
-                dbfprintf(stderr, "Receive error. errno: %d\n",errno);
-            } else { // is zero
-                dbfprintf(stderr,"Receive timeout\n");
+            } else if (rtc->run) {
+                dbfprintf(stderr, "Receive error. n:%ld errno: %d\n", n, errno);
             }
         }
     }

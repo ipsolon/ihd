@@ -23,7 +23,7 @@ class chameleon_packet;
 
 class chameleon_rx_stream : public ipsolon_rx_stream {
 public:
-    static constexpr size_t default_timeout = 30;
+    static constexpr size_t default_timeout = 30; // short for IQ longer for psd
     typedef std::complex<int16_t> chameleon_data_type;
 
     explicit chameleon_rx_stream(const uhd::stream_args_t& stream_cmd, const uhd::device_addr_t& device_addr);
@@ -99,6 +99,7 @@ private:
         std::queue<chameleon_packet*> *q_samples;
         std::mutex *mtx_samples;
         std::condition_variable *cv_samples;
+
 
     } receive_thread_context_t;
 
