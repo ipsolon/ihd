@@ -24,7 +24,7 @@ namespace ihd {
 
     protected:
         void send_rx_cfg_set_cmd(uint32_t chanMask) override;
-        size_t get_max_num_samps() override {
+        size_t get_max_num_samps() const {
             return _max_samples_per_packet;
         }
 

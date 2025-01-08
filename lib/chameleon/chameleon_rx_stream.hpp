@@ -42,7 +42,6 @@ namespace ihd {
 
     protected:
         virtual void send_rx_cfg_set_cmd(uint32_t chanMask) = 0;
-        virtual size_t get_max_num_samps() = 0;
 
         stream_type _stream_type;
         size_t _max_samples_per_packet;
