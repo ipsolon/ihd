@@ -14,8 +14,12 @@ FILENAME=isrp_samples.dat
 let "errors=0"
 let "file_size_errors=0"
 
-function exec_rx_samples_to_file()
-{
+function exec_rx_samples_to_file() {
+   echo "all parms $@"
+   echo "First argument: ${1}"
+   echo "Second argument: ${2}"
+   echo "third argument: $3"
+   echo "fourth argument: $4"
    local tmp_dest_ip=$1
    local tmp_cham_ip=$2
    local tmp_num_samps=$3
@@ -24,9 +28,9 @@ function exec_rx_samples_to_file()
 
    echo "parms ${1} ${2} ${3} ${4} ${5}"
 
-   echo "HUH? ${tmp_dest_ip} ${tmp_cham_ip} ${tmp_num_samps} ${tmp_fft_size} ${tmp_channel}"
+   #echo "HUH? ${tmp_dest_ip} ${tmp_cham_ip} ${tmp_num_samps} ${tmp_fft_size} ${tmp_channel}"
    rm isrp_samples.dat
-   ./rx_samples_to_file --stream_type=psd --dest_ip="${tmp_dest_ip}" --args=addr="${tmp_cham_ip}"  --nsamps="${tmp_num_samps}" --fft_size="${tmp_fft_size}" #--channel=${channel}
+   ./rx_samples_to_file --stream_type=psd --dest_ip="${1}" --args=addr="${2}"  --nsamps="${3}" --fft_size="${4}" #--channel=${channel}
    ret_code=$?
    if [ $ret_code != 0 ]; then  let "errors=errors+1";  echo -e "***ERROR: fft: ${fft_size} channel: ${channel}\n"; fi
    ls -al isrp_samples.dat
@@ -40,7 +44,7 @@ function exec_rx_samples_to_file()
 }
 
 echo "BEFORE call echo ${dest_ip} ${cham_ip} ${NUM_SAMPS}"
-exec_rx_samples_to_file ${dest_id} ${cham_ip} ${NUM_SAMPS} 256 1
+exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 1
 
 exit 1
 
