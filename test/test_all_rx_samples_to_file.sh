@@ -29,36 +29,39 @@ function exec_rx_samples_to_file() {
    FILESIZE=$(stat -c%s "$FILENAME")
    # calculate the correct size
    # total_bytes = num_samps * 4
-   let "total_bytes=$(($num_samps * 4))"
+   total_bytes=$((num_samps * 4))
+   echo "total_bytes ${total_bytes}"
    # file size = total_bytes - (total_bytes % fft_size*4)
-   let "fft_bytes=$(($fft_fize * 4))"
+   fft_bytes=$((fft_size * 4))
+   echo "fft_bytes ${fft_bytes}"
 
-   let "CORRECT_FILE_SIZE=$(($total_bytes-(total_bytes % fft_bytes)))"
+   CORRECT_FILE_SIZE=$((total_bytes-(total_bytes % fft_bytes)))
+   echo "FILESIZE: ${FILESIZE} CORRECT: ${CORRECT_FILE_SIZE}"
    if [ $FILESIZE != $CORRECT_FILE_SIZE ]; then
      let "file_size_errors=file_size_errors+1";
      echo -e "\n***ERROR file size ${FILESIZE} ne correct size ${CORRECT_FILE_SIZE}\n\n";
    fi
 }
 
-#exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 1
+exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 1
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 2
-#exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 3
+exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 3
 
-#exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 512 1
-#exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 512 2
-#exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 512 3
+exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 512 1
+exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 512 2
+exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 512 3
 
-#exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 1024 1
-#exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 1024 2
-#exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 1024 3
+exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 1024 1
+exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 1024 2
+exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 1024 3
 
-#exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 2048 1
-#exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 2048 2
-#exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 2048 3
+exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 2048 1
+exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 2048 2
+exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 2048 3
 
-#exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 1
-#exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 2
-#exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 3
+exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 1
+exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 2
+exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 3
 
 echo "ERRORS = ${errors}"
 echo "FILE SIZE ERRORS = ${file_size_errors}"
