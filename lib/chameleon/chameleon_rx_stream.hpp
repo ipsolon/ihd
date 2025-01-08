@@ -59,7 +59,6 @@ namespace ihd {
         uint16_t _vita_port;
         uint32_t _stream_id{};
         static constexpr uint32_t DEFAULT_PACKET_SIZE = 8192;
-        static constexpr uint32_t DEFAULT_IQ_BUFFER_MEM_SIZE = 0x28C58000;
 
         size_t _bytes_per_packet;
 
