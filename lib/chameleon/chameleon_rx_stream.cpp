@@ -19,20 +19,17 @@
 using namespace ihd;
 
 const std::string chameleon_rx_stream::DEFAULT_VITA_IP_STR = "0.0.0.0";
-//FIXME - need to figure out buffer sizes
-#define PSD_STREAM_BUFFER_SIZE  (4 * 1024 * 1024)
+
 
 chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t &stream_cmd,
                                          const uhd::device_addr_t &device_addr) : _stream_type(
         ihd::ipsolon_rx_stream::stream_type::PSD_STREAM),
+    _commander(device_addr),
     _vita_ip_str(DEFAULT_VITA_IP_STR),
     _vita_ip(DEFAULT_VITA_IP),
     _vita_port(DEFAULT_VITA_PORT),
-    _packet_size(DEFAULT_PACKET_SIZE),
-    _fft_size(DEFAULT_FFT_SIZE),
-    _fft_avg(DEFAULT_FFT_AVG),
+    _bytes_per_packet(0),
     _nChans(stream_cmd.channels.size()),
-    _commander(device_addr),
     _socket_fd(-1),
     _current_packet(nullptr),
     _receive_thread_context{} {
@@ -45,9 +42,6 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t &stream_cmd,
     for (const size_t &chan: stream_cmd.channels) {
         _chanMask |= 1 << (chan - 1); /* Channels indexed at 1 */
     }
-    std::string type_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY];
-    stream_type st(type_str);
-    _stream_type = st;
     if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY)) {
         _vita_ip_str.assign(stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY]);
         int err = inet_pton(AF_INET, _vita_ip_str.c_str(), &_vita_ip);
@@ -60,21 +54,6 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t &stream_cmd,
         std::string port_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY];
         _vita_port = std::stoul(port_str, nullptr, 10);
     }
-    if (_stream_type.modeEquals(stream_type::PSD_STREAM)) {
-        dbprintf("Create FFT stream\n");
-        if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::FFT_SIZE_KEY)) {
-            std::string fft_size = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_SIZE_KEY];
-            _fft_size = std::strtol(fft_size.c_str(), nullptr, 10);
-        }
-        if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY)) {
-            std::string fft_avg = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY];
-            _fft_avg = std::strtol(fft_avg.c_str(), nullptr, 10);
-        }
-    } else {
-        dbprintf("Create IQ stream\n");
-        _packet_size = DEFAULT_PACKET_SIZE;
-        _vita_port_timeout = {0, 500000};;
-    }
     open_socket();
 
     _receive_thread_context.run = false;
@@ -86,23 +65,6 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t &stream_cmd,
     _receive_thread_context.cv_samples = &cv_sample_queue;
     _receive_thread_context.socket_fd = _socket_fd;
 
-    // FIXME this is for iq
-    _bytes_per_packet = DEFAULT_PACKET_SIZE;
-    _buffer_mem_size = DEFAULT_IQ_BUFFER_MEM_SIZE;
-    if (_stream_type.modeEquals(stream_type::PSD_STREAM)) {
-        _bytes_per_packet = (_fft_size * BYTES_PER_IQ_PAIR) + PACKET_HEADER_SIZE;
-        // FIXME - fix buffering? Need to speed up udp
-        _buffer_mem_size = (PSD_STREAM_BUFFER_SIZE); /* The memory allocated to store received UDP packets */
-    }
-    _max_samples_per_packet = (_bytes_per_packet - PACKET_HEADER_SIZE) / BYTES_PER_IQ_PAIR;
-    _buffer_packet_cnt = _buffer_mem_size / _max_samples_per_packet;
-
-    /* Fill the free queue */
-    std::lock_guard<std::mutex> lock(mtx_free_queue);
-    for (int i = 0; i < _buffer_packet_cnt; ++i) {
-        auto cp = new chameleon_packet(_bytes_per_packet);
-        q_free_packets.push(cp);
-    }
 }
 
 chameleon_rx_stream::~chameleon_rx_stream() {
@@ -276,17 +238,7 @@ void chameleon_rx_stream::start_stream() {
 
     dbprintf("SEND rx_cfg_set nChans = %lu _chanMask 0x%X\n", _nChans, _chanMask);
 
-    size_t chan_num = 1;
-    for (int i = 0; i < MAX_RX_CHANNELS; i++) {
-        size_t chan_enabled = _chanMask & (1 << i);
-        if (chan_enabled) {
-            std::unique_ptr<chameleon_fw_cmd> rx_cfg_set_cmd(new chameleon_fw_rx_cfg_set(chan_num, stream_type_str,
-                _fft_size, _fft_avg, _packet_size));
-            chameleon_fw_comms chameleon_fw_rx_cfg_set(std::move(rx_cfg_set_cmd));
-            _commander.send_request(chameleon_fw_rx_cfg_set);
-        }
-        ++chan_num;
-    }
+    send_rx_cfg_set_cmd(_chanMask);
 
     // Issue stream_rx_cfg - returns Stream id
     std::unique_ptr<chameleon_fw_cmd>
