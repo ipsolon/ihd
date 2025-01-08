@@ -27,7 +27,13 @@ function exec_rx_samples_to_file() {
    if [ $ret_code != 0 ]; then  let "errors=errors+1";  echo -e "***ERROR: fft: ${fft_size} channel: ${channel}\n"; fi
    ls -al isrp_samples.dat
    FILESIZE=$(stat -c%s "$FILENAME")
-   let "CORRECT_FILE_SIZE=$(($num_samps * 4))"
+   # calculate the correct size
+   # total_bytes = num_samps * 4
+   let "total_bytes=$(($num_samps * 4))"
+   # file size = total_bytes - (total_bytes % fft_size*4)
+   let "fft_bytes=$(($fft_fize * 4))"
+
+   let "CORRECT_FILE_SIZE=$(($total_bytes-(total_bytes % fft_bytes)))"
    if [ $FILESIZE != $CORRECT_FILE_SIZE ]; then
      let "file_size_errors=file_size_errors+1";
      echo -e "\n***ERROR file size ${FILESIZE} ne correct size ${CORRECT_FILE_SIZE}\n\n";
@@ -35,14 +41,14 @@ function exec_rx_samples_to_file() {
 }
 
 #exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 1
-#exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 2
+exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 2
 #exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 3
 
 #exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 512 1
 #exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 512 2
 #exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 512 3
 
-exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 1024 1
+#exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 1024 1
 #exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 1024 2
 #exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 1024 3
 
