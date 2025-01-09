@@ -1,13 +1,14 @@
 #!/bin/bash 
 
-if [[ $# -lt 3  || $# -gt 4 ]]
+if [[ $# -lt 4  || $# -gt 5 ]]
 then
-  echo "Usage: $(basename $0) DEST_IP CHAMELEON_IP NUM_SAMPS TEST_MASK(optional)"
+  echo "Usage: $(basename $0) DEST_IP DEST_PORT CHAMELEON_IP NUM_SAMPS TEST_MASK(optional)"
   exit 1
 fi
 dest_ip=$1
-cham_ip=$2
-NUM_SAMPS=$3
+dest_port=$2
+cham_ip=$3
+NUM_SAMPS=$4
 
 test_256=0
 test_512=0
@@ -15,7 +16,7 @@ test_1024=0
 test_2048=0
 test_4096=0
 
-if [ $# -eq 4 ]
+if [ $# -eq 5 ]; then
    test_256=$(($4 & 0x1))
    test_512=$(($4 & 0x2))
    test_1024=$(($4 & 0x4))
@@ -44,7 +45,7 @@ function exec_rx_samples_to_file() {
    local channel=$5
    echo -e "Running test with fft_size ${fft_size} channel: ${channel}\n"
    rm isrp_samples.dat
-   ./rx_samples_to_file --stream_type=psd --dest_ip="${dest_ip}" --args=addr="${cham_ip}"  --nsamps="${num_samps}" --fft_size="${fft_size}" --channel=${channel}
+   ./rx_samples_to_file --stream_type=psd --dest_ip="${dest_ip}" --dest_port="${dest_port}" --args=addr="${cham_ip}"  --nsamps="${num_samps}" --fft_size="${fft_size}" --channel=${channel}
    ret_code=$?
    if [ $ret_code != 0 ]; then  let "errors=errors+1";  echo -e "***ERROR: fft: ${fft_size} channel: ${channel}\n"; fi
    ls -al isrp_samples.dat
