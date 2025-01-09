@@ -44,7 +44,9 @@ function exec_rx_samples_to_file() {
    local num_samps=$3
    local fft_size=$4
    local channel=$5
-   echo -e "Running test with fft_size ${fft_size} channel: ${channel}\n"
+   GREEN='\033[0;32m'
+   WHITE='\033[0;37m'
+   echo -e "${GREEN} Running test with fft_size ${fft_size} channel: ${channel} ${WHITE}\n"
    rm isrp_samples.dat
    ./rx_samples_to_file --stream_type=psd --dest_ip="${dest_ip}" --dest_port="${dest_port}" --args=addr="${cham_ip}"  --nsamps="${num_samps}" --fft_size="${fft_size}" --channel=${channel}
    ret_code=$?
@@ -54,13 +56,10 @@ function exec_rx_samples_to_file() {
    # calculate the correct size
    # total_bytes = num_samps * 4
    total_bytes=$((num_samps * 4))
-   echo "total_bytes ${total_bytes}"
    # file size = total_bytes - (total_bytes % fft_size*4)
    fft_bytes=$((fft_size * 4))
-   echo "fft_bytes ${fft_bytes}"
 
    CORRECT_FILE_SIZE=$((total_bytes-(total_bytes % fft_bytes)))
-   echo "FILESIZE: ${FILESIZE} CORRECT: ${CORRECT_FILE_SIZE}"
    if [ $FILESIZE != $CORRECT_FILE_SIZE ]; then
      let "file_size_errors=file_size_errors+1";
      echo -e "\n***ERROR file size ${FILESIZE} ne correct size ${CORRECT_FILE_SIZE}\n\n";
