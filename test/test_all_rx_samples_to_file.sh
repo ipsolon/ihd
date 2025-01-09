@@ -16,12 +16,13 @@ test_1024=0
 test_2048=0
 test_4096=0
 
+echo "arg 5 is -> $5\n"
 if [ $# -eq 5 ]; then
-   test_256=$(($4 & 0x1))
-   test_512=$(($4 & 0x2))
-   test_1024=$(($4 & 0x4))
-   test_2048=$(($4 & 0x8))
-   test_4096=$(($4 & 0x10))
+   test_256=$(($5 & 0x1))
+   test_512=$(($5 & 0x2))
+   test_1024=$(($5 & 0x4))
+   test_2048=$(($5 & 0x8))
+   test_4096=$(($5 & 0x10))
 else
    # test mask 1=256, 2=512, 4=1024, 8=2048, 16=4096
    test_256=1
@@ -66,26 +67,40 @@ function exec_rx_samples_to_file() {
    fi
 }
 
-
+if [ $test_256 == 1 ];
+then
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 1
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 2
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 3
+fi
 
+if [ $test_512 == 2 ];
+then
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 512 1
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 512 2
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 512 3
+fi
 
+if [ $test_1024 == 4 ];
+then
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 1024 1
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 1024 2
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 1024 3
+fi
 
+if [ $test_2048 == 8 ];
+then
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 2048 1
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 2048 2
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 2048 3
+fi
 
+if [ $test_4096 == 16 ];
+then
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 1
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 2
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 3
+fi
 
 echo "ERRORS = ${errors}"
 echo "FILE SIZE ERRORS = ${file_size_errors}"
