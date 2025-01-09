@@ -26,10 +26,10 @@ if [ $# -eq 5 ]; then
 else
    # test mask 1=256, 2=512, 4=1024, 8=2048, 16=4096
    test_256=1
-   test_512=1
-   test_1024=1
-   test_2048=1
-   test_4096=1
+   test_512=2
+   test_1024=4
+   test_2048=8
+   test_4096=16
 fi
 
 echo "Running with dest_ip=$dest_ip cham_ip=$cham_ip num_samps=$NUM_SAMPS"
