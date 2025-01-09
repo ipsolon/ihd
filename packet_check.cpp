@@ -53,9 +53,9 @@ public:
 
 private:
     uhd::stream_args_t stream_args{};
-    size_t channel{};
 
 protected:
+    size_t channel{};
     uint32_t total_time{};
     uhd::rx_streamer::sptr rx_stream{};
 };
@@ -103,8 +103,8 @@ private:
         bytes *= 4; /* bytes = samples * 4 */
         bytes += 16 * packets; /* Account for CHDR */
         double megabits_per_second = (((double) bytes / total_time) / (1024 * 1024)) * 8;
-        printf("RESULT duration ms:%ld packets:%lu bytes:%lu Mb/s:%f errors:%lu\n",
-               finishTime.count(), packets, bytes, megabits_per_second, errors);
+        printf("RESULT chan:%zu duration ms:%ld packets:%lu bytes:%lu Mb/s:%f errors:%lu\n",
+               channel, finishTime.count(), packets, bytes, megabits_per_second, errors);
     }
 };
 
@@ -152,8 +152,8 @@ private:
         bytes *= 4; /* bytes = samples * 4 */
         bytes += 16 * packets; /* Account for CHDR */
         double megabits_per_second = (((double) bytes / total_time) / (1024 * 1024)) * 8;
-        printf("RESULT duration ms:%ld packets:%lu bytes:%lu Mb/s:%f errors:%lu\n",
-               finishTime.count(), packets, bytes, megabits_per_second, errors);
+        printf("RESULT chan:%zu duration ms:%ld packets:%lu bytes:%lu Mb/s:%f errors:%lu\n",
+               channel, finishTime.count(), packets, bytes, megabits_per_second, errors);
     }
 };
 
