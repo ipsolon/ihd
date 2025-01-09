@@ -60,8 +60,6 @@ namespace ihd {
         uint32_t _stream_id{};
         static constexpr uint32_t DEFAULT_PACKET_SIZE = 8192;
 
-        size_t _bytes_per_packet;
-
         size_t _buffer_mem_size = (DEFAULT_BUFFER_SIZE); /* The memory allocated to store received UDP packets */
 
         timeval _vita_port_timeout = {DEFAULT_TIMEOUT, 0};

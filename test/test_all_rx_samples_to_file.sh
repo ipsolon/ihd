@@ -1,13 +1,35 @@
 #!/bin/bash 
 
-if [ $# -ne 3 ]
+if [[ $# -lt 3  || $# -gt 4 ]]
 then
-  echo "Usage: $(basename $0) DEST_IP CHAMELEON_IP NUM_SAMPS"
+  echo "Usage: $(basename $0) DEST_IP CHAMELEON_IP NUM_SAMPS TEST_MASK(optional)"
   exit 1
 fi
 dest_ip=$1
 cham_ip=$2
 NUM_SAMPS=$3
+
+test_256=0
+test_512=0
+test_1024=0
+test_2048=0
+test_4096=0
+
+if [ $# -eq 4 ]
+   test_256=$(($4 & 0x1))
+   test_512=$(($4 & 0x2))
+   test_1024=$(($4 & 0x4))
+   test_2048=$(($4 & 0x8))
+   test_4096=$(($4 & 0x10))
+else
+   # test mask 1=256, 2=512, 4=1024, 8=2048, 16=4096
+   test_256=1
+   test_512=1
+   test_1024=1
+   test_2048=1
+   test_4096=1
+fi
+
 echo "Running with dest_ip=$dest_ip cham_ip=$cham_ip num_samps=$NUM_SAMPS"
 
 FILENAME=isrp_samples.dat
@@ -42,6 +64,7 @@ function exec_rx_samples_to_file() {
      echo -e "\n***ERROR file size ${FILESIZE} ne correct size ${CORRECT_FILE_SIZE}\n\n";
    fi
 }
+
 
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 1
 exec_rx_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 2

@@ -24,11 +24,12 @@ const std::string chameleon_rx_stream::DEFAULT_VITA_IP_STR = "0.0.0.0";
 chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t &stream_cmd,
                                          const uhd::device_addr_t &device_addr) : _stream_type(
         ihd::ipsolon_rx_stream::stream_type::PSD_STREAM),
+    _max_samples_per_packet((DEFAULT_PACKET_SIZE - PACKET_HEADER_SIZE) / BYTES_PER_IQ_PAIR),
+    _buffer_packet_cnt(0),
     _commander(device_addr),
     _vita_ip_str(DEFAULT_VITA_IP_STR),
     _vita_ip(DEFAULT_VITA_IP),
     _vita_port(DEFAULT_VITA_PORT),
-    _bytes_per_packet(0),
     _nChans(stream_cmd.channels.size()),
     _socket_fd(-1),
     _current_packet(nullptr),
@@ -64,7 +65,6 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t &stream_cmd,
     _receive_thread_context.cv_free = &cv_free_queue;
     _receive_thread_context.cv_samples = &cv_sample_queue;
     _receive_thread_context.socket_fd = _socket_fd;
-
 }
 
 chameleon_rx_stream::~chameleon_rx_stream() {
@@ -230,15 +230,11 @@ void chameleon_rx_stream::start_stream() {
     _first_packet = true;
     _receive_thread_context.run = true;
     _recv_thread = std::thread([=] { receive_thread_func(&_receive_thread_context); });
-
     // Issue stream_rx_cfg - returns Stream id
-    std::string stream_type_str = (_stream_type.modeEquals(stream_type::PSD_STREAM))
-                                      ? ipsolon_rx_stream::stream_type::PSD_STREAM
-                                      : ipsolon_rx_stream::stream_type::IQ_STREAM;
-
-    dbprintf("SEND rx_cfg_set nChans = %lu _chanMask 0x%X\n", _nChans, _chanMask);
 
     send_rx_cfg_set_cmd(_chanMask);
+
+    dbprintf("SEND rx_cfg_set nChans = %lu _chanMask 0x%X\n", _nChans, _chanMask);
 
     // Issue stream_rx_cfg - returns Stream id
     std::unique_ptr<chameleon_fw_cmd>

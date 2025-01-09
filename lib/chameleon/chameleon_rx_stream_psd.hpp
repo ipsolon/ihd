@@ -26,13 +26,12 @@ namespace ihd {
 
     protected:
         void send_rx_cfg_set_cmd(uint32_t chanMask) override;
-        size_t get_max_num_samps() const {
+        size_t get_max_num_samps() const override {
             return _max_samples_per_packet;
         }
 
     private:
         static constexpr uint32_t DEFAULT_PACKET_SIZE = 8192;
-        static constexpr uint32_t DEFAULT_IQ_BUFFER_MEM_SIZE = 0x28C58000;
         static constexpr uint32_t DEFAULT_FFT_SIZE = 256;
         static constexpr uint32_t DEFAULT_FFT_AVG = 120;
 
@@ -41,11 +40,11 @@ namespace ihd {
 
         size_t _max_samples_per_packet;
 
-        size_t _bytes_per_packet = (_fft_size * BYTES_PER_IQ_PAIR) + PACKET_HEADER_SIZE;
+        size_t _bytes_per_packet = DEFAULT_PACKET_SIZE;
         // FIXME - fix buffering? Need to speed up udp
-        size_t _buffer_mem_size = (PSD_STREAM_BUFFER_SIZE); /* The memory allocated to store received UDP packets */
+        size_t _buffer_mem_size{PSD_STREAM_BUFFER_SIZE}; /* The memory allocated to store received UDP packets */
 
-        size_t _buffer_packet_cnt;
+        size_t _buffer_packet_cnt{0};
 
         timeval _vita_port_timeout = {DEFAULT_PSD_TIMEOUT, 0};
 
