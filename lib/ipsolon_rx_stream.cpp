@@ -27,10 +27,8 @@ ipsolon_rx_stream::sptr ipsolon_rx_stream::make(const uhd::stream_args_t &stream
     stream_type st(type_str);
     dbprintf("ipsolon_rx_stream::make stream_type=%s\n",type_str.c_str());
     if (st.modeEquals(stream_type::PSD_STREAM)) {
-        dbprintf("\n\n CONSTRUCT psd\n");
         return std::make_shared<chameleon_rx_stream_psd>(stream_cmd, device_addr);
     } else {
-        dbprintf("\n\n CONSTRUCT iq\n");
         return std::make_shared<chameleon_rx_stream_iq>(stream_cmd, device_addr);
     }
 }

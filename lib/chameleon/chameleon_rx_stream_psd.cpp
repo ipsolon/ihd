@@ -27,8 +27,6 @@ chameleon_rx_stream_psd::chameleon_rx_stream_psd(const uhd::stream_args_t &strea
  {
     _vita_port_timeout = {DEFAULT_PSD_TIMEOUT, 0};
 
-    dbprintf("chameleon_rx_stream_psd CONTRUCTOR _max_samples_per_packet=%lu\n",_max_samples_per_packet);
-
     if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::FFT_SIZE_KEY)) {
         std::string fft_size = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_SIZE_KEY];
         _fft_size = std::strtol(fft_size.c_str(), nullptr, 10);
@@ -37,9 +35,7 @@ chameleon_rx_stream_psd::chameleon_rx_stream_psd(const uhd::stream_args_t &strea
         std::string fft_avg = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY];
         _fft_avg = std::strtol(fft_avg.c_str(), nullptr, 10);
     }
-    dbprintf("Constructor fft_size %u\n",_fft_size);
     _bytes_per_packet = (_fft_size * BYTES_PER_IQ_PAIR) + PACKET_HEADER_SIZE;
-    dbprintf("Constructor _bytes_per_packet %zu\n",_bytes_per_packet);
     // FIXME - fix buffering? Need to speed up udp
     _buffer_mem_size = (PSD_STREAM_BUFFER_SIZE); /* The memory allocated to store received UDP packets */
 
