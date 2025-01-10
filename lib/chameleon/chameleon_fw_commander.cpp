@@ -9,6 +9,7 @@
 #include <utility>
 #include "chameleon_fw_common.hpp"
 #include "debug.hpp"
+#include <atomic>
 
 namespace ihd {
     static std::atomic<size_t> _seq(1);

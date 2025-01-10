@@ -9,7 +9,6 @@
 #define CHAMELEON_STREAM_PSD_HPP
 
 #include "chameleon_rx_stream.hpp"
-#include "ipsolon_chdr_header.h"
 
 //FIXME - need to figure out buffer sizes
 #define PSD_STREAM_BUFFER_SIZE  (4 * 1024 * 1024)

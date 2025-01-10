@@ -74,10 +74,15 @@ namespace ihd {
     class chameleon_fw_rx_cfg_set : public chameleon_fw_cmd {
     public:
         chameleon_fw_rx_cfg_set(const std::size_t chan, std::string data_type, const uint32_t fft_size,
-                                const uint8_t avg, const uint16_t packet_size = 0) : chameleon_fw_cmd("rx_cfg_set"),
+                                const uint8_t avg) : chameleon_fw_cmd("rx_cfg_set"),
             m_data_type(std::move(data_type)),
             m_fft_size(fft_size),
             m_avg(avg),
+            m_chan(chan) {
+        }
+        chameleon_fw_rx_cfg_set(const std::size_t chan,
+                                std::string data_type, const uint16_t packet_size = 0) : chameleon_fw_cmd("rx_cfg_set"),
+            m_data_type(std::move(data_type)),
             m_packet_size(packet_size),
             m_chan(chan) {
         }
@@ -99,9 +104,9 @@ namespace ihd {
 
     private:
         std::string m_data_type;
-        uint32_t m_fft_size;
-        uint16_t m_avg;
-        uint16_t m_packet_size;
+        uint32_t m_fft_size{};
+        uint16_t m_avg{};
+        uint16_t m_packet_size{};
         std::size_t m_chan;
     };
 

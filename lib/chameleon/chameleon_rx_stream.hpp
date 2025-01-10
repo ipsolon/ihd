@@ -43,6 +43,9 @@ namespace ihd {
     protected:
         virtual void send_rx_cfg_set_cmd(uint32_t chanMask) = 0;
 
+        std::queue<chameleon_packet *> q_free_packets;
+        std::mutex mtx_free_queue;
+
         stream_type _stream_type;
         size_t _max_samples_per_packet;
         size_t _buffer_packet_cnt;
@@ -65,16 +68,11 @@ namespace ihd {
         timeval _vita_port_timeout = {DEFAULT_TIMEOUT, 0};
 
         /* Free Queue and Sample Queue
-         * Receiver: Take from free queue, receive message, place in sample queue.
-         *           When free is empty, steal from samples queue.
-         * Consumer: Take from sample queue, process samples, place in free queue when done
-         */
-    protected:
-        std::queue<chameleon_packet *> q_free_packets;
-        std::mutex mtx_free_queue;
-    private:
+        * Receiver: Take from free queue, receive message, place in sample queue.
+        *           When free is empty, steal from samples queue.
+        * Consumer: Take from sample queue, process samples, place in free queue when done
+        */
         std::condition_variable cv_free_queue;
-
         std::queue<chameleon_packet *> q_sample_packets;
         std::mutex mtx_sample_queue;
         std::condition_variable cv_sample_queue;

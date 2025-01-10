@@ -26,11 +26,11 @@ ihd::chameleon_jammer_tx_stream::chameleon_jammer_tx_stream(const uhd::stream_ar
     _udp_cmd_port = uhd::transport::udp_simple::make_connected(device_addr["addr"], port);
 }
 
-size_t ihd::chameleon_jammer_tx_stream::get_num_channels(void) const {
+size_t ihd::chameleon_jammer_tx_stream::get_num_channels() const {
     return 1; // We only control one jammer channel at a time
 }
 
-size_t ihd::chameleon_jammer_tx_stream::get_max_num_samps(void) const {
+size_t ihd::chameleon_jammer_tx_stream::get_max_num_samps() const {
     return 0;
 }
 

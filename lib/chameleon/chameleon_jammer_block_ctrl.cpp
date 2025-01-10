@@ -26,25 +26,25 @@ void chameleon_jammer_block_ctrl::convert_stop(std::vector<uint32_t> &y) {
 }
 
 void chameleon_jammer_block_ctrl::convert_config(jammer_config_t &config, std::vector<uint32_t> &y) {
-    static const uint32_t FIXED_SIZES = 7;
+    static constexpr uint32_t FIXED_SIZES = 7;
     y.resize(FIXED_SIZES + 2 * config.phasors.size() + config.centers.size());
     y[0] = (config.bank == BANK_A) ? CMD_CONFIG_A : CMD_CONFIG_B;
     y[1] = config.dwell;
-    y[2] = config.fm_max_dev * powf(2, 32) / (2.0f * M_PI);
-    y[3] = config.fm_ddang * powf(2, 32) / (2.0f * M_PI);
+    y[2] = static_cast<uint32_t>(config.fm_max_dev * powf(2, 32) / (2.0f * M_PI));
+    y[3] = static_cast<uint32_t>(config.fm_ddang * powf(2, 32) / (2.0f * M_PI));
     y[4] = config.phasors.size();
     y[5] = 0;
     uint32_t idx = 6;
     for (auto phasor: config.phasors) {
         y[idx++] = phasor.first;
-        uint32_t val = (phasor.second.real() * 28126.0f);
+        auto val = static_cast<uint32_t>((phasor.second.real() * 28126.0f));
         val <<= 16;
         val |= (static_cast<uint32_t>(phasor.second.imag() * 28126.0f) & 0xffff);
         y[idx++] = val;
     }
     y[idx++] = config.centers.size();
     for (auto center: config.centers) {
-        y[idx++] = center / (2.0f * M_PI) * (powf(2, 32.0f) - 1);
+        y[idx++] = static_cast<uint32_t>(center / (2.0f * M_PI) * (powf(2, 32.0f) - 1));
     }
 }
 

@@ -4,18 +4,10 @@
 * SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include <iostream>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-
-#include <uhd/transport/udp_simple.hpp>
 
 #include "chameleon_fw_common.hpp"
 #include "chameleon_rx_stream_iq.hpp"
 #include "chameleon_packet.hpp"
-#include <exception.hpp>
-#include "debug.hpp"
-
 using namespace ihd;
 
 chameleon_rx_stream_iq::chameleon_rx_stream_iq(const uhd::stream_args_t &stream_cmd,
@@ -37,17 +29,15 @@ chameleon_rx_stream_iq::chameleon_rx_stream_iq(const uhd::stream_args_t &stream_
     }
 }
 
-chameleon_rx_stream_iq::~chameleon_rx_stream_iq() {
-}
+chameleon_rx_stream_iq::~chameleon_rx_stream_iq() = default;
 
 void chameleon_rx_stream_iq::send_rx_cfg_set_cmd(uint32_t chanMask) {
     size_t chan_num = 1;
     for (int i = 0; i < MAX_RX_CHANNELS; i++) {
         size_t chan_enabled = chanMask & (1 << i);
         if (chan_enabled) {
-            std::unique_ptr<chameleon_fw_cmd> rx_cfg_set_cmd(new chameleon_fw_rx_cfg_set(chan_num, ipsolon_rx_stream::stream_type::IQ_STREAM,
-                                                       0, /* fft_size unused */
-                                                       0 /* fft_avg unused */,
+            std::unique_ptr<chameleon_fw_cmd> rx_cfg_set_cmd(new chameleon_fw_rx_cfg_set(chan_num,
+                                                       ipsolon_rx_stream::stream_type::IQ_STREAM,
                                                        _packet_size));
             chameleon_fw_comms chameleon_fw_rx_cfg_set(std::move(rx_cfg_set_cmd));
             _commander.send_request(chameleon_fw_rx_cfg_set);

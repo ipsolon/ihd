@@ -9,7 +9,6 @@
 #include <cstdlib>
 
 #include "chameleon_rx_stream.hpp"
-#include "ipsolon_chdr_header.h"
 
 namespace ihd {
 

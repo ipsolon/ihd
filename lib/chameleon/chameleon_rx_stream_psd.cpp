@@ -6,16 +6,12 @@
 
 #include <iostream>
 #include <sys/socket.h>
-#include <arpa/inet.h>
 
 #include <uhd/transport/udp_simple.hpp>
 
 #include "chameleon_fw_common.hpp"
 #include "chameleon_rx_stream_psd.hpp"
 #include "chameleon_packet.hpp"
-#include <exception.hpp>
-#include "debug.hpp"
-
 using namespace ihd;
 
 //FIXME - need to figure out buffer sizes
@@ -51,16 +47,17 @@ chameleon_rx_stream_psd::chameleon_rx_stream_psd(const uhd::stream_args_t &strea
 
 }
 
-chameleon_rx_stream_psd::~chameleon_rx_stream_psd() {
-}
+chameleon_rx_stream_psd::~chameleon_rx_stream_psd() = default;
 
 void chameleon_rx_stream_psd::send_rx_cfg_set_cmd(uint32_t chanMask) {
     size_t chan_num = 1;
     for (int i = 0; i < MAX_RX_CHANNELS; i++) {
         size_t chan_enabled = chanMask & (1 << i);
         if (chan_enabled) {
-            std::unique_ptr<chameleon_fw_cmd> rx_cfg_set_cmd(new chameleon_fw_rx_cfg_set(chan_num, ipsolon_rx_stream::stream_type::PSD_STREAM,
-                _fft_size, _fft_avg, 0 /* unused packet size */));
+            std::unique_ptr<chameleon_fw_cmd> rx_cfg_set_cmd(new chameleon_fw_rx_cfg_set(chan_num,
+                                                             ipsolon_rx_stream::stream_type::PSD_STREAM,
+                                                            _fft_size,
+                                                            _fft_avg));
             chameleon_fw_comms chameleon_fw_rx_cfg_set(std::move(rx_cfg_set_cmd));
             _commander.send_request(chameleon_fw_rx_cfg_set);
         }
