@@ -67,7 +67,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     isrp->set_tx_freq(tune_request, channel);
     isrp->uhd::usrp::multi_usrp::set_tx_gain(gain, channel);
     printf("freq=%f, gain=%f , channel=%zu\n",freq,gain, channel);
-   // printf("Actual frequency: %14.8f\n", isrp->get_tx_freq(0));
+    //Todo
+    // 1. read back tx_gain set
+    // 2. read back freq set
+
 
     // Metadata
     uhd::tx_metadata_t md;
