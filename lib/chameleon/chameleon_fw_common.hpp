@@ -53,6 +53,23 @@ namespace ihd {
         uint64_t freq{};
     };
 
+    class chameleon_fw_cmd_tune_get : public chameleon_fw_cmd {
+    public:
+        chameleon_fw_cmd_tune_get(std::size_t c ) : chameleon_fw_cmd("get_freq"),
+                                                           chan(c) {
+        }
+
+        const char *to_command_string() override {
+            std::stringstream ss;
+            ss << _cmd << " chan=" << chan ;
+            _command_string = ss.str();
+            return _command_string.c_str();
+        }
+
+    private:
+        std::size_t chan{};
+    };
+
     class chameleon_fw_cmd_txgain : public chameleon_fw_cmd {
     public:
         chameleon_fw_cmd_txgain(std::size_t c, double g) : chameleon_fw_cmd("set_txgain"),
@@ -71,7 +88,22 @@ namespace ihd {
         double gain{};
     };
 
+    class chameleon_fw_cmd_get_txgain : public chameleon_fw_cmd {
+    public:
+        chameleon_fw_cmd_get_txgain(std::size_t c) : chameleon_fw_cmd("get_txgain"),
+                                                         chan(c) {
+        }
 
+        const char *to_command_string() override {
+            std::stringstream ss;
+            ss << _cmd << " chan=" << chan;
+            _command_string = ss.str();
+            return _command_string.c_str();
+        }
+
+    private:
+        std::size_t chan{};
+    };
 
     class chameleon_fw_cmd_rxgain : public chameleon_fw_cmd {
     public:
@@ -89,6 +121,23 @@ namespace ihd {
     private:
         std::size_t chan{};
         double gain{};
+    };
+
+    class chameleon_fw_cmd_get_rxgain : public chameleon_fw_cmd {
+    public:
+        chameleon_fw_cmd_get_rxgain(std::size_t c) : chameleon_fw_cmd("get_rxgain"),
+                                                         chan(c) {
+        }
+
+        const char *to_command_string() override {
+            std::stringstream ss;
+            ss << _cmd << " chan=";
+            _command_string = ss.str();
+            return _command_string.c_str();
+        }
+
+    private:
+        std::size_t chan{};
     };
 
     class chameleon_fw_rx_cfg_set : public chameleon_fw_cmd {
