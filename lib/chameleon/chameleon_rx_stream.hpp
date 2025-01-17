@@ -17,12 +17,14 @@
 #include "ipsolon_rx_stream.hpp"
 #include "ipsolon_chdr_header.h"
 
+// FIXME
+#define DEFAULT_BUFFER_SIZE (4 * 1024 * 1024)
+
 namespace ihd {
     class chameleon_packet;
 
     class chameleon_rx_stream : public ipsolon_rx_stream {
     public:
-        static constexpr size_t default_timeout = 30; // short for IQ longer for psd
         typedef std::complex<int16_t> chameleon_data_type;
 
         explicit chameleon_rx_stream(const uhd::stream_args_t &stream_cmd, const uhd::device_addr_t &device_addr);
@@ -38,43 +40,39 @@ namespace ihd {
 
         void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd) override;
 
+    protected:
+        virtual void send_rx_cfg_set_cmd(uint32_t chanMask) = 0;
+
+        std::queue<chameleon_packet *> q_free_packets;
+        std::mutex mtx_free_queue;
+
+        stream_type _stream_type;
+        size_t _max_samples_per_packet;
+        size_t _buffer_packet_cnt;
+        chameleon_fw_commander _commander;
+
     private:
         static const std::string DEFAULT_VITA_IP_STR;
         static constexpr uint32_t DEFAULT_VITA_IP = INADDR_ANY;
         static constexpr uint32_t DEFAULT_VITA_PORT = 9090;
+        static constexpr size_t DEFAULT_TIMEOUT = 30;
 
-        stream_type _stream_type;
         std::string _vita_ip_str;
         in_addr_t _vita_ip;
         uint16_t _vita_port;
         uint32_t _stream_id{};
-        uint32_t _packet_size;
         static constexpr uint32_t DEFAULT_PACKET_SIZE = 8192;
-        static constexpr uint32_t DEFAULT_IQ_BUFFER_MEM_SIZE = 0x28C58000;
 
-        static constexpr uint32_t DEFAULT_FFT_SIZE = 256;
-        static constexpr uint32_t DEFAULT_FFT_AVG = 105;
-        uint32_t _fft_size;
-        uint32_t _fft_avg;
+        size_t _buffer_mem_size = (DEFAULT_BUFFER_SIZE); /* The memory allocated to store received UDP packets */
 
-        static constexpr uint32_t DEFAULT_UDP_PACKET_SIZE = (DEFAULT_FFT_SIZE * BYTES_PER_SAMPLE) * PACKET_HEADER_SIZE;
-        size_t _bytes_per_packet;
-        size_t _max_samples_per_packet;
-
-        size_t _buffer_mem_size = (4 * 1024 * 1024); /* The memory allocated to store received UDP packets */
-        size_t _buffer_packet_cnt;
-
-        timeval _vita_port_timeout = {default_timeout, 0};
+        timeval _vita_port_timeout = {DEFAULT_TIMEOUT, 0};
 
         /* Free Queue and Sample Queue
-         * Receiver: Take from free queue, receive message, place in sample queue.
-         *           When free is empty, steal from samples queue.
-         * Consumer: Take from sample queue, process samples, place in free queue when done
-         */
-        std::queue<chameleon_packet *> q_free_packets;
-        std::mutex mtx_free_queue;
+        * Receiver: Take from free queue, receive message, place in sample queue.
+        *           When free is empty, steal from samples queue.
+        * Consumer: Take from sample queue, process samples, place in free queue when done
+        */
         std::condition_variable cv_free_queue;
-
         std::queue<chameleon_packet *> q_sample_packets;
         std::mutex mtx_sample_queue;
         std::condition_variable cv_sample_queue;
@@ -83,7 +81,6 @@ namespace ihd {
 
         size_t _nChans{};
         uint32_t _chanMask{};
-        chameleon_fw_commander _commander;
         int _socket_fd{};
 
         chameleon_packet *_current_packet;

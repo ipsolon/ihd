@@ -13,12 +13,10 @@
 using namespace ihd;
 
 ipsolon_isrp::~ipsolon_isrp()
-{
-}
+= default;
 
 ipsolon_isrp::ipsolon_isrp()
-{
-}
+= default;
 
 /***********************************************************************
  * The Make Function

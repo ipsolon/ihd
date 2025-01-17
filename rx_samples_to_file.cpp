@@ -161,10 +161,12 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
         /************************************************************************
          * Receive Data
          ***********************************************************************/
+        dbprintf("total_num_samps = %lu spb=%lu\n",total_num_samps,spb);
         size_t sample_iterations = total_num_samps / spb;
+        dbprintf("sample_iterations = %lu \n",sample_iterations);
         int err = 0;
         size_t out_of_sequence_packets = 0;
-        dbprintf("receiving data sample_iterations = %lu\n", sample_iterations);
+        dbprintf("Receiving data sample_iterations = %lu\n", sample_iterations);
         for (size_t i = 0; i < sample_iterations && !err; i++) {
             size_t n = rx_stream->recv(buffs, spb, md, 5);
             if (md.out_of_sequence) {
