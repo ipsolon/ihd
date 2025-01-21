@@ -68,11 +68,15 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     double freq_ack=  isrp->get_tx_freq(channel);
     isrp->uhd::usrp::multi_usrp::set_tx_gain(gain, channel);
     double txgain_ack= isrp->uhd::usrp::multi_usrp::get_tx_gain(channel);;
-    double rxgain_ack= isrp->uhd::usrp::multi_usrp::get_rx_gain(channel);
-    //Todo
-    // 1. read back tx_gain set
-    // 2. read back freq set
-
+    if (freq_ack <0 || txgain_ack < 0 )
+    {
+        std::cout<<"jammer configure problem: " << " channel="<< channel << " freq="<<freq_ack << " tx_gain ="<<txgain_ack <<"\n";
+        exit(-1);
+    }
+    else
+    {
+        std::cout<<"jammer configure with: " << " channel="<< channel << " freq="<<freq_ack << " tx_gain ="<<txgain_ack <<"\n";
+    }
 
     // Metadata
     uhd::tx_metadata_t md;
