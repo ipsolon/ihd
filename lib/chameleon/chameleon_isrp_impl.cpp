@@ -58,8 +58,14 @@ double chameleon_isrp_impl::get_freq(size_t chan) const {
     _commander.send_request(request, rx_get_freq_timeout_ms);
 
     auto result= request.getResponse();;
-    std::string x= result.at(2).c_str();
-    return std::stod( x.substr(x.find("=") + 1));
+    std::string x0= result.at(2).c_str();
+    if (x0=="ACK")
+    {
+        std::string x= result.at(2).c_str();
+        return std::stod( x.substr(x.find("=") + 1));
+    }
+    else
+        return(-1.0);
 }
 
 uhd::tune_result_t chameleon_isrp_impl::set_rx_freq(const uhd::tune_request_t& tune_request, size_t chan)
@@ -103,8 +109,14 @@ double chameleon_isrp_impl::get_rx_gain(const std::string& name,size_t chan)
     // send request
     _commander.send_request(request, rx_get_gain_timeout_ms);
     auto result= request.getResponse();;
-    std::string x= result.at(2).c_str();
-    return std::stod( x.substr(x.find("=") + 1));
+    std::string x0= result.at(2).c_str();
+    if (x0=="ACK")
+    {
+        std::string x= result.at(2).c_str();
+        return std::stod( x.substr(x.find("=") + 1));
+    }
+    else
+        return(-1.0);
 }
 
 void chameleon_isrp_impl::set_tx_gain(double gain, const std::string& name, size_t chan)
@@ -128,9 +140,14 @@ double chameleon_isrp_impl::get_tx_gain(const std::string& name,size_t chan)
     // send request
     _commander.send_request(request, tx_get_gain_timeout_ms);
     auto result= request.getResponse();;
-    std::string x= result.at(2).c_str();
-    return std::stod( x.substr(x.find("=") + 1));
-
+    std::string x0= result.at(2).c_str();
+    if (x0=="ACK")
+    {
+        std::string x= result.at(2).c_str();
+        return std::stod( x.substr(x.find("=") + 1));
+    }
+    else
+        return(-1.0);
 }
 
 uhd::time_spec_t chameleon_isrp_impl::get_time_now() {
