@@ -2,7 +2,7 @@
 
 if [[ $# -ne 1 ]]
 then
-  echo "Usage: $(basename $0) ARGS CHAN FREQ GAIN"
+  echo "Usage: $(basename $0) IP CHAN FREQ GAIN"
   exit 1
 fi
 
