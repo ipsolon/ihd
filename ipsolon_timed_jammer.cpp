@@ -18,11 +18,13 @@
 // Convenient namespacing for options parsing
 namespace po = boost::program_options;
 
-void print_help_message() {
+void print_help_message()
+{
     printf("Help Message\n");
 }
 
-int UHD_SAFE_MAIN(int argc, char *argv[]) {
+int UHD_SAFE_MAIN(int argc, char *argv[])
+{
     uhd::set_thread_priority_safe();
     // Options
     float freq;
@@ -32,17 +34,18 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
 
     po::options_description desc("Allowed options");
     desc.add_options()
-            ("help", "Help message")
-            ("freq", po::value<float>(&freq)->default_value(2.45e9), "RF Center Frequency")
-            ("gain", po::value<float>(&gain)->default_value(10.0), "TX Gain")
-            ("channel", po::value<size_t>(&channel)->default_value(1), "which channel to use")
-            ("args", po::value<std::string>(&isrp_args)->default_value("addr=192.168.0.100"),
-                    "UHD Device Arguments");
+        ("help", "Help message")
+        ("freq", po::value<float>(&freq)->default_value(2.45e9), "RF Center Frequency")
+        ("gain", po::value<float>(&gain)->default_value(10.0), "TX Gain")
+        ("channel", po::value<size_t>(&channel)->default_value(1), "which channel to use")
+        ("args", po::value<std::string>(&isrp_args)->default_value("addr=192.168.0.100"),
+         "UHD Device Arguments");
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
-    if (vm.count("help")) {
+    if (vm.count("help"))
+    {
         print_help_message();
         return EXIT_SUCCESS;
     }
@@ -55,7 +58,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
 
     // Initialize both banks with zeros
     std::map<uint32_t, std::complex<float>> init;
-    for (uint32_t idx = 0; idx < 4096; idx++) {
+    for (uint32_t idx = 0; idx < 4096; idx++)
+    {
         init[idx] = std::complex<float>(0.0f, 0.0f);
     }
     std::vector<float> centers;
@@ -65,12 +69,20 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     uhd::tune_request_t tune_request{};
     tune_request.rf_freq = freq;
     isrp->set_tx_freq(tune_request, channel);
+    double freq_ack = isrp->get_tx_freq(channel);
     isrp->uhd::usrp::multi_usrp::set_tx_gain(gain, channel);
-    printf("freq=%f, gain=%f , channel=%zu\n",freq,gain, channel);
-    //Todo
-    // 1. read back tx_gain set
-    // 2. read back freq set
-
+    double txgain_ack = isrp->uhd::usrp::multi_usrp::get_tx_gain(channel);;
+    if (freq_ack < 0 || txgain_ack < 0)
+    {
+        std::cout << "jammer configure problem: " << " channel=" << channel << " freq=" << freq_ack << " tx_gain =" <<
+            txgain_ack << "\n";
+        exit(-1);
+    }
+    else
+    {
+        std::cout << "jammer configure with: " << " channel=" << channel << " freq=" << freq_ack << " tx_gain =" <<
+            txgain_ack << "\n";
+    }
 
     // Metadata
     uhd::tx_metadata_t md;
@@ -109,43 +121,44 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     ctrl_jammer->send_config(zeroize);
 
     // Bank A - Titan example
-    std::vector<int>  indices = {
-            3824, 3840, 3856, 3872, 3888,
-            3904, 3920, 3936, 3952, 3968,
-            3984, 4000, 4016, 4032, 4048,
-            4064, 4080,    0,   16,   32,
-              48,   64,   80,   96,  112,
-             128,  144,  160,  176,  192,
-             208,  224,  240,  256,  272
+    std::vector<int> indices = {
+        3824, 3840, 3856, 3872, 3888,
+        3904, 3920, 3936, 3952, 3968,
+        3984, 4000, 4016, 4032, 4048,
+        4064, 4080, 0, 16, 32,
+        48, 64, 80, 96, 112,
+        128, 144, 160, 176, 192,
+        208, 224, 240, 256, 272
     };
     std::vector<float> real_parts = {
-            1.243725e-01,  1.238718e-01,  1.164418e-01,  8.594916e-02, 1.669492e-02,
-            -7.754496e-02, -1.238718e-01, -3.843320e-02,  1.067674e-01, 6.851641e-02,
-            -1.120557e-01, -1.669492e-02,  1.164418e-01, -1.067674e-01, 3.843320e-02,
-            2.767547e-02, -6.851641e-02,  8.594916e-02, -8.594916e-02, 6.851641e-02,
-            -2.767547e-02, -3.843320e-02,  1.067674e-01, -1.164418e-01, 1.669492e-02,
-            1.120557e-01, -6.851641e-02, -1.067674e-01,  3.843320e-02, 1.238718e-01,
-            7.754496e-02, -1.669492e-02, -8.594916e-02, -1.164418e-01, -1.238718e-01
+        1.243725e-01, 1.238718e-01, 1.164418e-01, 8.594916e-02, 1.669492e-02,
+        -7.754496e-02, -1.238718e-01, -3.843320e-02, 1.067674e-01, 6.851641e-02,
+        -1.120557e-01, -1.669492e-02, 1.164418e-01, -1.067674e-01, 3.843320e-02,
+        2.767547e-02, -6.851641e-02, 8.594916e-02, -8.594916e-02, 6.851641e-02,
+        -2.767547e-02, -3.843320e-02, 1.067674e-01, -1.164418e-01, 1.669492e-02,
+        1.120557e-01, -6.851641e-02, -1.067674e-01, 3.843320e-02, 1.238718e-01,
+        7.754496e-02, -1.669492e-02, -8.594916e-02, -1.164418e-01, -1.238718e-01
     };
     std::vector<float> imag_parts = {
-            0.000000e+00,  1.114866e-02,  4.370135e-02,  8.989577e-02,  1.232469e-01,
-            9.723830e-02, -1.114866e-02, -1.182852e-01, -6.379054e-02,  1.037979e-01,
-            5.396319e-02, -1.232469e-01,  4.370135e-02,  6.379054e-02, -1.182852e-01,
-            1.212542e-01, -1.037979e-01,  8.989577e-02, -8.989577e-02,  1.037979e-01,
-            -1.212542e-01,  1.182852e-01, -6.379054e-02, -4.370135e-02,  1.232469e-01,
-            -5.396319e-02, -1.037979e-01,  6.379054e-02,  1.182852e-01,  1.114866e-02,
-            -9.723830e-02, -1.232469e-01, -8.989577e-02, -4.370135e-02, -1.114866e-02
+        0.000000e+00, 1.114866e-02, 4.370135e-02, 8.989577e-02, 1.232469e-01,
+        9.723830e-02, -1.114866e-02, -1.182852e-01, -6.379054e-02, 1.037979e-01,
+        5.396319e-02, -1.232469e-01, 4.370135e-02, 6.379054e-02, -1.182852e-01,
+        1.212542e-01, -1.037979e-01, 8.989577e-02, -8.989577e-02, 1.037979e-01,
+        -1.212542e-01, 1.182852e-01, -6.379054e-02, -4.370135e-02, 1.232469e-01,
+        -5.396319e-02, -1.037979e-01, 6.379054e-02, 1.182852e-01, 1.114866e-02,
+        -9.723830e-02, -1.232469e-01, -8.989577e-02, -4.370135e-02, -1.114866e-02
     };
     a.bank = ihd::BANK_A;
     a.dwell = 1;
     a.fm_ddang = 1.640625e-06;
     a.fm_max_dev = 1.953125e-03;
     a.phasors.clear();
-    for (int i = 0; i < indices.size(); i++) {
+    for (int i = 0; i < indices.size(); i++)
+    {
         a.phasors[indices[i]] = std::complex<float>(real_parts[i], imag_parts[i]);
     }
     a.centers = {
-            -8.589114e-01, 0.000000e+00, 8.589114e-01
+        -8.589114e-01, 0.000000e+00, 8.589114e-01
     };
 
     // Bank B - Citadel example
@@ -154,7 +167,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     b.fm_ddang = 1.640625e-06;
     b.fm_max_dev = 1.953125e-03;
     b.phasors.clear();
-    for (int i = 0; i < indices.size(); i++) {
+    for (int i = 0; i < indices.size(); i++)
+    {
         b.phasors[indices[i]] = std::complex<float>(real_parts[i], imag_parts[i]);
     }
     b.centers = {-8.589114e-01};
@@ -167,7 +181,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     auto radio_time = isrp->get_time_now();
     auto time = radio_time + uhd::time_spec_t(1.0);
 
-    for (uint32_t i = 0; i < 10; i++) {
+    for (uint32_t i = 0; i < 10; i++)
+    {
         printf("Jamming from bank A\n");
         ctrl_jammer->start(ihd::BANK_A, time);
         time += uhd::time_spec_t(4096.0 * a.dwell / 200.0e6 + 0.1e-6); // 20 usecs
