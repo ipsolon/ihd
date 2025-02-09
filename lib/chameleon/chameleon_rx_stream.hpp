@@ -106,9 +106,9 @@ namespace ihd {
 
         void stop_stream();
 
-        int open_socket();
+        int open_socket() const;
 
-        void receive_thread_func(receive_thread_context_t *rtc);
+        void receive_thread_func(receive_thread_context_t *rtc) const;
 
         size_t get_packet_data(size_t n, chameleon_data_type *buff, uhd::rx_metadata_t &metadata, uint64_t timeout_ms);
     };

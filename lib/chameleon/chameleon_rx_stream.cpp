@@ -170,7 +170,7 @@ size_t chameleon_rx_stream::recv(const buffs_type &buffs, const size_t nsamps_pe
     return n_samples;
 }
 
-void chameleon_rx_stream::receive_thread_func(receive_thread_context *rtc) {
+void chameleon_rx_stream::receive_thread_func(receive_thread_context *rtc) const {
     sockaddr_in server_addr{};
     socklen_t len;
 
@@ -178,40 +178,43 @@ void chameleon_rx_stream::receive_thread_func(receive_thread_context *rtc) {
     if  (socket_fd < 0) {
         dbfprintf(stderr, "Error: open socket FAILED");
     }
-    while (rtc->run) {
-        chameleon_packet *cp = nullptr;
-        std::unique_lock<std::mutex> lock_free(*rtc->mtx_free);
-        auto now = std::chrono::system_clock::now();
-        auto then = now + std::chrono::milliseconds(100);
-        bool ret = false;
-        do {
-            ret = rtc->cv_free->wait_until(lock_free, then, [&rtc] { return !rtc->q_free->empty(); });
-        } while (!ret && rtc->run); // While timed out and predicate false and still running
-        if (ret) {
-            // Did not time out and predicate is true
-            cp = rtc->q_free->front();
-        }
-        lock_free.unlock();
-
-        ssize_t n = 0;
-        while (n == 0 && rtc->run && cp != nullptr) {
-            n = recvfrom(socket_fd, cp->getPacketMem(), cp->getPacketSize(), 0,
-                         reinterpret_cast<struct sockaddr *>(&server_addr), &len);
-            if (n > 0) {
-                lock_free.lock();
-                rtc->q_free->pop();
-                lock_free.unlock();
-
-                std::lock_guard<std::mutex> lock_samples(*rtc->mtx_free);
-                cp->setPacketSize(n);
-                rtc->q_samples->push(cp);
-                rtc->cv_samples->notify_one();
-            } else if (rtc->run) {
-                dbfprintf(stderr, "Receive error. n:%ld errno: %d\n", n, errno);
+    else
+    {
+        while (rtc->run) {
+            chameleon_packet *cp = nullptr;
+            std::unique_lock<std::mutex> lock_free(*rtc->mtx_free);
+            auto now = std::chrono::system_clock::now();
+            auto then = now + std::chrono::milliseconds(100);
+            bool ret = false;
+            do {
+                ret = rtc->cv_free->wait_until(lock_free, then, [&rtc] { return !rtc->q_free->empty(); });
+            } while (!ret && rtc->run); // While timed out and predicate false and still running
+            if (ret) {
+                // Did not time out and predicate is true
+                cp = rtc->q_free->front();
             }
-        }
-    }
-    close(socket_fd);
+            lock_free.unlock();
+
+            ssize_t n = 0;
+            while (n == 0 && rtc->run && cp != nullptr) {
+                n = recvfrom(socket_fd, cp->getPacketMem(), cp->getPacketSize(), 0,
+                             reinterpret_cast<struct sockaddr *>(&server_addr), &len);
+                if (n > 0) {
+                    lock_free.lock();
+                    rtc->q_free->pop();
+                    lock_free.unlock();
+
+                    std::lock_guard<std::mutex> lock_samples(*rtc->mtx_free);
+                    cp->setPacketSize(n);
+                    rtc->q_samples->push(cp);
+                    rtc->cv_samples->notify_one();
+                } else if (rtc->run) {
+                    dbfprintf(stderr, "Receive error. n:%ld errno: %d\n", n, errno);
+                }
+            }
+        } // end while (rtc->run)
+        close(socket_fd);
+    } // end if (socket_fs < 0)
 
 }
 
@@ -231,8 +234,6 @@ void chameleon_rx_stream::issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd) 
 void chameleon_rx_stream::start_stream() {
     _first_packet = true;
     _receive_thread_context.run = true;
-    // Issue stream_rx_cfg - returns Stream id
-   // open_socket();
     _recv_thread = std::thread([=] { receive_thread_func(&_receive_thread_context); });
 
     send_rx_cfg_set_cmd(_chanMask);
@@ -285,7 +286,7 @@ void chameleon_rx_stream::stop_stream() {
     }
 }
 
-int chameleon_rx_stream::open_socket() { // NOLINT
+int chameleon_rx_stream::open_socket() const {
     int err = 0;
     int sock_fd = -1;
 
