@@ -81,7 +81,6 @@ namespace ihd {
 
         size_t _nChans{};
         uint32_t _chanMask{};
-        int _socket_fd{};
 
         chameleon_packet *_current_packet;
         bool _first_packet{};
@@ -90,7 +89,6 @@ namespace ihd {
 
         typedef struct receive_thread_context {
             bool run;
-            int socket_fd;
 
             std::queue<chameleon_packet *> *q_free;
             std::mutex *mtx_free;
@@ -108,9 +106,9 @@ namespace ihd {
 
         void stop_stream();
 
-        void open_socket();
+        int open_socket();
 
-        static void receive_thread_func(receive_thread_context_t *rtc);
+        void receive_thread_func(receive_thread_context_t *rtc);
 
         size_t get_packet_data(size_t n, chameleon_data_type *buff, uhd::rx_metadata_t &metadata, uint64_t timeout_ms);
     };

@@ -31,7 +31,6 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t &stream_cmd,
     _vita_ip(DEFAULT_VITA_IP),
     _vita_port(DEFAULT_VITA_PORT),
     _nChans(stream_cmd.channels.size()),
-    _socket_fd(-1),
     _current_packet(nullptr),
     _receive_thread_context{} {
     if (stream_cmd.cpu_format != "sc16") {
@@ -55,7 +54,6 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t &stream_cmd,
         std::string port_str = stream_cmd.args[ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY];
         _vita_port = std::stoul(port_str, nullptr, 10);
     }
-    open_socket();
 
     _receive_thread_context.run = false;
     _receive_thread_context.q_free = &q_free_packets;
@@ -64,10 +62,10 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t &stream_cmd,
     _receive_thread_context.mtx_samples = &mtx_sample_queue;
     _receive_thread_context.cv_free = &cv_free_queue;
     _receive_thread_context.cv_samples = &cv_sample_queue;
-    _receive_thread_context.socket_fd = _socket_fd;
 }
 
 chameleon_rx_stream::~chameleon_rx_stream() {
+    stop_stream();
     while (!q_free_packets.empty()) {
         chameleon_packet *pk = q_free_packets.front();
         q_free_packets.pop();
@@ -78,9 +76,7 @@ chameleon_rx_stream::~chameleon_rx_stream() {
         q_sample_packets.pop();
         free(pk);
     }
-    if (_socket_fd >= 0) {
-        close(_socket_fd);
-    }
+
 }
 
 size_t chameleon_rx_stream::get_num_channels() const {
@@ -178,6 +174,10 @@ void chameleon_rx_stream::receive_thread_func(receive_thread_context *rtc) {
     sockaddr_in server_addr{};
     socklen_t len;
 
+    int socket_fd = open_socket();
+    if  (socket_fd < 0) {
+        dbfprintf(stderr, "Error: open socket FAILED");
+    }
     while (rtc->run) {
         chameleon_packet *cp = nullptr;
         std::unique_lock<std::mutex> lock_free(*rtc->mtx_free);
@@ -195,7 +195,7 @@ void chameleon_rx_stream::receive_thread_func(receive_thread_context *rtc) {
 
         ssize_t n = 0;
         while (n == 0 && rtc->run && cp != nullptr) {
-            n = recvfrom(rtc->socket_fd, cp->getPacketMem(), cp->getPacketSize(), 0,
+            n = recvfrom(socket_fd, cp->getPacketMem(), cp->getPacketSize(), 0,
                          reinterpret_cast<struct sockaddr *>(&server_addr), &len);
             if (n > 0) {
                 lock_free.lock();
@@ -211,6 +211,8 @@ void chameleon_rx_stream::receive_thread_func(receive_thread_context *rtc) {
             }
         }
     }
+    close(socket_fd);
+
 }
 
 void chameleon_rx_stream::issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd) {
@@ -229,8 +231,9 @@ void chameleon_rx_stream::issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd) 
 void chameleon_rx_stream::start_stream() {
     _first_packet = true;
     _receive_thread_context.run = true;
-    _recv_thread = std::thread([=] { receive_thread_func(&_receive_thread_context); });
     // Issue stream_rx_cfg - returns Stream id
+   // open_socket();
+    _recv_thread = std::thread([=] { receive_thread_func(&_receive_thread_context); });
 
     send_rx_cfg_set_cmd(_chanMask);
 
@@ -260,36 +263,32 @@ void chameleon_rx_stream::start_stream() {
 }
 
 void chameleon_rx_stream::stop_stream() {
-    _receive_thread_context.run = false;
-    _recv_thread.join();
+    if (_receive_thread_context.run) {
+        _receive_thread_context.run = false;
+        _recv_thread.join();
 
-    std::unique_ptr<chameleon_fw_cmd> stream_stop_cmd(
-        new chameleon_fw_stream_stop(_stream_id));
-    chameleon_fw_comms request(std::move(stream_stop_cmd));
-    // The response takes a LONG time so set timeout to 30 seconds
-    _commander.send_request(request, 30000);
+        std::unique_ptr<chameleon_fw_cmd> stream_stop_cmd(
+            new chameleon_fw_stream_stop(_stream_id));
+        chameleon_fw_comms request(std::move(stream_stop_cmd));
+        // The response takes a LONG time so set timeout to 30 seconds
+        _commander.send_request(request, 30000);
 
-    // Check ACK/NACK
-    _stream_id = 0;
+        // Check ACK/NACK
+        _stream_id = 0;
 
-    std::lock_guard<std::mutex> free_lock(mtx_free_queue);
-    std::lock_guard<std::mutex> sample_lock(mtx_sample_queue);
-    while (!q_sample_packets.empty()) {
-        q_free_packets.push(q_sample_packets.front());
-        q_sample_packets.pop();
+        std::lock_guard<std::mutex> free_lock(mtx_free_queue);
+        std::lock_guard<std::mutex> sample_lock(mtx_sample_queue);
+        while (!q_sample_packets.empty()) {
+            q_free_packets.push(q_sample_packets.front());
+            q_sample_packets.pop();
+        }
     }
-    close(_socket_fd);
-    _socket_fd = -1;
 }
 
-void chameleon_rx_stream::open_socket() {
+int chameleon_rx_stream::open_socket() { // NOLINT
     int err = 0;
     int sock_fd = -1;
-    // Just in case. close an "open socket"
-    if (_socket_fd > -1) {
-        close(_socket_fd);
-        _socket_fd = -1;
-    }
+
     // Creating socket file descriptor
     err = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (err < 0) {
@@ -328,9 +327,8 @@ void chameleon_rx_stream::open_socket() {
     if (err) {
         if (sock_fd > -1) {
             close(sock_fd);
+            sock_fd = -1;
         }
-        throw std::runtime_error("Error opening socket");
-    } else {
-        _socket_fd = sock_fd;
     }
+    return sock_fd;;
 }
