@@ -177,7 +177,5 @@ then
   fi
 fi
 
-
-
 echo "ERRORS = ${errors}"
 echo "FILE SIZE ERRORS = ${file_size_errors}"
