@@ -23,19 +23,20 @@ namespace po = boost::program_options;
 
 class RxStream {
 public:
-    RxStream(size_t chan, ihd::ipsolon_isrp::sptr &isrp, uint32_t tt,
+    RxStream(size_t chan, const ihd::ipsolon_isrp::sptr &isrp, uint32_t tt,
              uhd::stream_args_t &stream_args) : channel(chan), total_time(tt) {
         std::vector<size_t> channel_nums;
         channel_nums.push_back(chan);
         stream_args.channels = channel_nums;
         rx_stream = isrp->get_rx_stream(stream_args);
     }
+    virtual ~RxStream() = default;
 
     // Start a threads to receive iq/psd data - one for each channel enabled in the chan_mask
     virtual void run_loop() = 0;
 
     void stream_run() {
-        std::cout << "Run stream for channel:" << channel << std::endl;
+        std::cout << "RxStream stream_run for channel:" << channel << std::endl;
 
         /************************************************************************
          * Start the stream
@@ -62,7 +63,7 @@ protected:
 
 class RxStreamPsd : public RxStream {
 public:
-    RxStreamPsd(size_t chan, ihd::ipsolon_isrp::sptr &isrp, uint32_t tt, uhd::stream_args_t &stream_args)
+    RxStreamPsd(size_t chan, const ihd::ipsolon_isrp::sptr &isrp, uint32_t tt, uhd::stream_args_t &stream_args)
         : RxStream(chan, isrp, tt, stream_args) {
     }
 
@@ -110,7 +111,7 @@ private:
 
 class RxStreamIq : public RxStream {
 public:
-    RxStreamIq(size_t chan, ihd::ipsolon_isrp::sptr &isrp, uint32_t tt, uhd::stream_args_t &stream_args)
+    RxStreamIq(size_t chan, const ihd::ipsolon_isrp::sptr &isrp, uint32_t tt, uhd::stream_args_t &stream_args)
         : RxStream(chan, isrp, tt, stream_args) {
     }
 
