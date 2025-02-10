@@ -62,7 +62,7 @@ namespace ihd
     class chameleon_fw_cmd_tune_get : public chameleon_fw_cmd
     {
     public:
-        chameleon_fw_cmd_tune_get(std::size_t c) : chameleon_fw_cmd("get_freq"),
+        explicit chameleon_fw_cmd_tune_get(std::size_t c) : chameleon_fw_cmd("get_freq"),
                                                    chan(c)
         {
         }
@@ -103,7 +103,7 @@ namespace ihd
     class chameleon_fw_cmd_get_txgain : public chameleon_fw_cmd
     {
     public:
-        chameleon_fw_cmd_get_txgain(std::size_t c) : chameleon_fw_cmd("get_txgain"),
+        explicit chameleon_fw_cmd_get_txgain(std::size_t c) : chameleon_fw_cmd("get_txgain"),
                                                      chan(c)
         {
         }
@@ -144,7 +144,7 @@ namespace ihd
     class chameleon_fw_cmd_get_rxgain : public chameleon_fw_cmd
     {
     public:
-        chameleon_fw_cmd_get_rxgain(std::size_t c) : chameleon_fw_cmd("get_rxgain"),
+        explicit chameleon_fw_cmd_get_rxgain(std::size_t c) : chameleon_fw_cmd("get_rxgain"),
                                                      chan(c)
         {
         }
@@ -159,6 +159,39 @@ namespace ihd
 
     private:
         std::size_t chan{};
+    };
+
+    class chameleon_fw_stream_remove : public chameleon_fw_cmd {
+    public:
+        explicit chameleon_fw_stream_remove(std::uint32_t stream_id) : chameleon_fw_cmd("stream_rm"),
+                    stream_id(stream_id)
+        {
+        }
+
+        const char* to_command_string() override
+        {
+            std::stringstream ss;
+            ss << _cmd << " id=" << stream_id;
+            _command_string = ss.str();
+            return _command_string.c_str();
+        }
+    private:
+        std::uint32_t stream_id{};
+    };
+
+    class chameleon_fw_stream_list : public chameleon_fw_cmd {
+    public:
+        chameleon_fw_stream_list() : chameleon_fw_cmd("stream_list")
+        {
+        }
+
+        const char* to_command_string() override
+        {
+            std::stringstream ss;
+            ss << _cmd;
+            _command_string = ss.str();
+            return _command_string.c_str();
+        }
     };
 
     class chameleon_fw_rx_cfg_set : public chameleon_fw_cmd
