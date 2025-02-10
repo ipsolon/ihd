@@ -31,6 +31,7 @@ public:
         stream_args.channels = channel_nums;
         rx_stream = isrp->get_rx_stream(stream_args);
     }
+
     virtual ~RxStream() = default;
 
     // Start a threads to receive iq/psd data - one for each channel enabled in the chan_mask
@@ -55,7 +56,6 @@ public:
         uhd::stream_cmd_t const stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
         rx_stream->issue_stream_cmd(stream_cmd);
     }
-
 
 private:
     uhd::stream_args_t stream_args{};
@@ -182,7 +182,8 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
     po::options_description desc("Allowed options");
     desc.add_options()
             ("help", "help message")
-            ("num_loops", po::value<uint32_t>(&num_loops)->default_value(DEFAULT_NUM_LOOPS), "Number of start stop loops")
+            ("num_loops", po::value<uint32_t>(&num_loops)->default_value(DEFAULT_NUM_LOOPS),
+             "Number of start stop loops")
             ("dest_ip", po::value<std::string>(&dest_ip)->default_value("0.0.0.0"), "destination IP address")
             ("dest_port", po::value<uint16_t>(&dest_port)->default_value(DEFAULT_PORT), "destination port")
             ("args", po::value<std::string>(&args)->default_value(""), "USRP device address args");
@@ -223,7 +224,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
     // First IQ stream
     uhd::stream_args_t stream_args1("sc16", "sc16");
     stream_args1.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
-               ihd::ipsolon_rx_stream::stream_type::IQ_STREAM;
+            ihd::ipsolon_rx_stream::stream_type::IQ_STREAM;
     stream_args1.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] =
             dest_ip;
     stream_args1.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] =
@@ -236,11 +237,11 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
     // Second IQ stream
     uhd::stream_args_t stream_args2("sc16", "sc16");
     stream_args2.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
-               ihd::ipsolon_rx_stream::stream_type::IQ_STREAM;
+            ihd::ipsolon_rx_stream::stream_type::IQ_STREAM;
     stream_args2.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] =
             dest_ip;
     stream_args2.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] =
-           std::to_string(dest_port+1);
+            std::to_string(dest_port + 1);
 
     stream_args2.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] = std::to_string(dest_port);
     RxStream *rxStream2 = nullptr;
@@ -249,11 +250,11 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
     // Third stream is PSD
     uhd::stream_args_t stream_args3("sc16", "sc16");
     stream_args3.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
-                   ihd::ipsolon_rx_stream::stream_type::PSD_STREAM;
+            ihd::ipsolon_rx_stream::stream_type::PSD_STREAM;
     stream_args3.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] =
-           dest_ip;
+            dest_ip;
     stream_args3.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] =
-            std::to_string(dest_port+2);
+            std::to_string(dest_port + 2);
     stream_args3.args[ihd::ipsolon_rx_stream::stream_type::FFT_SIZE_KEY] =
             std::to_string(fft_size);
     stream_args3.args[ihd::ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY] =
@@ -265,11 +266,11 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
     // Fourth stream is PSD
     uhd::stream_args_t stream_args4("sc16", "sc16");
     stream_args4.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
-                   ihd::ipsolon_rx_stream::stream_type::PSD_STREAM;
+            ihd::ipsolon_rx_stream::stream_type::PSD_STREAM;
     stream_args4.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] =
             dest_ip;
     stream_args4.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] =
-            std::to_string(dest_port+3);
+            std::to_string(dest_port + 3);
     stream_args4.args[ihd::ipsolon_rx_stream::stream_type::FFT_SIZE_KEY] =
             std::to_string(fft_size);
     stream_args4.args[ihd::ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY] =
@@ -280,7 +281,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
     rxStream4 = new RxStreamPsd(4, isrp, total_time, stream_args4);
 
     // Fourth stream is PSD
-    for (int i=0; i<num_loops; i++) {
+    for (int i = 0; i < num_loops; i++) {
         constexpr int ONE_SECOND = 1000000;
         rxStream1->start_stream();
         rxStream2->start_stream();
@@ -291,8 +292,8 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
         rxStream2->stop_stream();
         rxStream3->stop_stream();
         rxStream4->stop_stream();
-      }
-    dbprintf("BEFORE delete stream\n");
+    }
+
     delete rxStream1;
     delete rxStream2;
     delete rxStream3;

@@ -62,6 +62,8 @@ chameleon_rx_stream::chameleon_rx_stream(const uhd::stream_args_t &stream_cmd,
     _receive_thread_context.mtx_samples = &mtx_sample_queue;
     _receive_thread_context.cv_free = &cv_free_queue;
     _receive_thread_context.cv_samples = &cv_sample_queue;
+
+    config_stream();
 }
 
 chameleon_rx_stream::~chameleon_rx_stream() {
@@ -76,6 +78,10 @@ chameleon_rx_stream::~chameleon_rx_stream() {
         q_sample_packets.pop();
         free(pk);
     }
+    dbprintf("Destructor send stream_rm for stream_id = %d\n",_stream_id);
+    std::unique_ptr<chameleon_fw_cmd> stream_remove(new chameleon_fw_stream_remove(_stream_id));
+    chameleon_fw_comms stream_remove_cmd(std::move(stream_remove));
+    _commander.send_request(stream_remove_cmd);
 
 }
 
@@ -209,7 +215,8 @@ void chameleon_rx_stream::receive_thread_func(receive_thread_context *rtc) const
                     rtc->q_samples->push(cp);
                     rtc->cv_samples->notify_one();
                 } else if (rtc->run) {
-                    dbfprintf(stderr, "Receive error. n:%ld errno: %d\n", n, errno);
+                    constexpr int TRY_AGAIN = -11;
+                    if (errno != -TRY_AGAIN) dbfprintf(stderr, "Receive error. n:%ld errno: %d\n", n, errno);
                 }
             }
         } // end while (rtc->run)
@@ -231,15 +238,7 @@ void chameleon_rx_stream::issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd) 
     }
 }
 
-void chameleon_rx_stream::start_stream() {
-    _first_packet = true;
-    _receive_thread_context.run = true;
-    _recv_thread = std::thread([=] { receive_thread_func(&_receive_thread_context); });
-
-    send_rx_cfg_set_cmd(_chanMask);
-
-    dbprintf("SEND rx_cfg_set nChans = %lu _chanMask 0x%X\n", _nChans, _chanMask);
-
+void chameleon_rx_stream::config_stream() {
     // Issue stream_rx_cfg - returns Stream id
     std::unique_ptr<chameleon_fw_cmd>
             stream_rx_cfg(new chameleon_fw_stream_rx_cfg(_chanMask, _vita_ip_str, _vita_port));
@@ -248,13 +247,23 @@ void chameleon_rx_stream::start_stream() {
     // Get stream id from response
     _stream_id = 0;
     for (const auto &resp_parm: stream_rx_cfg_request.getResponse()) {
-        size_t id_indx = resp_parm.find("id=");
-        if (id_indx != std::string::npos) {
-            std::string id_str = resp_parm.substr(id_indx + 3);
-            _stream_id = std::stoul(id_str);
+       size_t id_indx = resp_parm.find("id=");
+       if (id_indx != std::string::npos) {
+          std::string id_str = resp_parm.substr(id_indx + 3);
+          _stream_id = std::stoul(id_str);
         }
     }
+}
 
+
+void chameleon_rx_stream::start_stream() {
+    _first_packet = true;
+    _receive_thread_context.run = true;
+    _recv_thread = std::thread([=] { receive_thread_func(&_receive_thread_context); });
+
+    send_rx_cfg_set_cmd(_chanMask);
+
+    dbprintf("chameleon_rx_stream start stream _stream_id = %d\n",_stream_id);
     // Issue stream_start command
     if (_stream_id) {
         std::unique_ptr<chameleon_fw_cmd> stream_start(new chameleon_fw_stream_start(_stream_id));
@@ -268,14 +277,12 @@ void chameleon_rx_stream::stop_stream() {
         _receive_thread_context.run = false;
         _recv_thread.join();
 
+        dbprintf("stop_stream stream_id=%d",_stream_id);
         std::unique_ptr<chameleon_fw_cmd> stream_stop_cmd(
             new chameleon_fw_stream_stop(_stream_id));
         chameleon_fw_comms request(std::move(stream_stop_cmd));
         // The response takes a LONG time so set timeout to 30 seconds
         _commander.send_request(request, 30000);
-
-        // Check ACK/NACK
-        _stream_id = 0;
 
         std::lock_guard<std::mutex> free_lock(mtx_free_queue);
         std::lock_guard<std::mutex> sample_lock(mtx_sample_queue);

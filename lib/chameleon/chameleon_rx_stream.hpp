@@ -41,7 +41,7 @@ namespace ihd {
         void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd) override;
 
     protected:
-        virtual void send_rx_cfg_set_cmd(uint32_t chanMask) = 0;
+        virtual void send_rx_cfg_set_cmd(const uint32_t chanMask) = 0;
 
         std::queue<chameleon_packet *> q_free_packets;
         std::mutex mtx_free_queue;
@@ -50,6 +50,7 @@ namespace ihd {
         size_t _max_samples_per_packet;
         size_t _buffer_packet_cnt;
         chameleon_fw_commander _commander;
+        uint32_t _chanMask{};
 
     private:
         static const std::string DEFAULT_VITA_IP_STR;
@@ -80,7 +81,6 @@ namespace ihd {
         std::mutex mtx_stream;
 
         size_t _nChans{};
-        uint32_t _chanMask{};
 
         chameleon_packet *_current_packet;
         bool _first_packet{};
@@ -105,6 +105,8 @@ namespace ihd {
         void start_stream();
 
         void stop_stream();
+
+        void config_stream();
 
         int open_socket() const;
 
