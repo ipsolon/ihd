@@ -179,11 +179,9 @@ size_t chameleon_rx_stream::recv(const buffs_type &buffs, const size_t nsamps_pe
 void chameleon_rx_stream::receive_thread_func(receive_thread_context *rtc) const {
 
     int socket_fd = open_socket();
-    if  (socket_fd < 0) {
+    if (socket_fd < 0) {
         dbfprintf(stderr, "Error: open socket FAILED");
-    }
-    else
-    {
+    } else {
         while (rtc->run) {
             chameleon_packet *cp = nullptr;
             std::unique_lock<std::mutex> lock_free(*rtc->mtx_free);
@@ -212,8 +210,9 @@ void chameleon_rx_stream::receive_thread_func(receive_thread_context *rtc) const
                     rtc->q_samples->push(cp);
                     rtc->cv_samples->notify_one();
                 } else if (rtc->run) {
-                    constexpr int TRY_AGAIN = -11;
-                    if (errno != -TRY_AGAIN) dbfprintf(stderr, "Receive error. n:%ld errno: %d\n", n, errno);
+                    if (errno != EAGAIN) {
+                        dbfprintf(stderr, "Receive error. n:%ld errno: %d\n", n, errno);
+                    }
                 }
             }
         } // end while (rtc->run)
@@ -308,7 +307,8 @@ int chameleon_rx_stream::open_socket() const {
     }
 
     if (!err) {
-        err = setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &_vita_port_timeout, sizeof(_vita_port_timeout));
+        int reuse = 1;
+        err = setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR,(const char*)&reuse, sizeof(reuse));
         if (err < 0) {
             perror("Socket SO_REUSEADDR set error");
         }

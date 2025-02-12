@@ -21,8 +21,6 @@ namespace ihd {
         static constexpr size_t DEFAULT_PSD_TIMEOUT = 30;
         explicit chameleon_rx_stream_psd(const uhd::stream_args_t &stream_cmd, const uhd::device_addr_t &device_addr);
 
-        //~chameleon_rx_stream_psd() override;
-
     protected:
         void send_rx_cfg_set_cmd(const uint32_t chanMask) override;
         size_t get_max_num_samps() const override {

@@ -27,7 +27,7 @@ chameleon_rx_stream_iq::chameleon_rx_stream_iq(const uhd::stream_args_t &stream_
         auto cp = new chameleon_packet(_bytes_per_packet);
         q_free_packets.push(cp);
     }
-    send_rx_cfg_set_cmd(_chanMask); // NOLINT
+     chameleon_rx_stream_iq::send_rx_cfg_set_cmd(_chanMask);
 }
 
 void chameleon_rx_stream_iq::send_rx_cfg_set_cmd(const uint32_t chanMask) {
