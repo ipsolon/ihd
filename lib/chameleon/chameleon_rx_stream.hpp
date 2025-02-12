@@ -56,7 +56,7 @@ namespace ihd {
         static const std::string DEFAULT_VITA_IP_STR;
         static constexpr uint32_t DEFAULT_VITA_IP = INADDR_ANY;
         static constexpr uint32_t DEFAULT_VITA_PORT = 9090;
-        static constexpr size_t DEFAULT_TIMEOUT = 30;
+        static constexpr size_t DEFAULT_TIMEOUT_USEC = 250000;
 
         std::string _vita_ip_str;
         in_addr_t _vita_ip;
@@ -66,7 +66,7 @@ namespace ihd {
 
         size_t _buffer_mem_size = (DEFAULT_BUFFER_SIZE); /* The memory allocated to store received UDP packets */
 
-        timeval _vita_port_timeout = {DEFAULT_TIMEOUT, 0};
+        timeval _vita_port_timeout = {0, DEFAULT_TIMEOUT_USEC};
 
         /* Free Queue and Sample Queue
         * Receiver: Take from free queue, receive message, place in sample queue.

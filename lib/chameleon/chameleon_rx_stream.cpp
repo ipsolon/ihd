@@ -271,7 +271,6 @@ void chameleon_rx_stream::start_stream() {
 void chameleon_rx_stream::stop_stream() {
     if (_receive_thread_context.run) {
         _receive_thread_context.run = false;
-        _recv_thread.join();
 
         dbprintf("stop_stream stream_id=%d",_stream_id);
         std::unique_ptr<chameleon_fw_cmd> stream_stop_cmd(
@@ -279,6 +278,8 @@ void chameleon_rx_stream::stop_stream() {
         chameleon_fw_comms request(std::move(stream_stop_cmd));
         // The response takes a LONG time so set timeout to 30 seconds
         _commander.send_request(request, 30000);
+
+        _recv_thread.join();
 
         std::lock_guard<std::mutex> free_lock(mtx_free_queue);
         std::lock_guard<std::mutex> sample_lock(mtx_sample_queue);
