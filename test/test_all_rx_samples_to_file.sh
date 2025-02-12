@@ -109,7 +109,9 @@ function exec_rx_iq_samples_to_file() {
 if [ $stream_iq == 1 ];
 then
     exec_rx_iq_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 1 iq
+    sleep 1
     exec_rx_iq_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 2 iq
+    sleep 1
 fi
 
 
@@ -117,41 +119,63 @@ if [ $stream_psd == 2 ];
 then
   if [ $test_256 == 1 ];
   then
-     exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 1 psd
-     exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 2 psd
-     exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 3 psd
+    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 1 psd
+    sleep 1
+    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 2 psd
+    sleep 1
+    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 4 psd
+    sleep 1
+    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 8 psd
+    sleep 1
   fi
 
   if [ $test_512 == 2 ];
   then
     exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 512 1 psd
+    sleep 1
     exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 512 2 psd
-    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 512 3 psd
+    sleep 1
+    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 4 psd
+    sleep 1
+    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 8 psd
+    sleep 1
   fi
 
   if [ $test_1024 == 4 ];
   then
     exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 1024 1 psd
+    sleep 1
     exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 1024 2 psd
-    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 1024 3 psd
+    sleep 1
+    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 4 psd
+    sleep 1
+    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 256 8 psd
+    sleep 1
   fi
 
   if [ $test_2048 == 8 ];
   then
     exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 2048 1 psd
+    sleep 1
     exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 2048 2 psd
-    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 2048 3 psd
+    sleep 1
+    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 2048 4 psd
+    sleep 1
+    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 2048 8 psd
+    sleep 1
   fi
 
   if [ $test_4096 == 16 ];
   then
     exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 1 psd
+    sleep 1
     exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 2 psd
-    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 3 psd
+    sleep 1
+    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 4 psd
+    sleep 1
+    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 8 psd
   fi
 fi
-
-
 
 echo "ERRORS = ${errors}"
 echo "FILE SIZE ERRORS = ${file_size_errors}"

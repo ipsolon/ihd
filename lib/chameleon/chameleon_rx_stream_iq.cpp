@@ -27,11 +27,10 @@ chameleon_rx_stream_iq::chameleon_rx_stream_iq(const uhd::stream_args_t &stream_
         auto cp = new chameleon_packet(_bytes_per_packet);
         q_free_packets.push(cp);
     }
+     chameleon_rx_stream_iq::send_rx_cfg_set_cmd(_chanMask);
 }
 
-chameleon_rx_stream_iq::~chameleon_rx_stream_iq() = default;
-
-void chameleon_rx_stream_iq::send_rx_cfg_set_cmd(uint32_t chanMask) {
+void chameleon_rx_stream_iq::send_rx_cfg_set_cmd(const uint32_t chanMask) {
     size_t chan_num = 1;
     for (int i = 0; i < MAX_RX_CHANNELS; i++) {
         size_t chan_enabled = chanMask & (1 << i);

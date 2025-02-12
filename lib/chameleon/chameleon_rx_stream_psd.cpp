@@ -26,10 +26,14 @@ chameleon_rx_stream_psd::chameleon_rx_stream_psd(const uhd::stream_args_t &strea
     if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::FFT_SIZE_KEY)) {
         std::string fft_size = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_SIZE_KEY];
         _fft_size = std::strtol(fft_size.c_str(), nullptr, 10);
+    } else {
+        _fft_size = DEFAULT_FFT_SIZE;
     }
     if (stream_cmd.args.has_key(ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY)) {
         std::string fft_avg = stream_cmd.args[ipsolon_rx_stream::stream_type::FFT_AVG_COUNT_KEY];
         _fft_avg = std::strtol(fft_avg.c_str(), nullptr, 10);
+    } else {
+        _fft_avg = DEFAULT_FFT_AVG;
     }
     _bytes_per_packet = (_fft_size * BYTES_PER_IQ_PAIR) + PACKET_HEADER_SIZE;
     // FIXME - fix buffering? Need to speed up udp
@@ -45,11 +49,11 @@ chameleon_rx_stream_psd::chameleon_rx_stream_psd(const uhd::stream_args_t &strea
         q_free_packets.push(cp);
     }
 
+    send_rx_cfg_set_cmd(_chanMask);
+
 }
 
-chameleon_rx_stream_psd::~chameleon_rx_stream_psd() = default;
-
-void chameleon_rx_stream_psd::send_rx_cfg_set_cmd(uint32_t chanMask) {
+void chameleon_rx_stream_psd::send_rx_cfg_set_cmd(const uint32_t chanMask) {
     size_t chan_num = 1;
     for (int i = 0; i < MAX_RX_CHANNELS; i++) {
         size_t chan_enabled = chanMask & (1 << i);

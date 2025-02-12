@@ -41,7 +41,7 @@ namespace ihd {
         void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd) override;
 
     protected:
-        virtual void send_rx_cfg_set_cmd(uint32_t chanMask) = 0;
+        virtual void send_rx_cfg_set_cmd(const uint32_t chanMask) = 0;
 
         std::queue<chameleon_packet *> q_free_packets;
         std::mutex mtx_free_queue;
@@ -50,12 +50,13 @@ namespace ihd {
         size_t _max_samples_per_packet;
         size_t _buffer_packet_cnt;
         chameleon_fw_commander _commander;
+        uint32_t _chanMask{};
 
     private:
         static const std::string DEFAULT_VITA_IP_STR;
         static constexpr uint32_t DEFAULT_VITA_IP = INADDR_ANY;
         static constexpr uint32_t DEFAULT_VITA_PORT = 9090;
-        static constexpr size_t DEFAULT_TIMEOUT = 30;
+        static constexpr size_t DEFAULT_TIMEOUT_USEC = 250000;
 
         std::string _vita_ip_str;
         in_addr_t _vita_ip;
@@ -65,7 +66,7 @@ namespace ihd {
 
         size_t _buffer_mem_size = (DEFAULT_BUFFER_SIZE); /* The memory allocated to store received UDP packets */
 
-        timeval _vita_port_timeout = {DEFAULT_TIMEOUT, 0};
+        timeval _vita_port_timeout = {0, DEFAULT_TIMEOUT_USEC};
 
         /* Free Queue and Sample Queue
         * Receiver: Take from free queue, receive message, place in sample queue.
@@ -80,8 +81,6 @@ namespace ihd {
         std::mutex mtx_stream;
 
         size_t _nChans{};
-        uint32_t _chanMask{};
-        int _socket_fd{};
 
         chameleon_packet *_current_packet;
         bool _first_packet{};
@@ -90,7 +89,6 @@ namespace ihd {
 
         typedef struct receive_thread_context {
             bool run;
-            int socket_fd;
 
             std::queue<chameleon_packet *> *q_free;
             std::mutex *mtx_free;
@@ -108,9 +106,11 @@ namespace ihd {
 
         void stop_stream();
 
-        void open_socket();
+        void config_stream();
 
-        static void receive_thread_func(receive_thread_context_t *rtc);
+        int open_socket() const;
+
+        void receive_thread_func(receive_thread_context_t *rtc) const;
 
         size_t get_packet_data(size_t n, chameleon_data_type *buff, uhd::rx_metadata_t &metadata, uint64_t timeout_ms);
     };
