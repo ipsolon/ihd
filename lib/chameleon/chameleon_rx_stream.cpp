@@ -177,8 +177,6 @@ size_t chameleon_rx_stream::recv(const buffs_type &buffs, const size_t nsamps_pe
 }
 
 void chameleon_rx_stream::receive_thread_func(receive_thread_context *rtc) const {
-    sockaddr_in server_addr{};
-    socklen_t len;
 
     int socket_fd = open_socket();
     if  (socket_fd < 0) {
@@ -203,8 +201,7 @@ void chameleon_rx_stream::receive_thread_func(receive_thread_context *rtc) const
 
             ssize_t n = 0;
             while (n == 0 && rtc->run && cp != nullptr) {
-                n = recvfrom(socket_fd, cp->getPacketMem(), cp->getPacketSize(), 0,
-                             reinterpret_cast<struct sockaddr *>(&server_addr), &len);
+                n = recvfrom(socket_fd, cp->getPacketMem(), cp->getPacketSize(), 0, nullptr, nullptr);
                 if (n > 0) {
                     lock_free.lock();
                     rtc->q_free->pop();
