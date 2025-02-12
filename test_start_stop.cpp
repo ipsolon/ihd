@@ -224,7 +224,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
     // First IQ stream
     uhd::stream_args_t stream_args1("sc16", "sc16");
     stream_args1.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
-            ihd::ipsolon_rx_stream::stream_type::IQ_STREAM;
+            ihd::ipsolon_rx_stream::stream_type::PSD_STREAM;
     stream_args1.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] =
             dest_ip;
     stream_args1.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] =
@@ -237,7 +237,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
     // Second IQ stream
     uhd::stream_args_t stream_args2("sc16", "sc16");
     stream_args2.args[ihd::ipsolon_rx_stream::stream_type::STREAM_FORMAT_KEY] =
-            ihd::ipsolon_rx_stream::stream_type::IQ_STREAM;
+            ihd::ipsolon_rx_stream::stream_type::PSD_STREAM;
     stream_args2.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_IP_KEY] =
             dest_ip;
     stream_args2.args[ihd::ipsolon_rx_stream::stream_type::STREAM_DEST_PORT_KEY] =
