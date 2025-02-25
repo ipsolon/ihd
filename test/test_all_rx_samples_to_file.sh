@@ -171,9 +171,9 @@ then
     sleep 1
     exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 2 psd
     sleep 1
-    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 4 psd
+    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 3 psd
     sleep 1
-    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 8 psd
+    exec_rx_psd_samples_to_file "${dest_ip}" "${cham_ip}" "${NUM_SAMPS}" 4096 4 psd
   fi
 fi
 
