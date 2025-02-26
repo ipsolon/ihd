@@ -197,8 +197,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     // Setting TX Frequency and Gain setting
     uhd::tune_request_t tune_request{};
     tune_request.rf_freq = freq;
+
+    int second_chan = 3;
+#define DO_TUNE 1
+#if DO_TUNE
     isrp->set_tx_freq(tune_request, channel);
     isrp->uhd::usrp::multi_usrp::set_tx_gain(gain, channel);
+#endif
     printf("freq=%f, gain=%f , channel=%zu\n",freq,gain, channel);
 
     if ( drone2 != -1 ) {
@@ -211,10 +216,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
         if ( freq2 == 0 ) {
             freq2 = freq;
         }
-
-        isrp->set_tx_freq(tune_request2, 2);
-        isrp->uhd::usrp::multi_usrp::set_tx_gain(gain2, 2);
-        printf("freq=%f, gain=%f , channel=%zu\n",freq2,gain2, 2);
+#if DO_TUNE
+        isrp->set_tx_freq(tune_request2, second_chan);
+        isrp->uhd::usrp::multi_usrp::set_tx_gain(gain2, second_chan);
+#endif
+        printf("freq=%f, gain=%f , channel=%d\n",freq2,gain2, second_chan);
     }
 
     //Todo
@@ -246,7 +252,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     stream_args2.args = target2;
 
     std::vector<size_t> channel_nums2;
-    channel_nums2.push_back(2);
+    channel_nums2.push_back(second_chan);
     stream_args2.channels = channel_nums2;
     auto tx_stream2 = isrp->get_tx_stream(stream_args2);
 
@@ -260,20 +266,33 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     ihd::jammer_config_t zeroize;
     ihd::jammer_config_t a;
     ihd::jammer_config_t b;
-
+#if ZEROIZE
     zeroize.bank = ihd::BANK_A;
     zeroize.dwell = 1;
     zeroize.fm_max_dev = 0.0f;
     zeroize.fm_ddang = 0.0f;
     zeroize.phasors = init;
     zeroize.centers = centers;
-
+#define DEBUG_DELAY 0
     // Initialize A and B
     ctrl_jammer->send_config(zeroize);
+#if DEBUG_DELAY
+    sleep(DEBUG_DELAY);
+#endif
     ctrl_jammer2->send_config(zeroize);
+#if DEBUG_DELAY
+    sleep(DEBUG_DELAY);
+#endif
     zeroize.bank = ihd::BANK_B;
     ctrl_jammer->send_config(zeroize);
+#if DEBUG_DELAY
+    sleep(DEBUG_DELAY);
+#endif
     ctrl_jammer2->send_config(zeroize);
+#if DEBUG_DELAY
+    sleep(DEBUG_DELAY);
+#endif
+#endif
 
     // Bank A - Titan example
     std::vector<int>  indices = {
@@ -318,10 +337,16 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     };*/
     get_engage_command__(drone,a, rescale, config, pgain);
     ctrl_jammer->send_config(a);
+#if DEBUG_DELAY
+    sleep(DEBUG_DELAY);
+#endif
 
     if ( drone2 != -1 ) {
         get_engage_command__(drone2,b,rescale,config,pgain);
         ctrl_jammer2->send_config(b);
+#if DEBUG_DELAY
+        sleep(DEBUG_DELAY);
+#endif
     }
 
     /*
