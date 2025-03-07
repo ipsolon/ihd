@@ -141,15 +141,20 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     // Options
     float freq;
     float freq2;
+    float freq3;
     float gain;
     float gain2;
+    float gain3;
     std::string isrp_args;
     size_t channel;
     int drone;
     int drone2;
+    int drone3;
     int rescale;
     std::string config;
     float pgain;
+    int dozero;
+    int duration;
 
     po::options_description desc("Allowed options");
     desc.add_options()
@@ -157,13 +162,18 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
             ("config", po::value<std::string>(&config)->default_value("drones.json"),"Drone configuration file, default=drones.json")
             ("drone", po::value<int>(&drone)->default_value(6),"Drone code, ie. 6 - ocusync 2.4")
             ("drone2", po::value<int>(&drone2)->default_value(-1),"Drone code, ie. 6 - ocusync 2.4 for second channel")
+            ("drone3", po::value<int>(&drone3)->default_value(-1),"Drone code, ie. 6 - ocusync 2.4 for third channel")
             ("rescale", po::value<int>(&rescale)->default_value(0),"Rescale waveforms for 245.76MHz samplerate, default=0")
             ("pgain", po::value<float>(&pgain)->default_value(1),"Adjust phasors for software gain, default=1 (no gain)")
             ("freq", po::value<float>(&freq)->default_value(2.45e9), "RF Center Frequency")
-            ("freq2", po::value<float>(&freq2)->default_value(0), "RF Center Frequency on second channel")
+            ("freq2", po::value<float>(&freq2)->default_value(2.45e9), "RF Center Frequency on second channel")
+            ("freq3", po::value<float>(&freq3)->default_value(2.45e9), "RF Center Frequency on third channel")
             ("gain", po::value<float>(&gain)->default_value(10.0), "TX Gain")
-            ("gain2", po::value<float>(&gain2)->default_value(-1), "TX Gain on second channel")
+            ("gain2", po::value<float>(&gain2)->default_value(10.0), "TX Gain on second channel")
+            ("gain3", po::value<float>(&gain3)->default_value(10.0), "TX Gain on second channel")
             ("channel", po::value<size_t>(&channel)->default_value(1), "which channel to use")
+            ("zeroize", po::value<int>(&dozero)->default_value(0), "Zeroize jammer banks after tx, default=0")
+            ("duration", po::value<int>(&duration)->default_value(20), "Transmit duration in seconds")
             ("args", po::value<std::string>(&isrp_args)->default_value("addr=192.168.0.100"),
                     "UHD Device Arguments");
 
@@ -184,6 +194,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     auto ctrl_jammer2 = isrp->get_block_ctrl<ihd::chameleon_jammer_block_ctrl>(ihd::block_id_t(1));
     ihd::block_id_t blockid_jammer2 = ctrl_jammer2->get_block_id();
 
+    auto ctrl_jammer3 = isrp->get_block_ctrl<ihd::chameleon_jammer_block_ctrl>(ihd::block_id_t(2));
+    ihd::block_id_t blockid_jammer3 = ctrl_jammer3->get_block_id();
+
+
 
 
     // Initialize both banks with zeros
@@ -197,30 +211,24 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     // Setting TX Frequency and Gain setting
     uhd::tune_request_t tune_request{};
     tune_request.rf_freq = freq;
-
-    int second_chan = 3;
-#define DO_TUNE 1
-#if DO_TUNE
     isrp->set_tx_freq(tune_request, channel);
     isrp->uhd::usrp::multi_usrp::set_tx_gain(gain, channel);
-#endif
     printf("freq=%f, gain=%f , channel=%zu\n",freq,gain, channel);
 
     if ( drone2 != -1 ) {
         uhd::tune_request_t tune_request2{};
         tune_request2.rf_freq = freq2;
-        if ( gain2 == -1 ) {
-            gain2 = gain;
-        }
+        isrp->set_tx_freq(tune_request2, 2);
+        isrp->uhd::usrp::multi_usrp::set_tx_gain(gain2, 2);
+        printf("freq=%f, gain=%f , channel=%zu\n",freq2,gain2, 2);
+    }
 
-        if ( freq2 == 0 ) {
-            freq2 = freq;
-        }
-#if DO_TUNE
-        isrp->set_tx_freq(tune_request2, second_chan);
-        isrp->uhd::usrp::multi_usrp::set_tx_gain(gain2, second_chan);
-#endif
-        printf("freq=%f, gain=%f , channel=%d\n",freq2,gain2, second_chan);
+    if ( drone3 != -1 ) {
+        uhd::tune_request_t tune_request3{};
+        tune_request3.rf_freq = freq3;
+        isrp->set_tx_freq(tune_request3, 3);
+        isrp->uhd::usrp::multi_usrp::set_tx_gain(gain3, 3);
+        printf("freq=%f, gain=%f , channel=%zu\n",freq3,gain3, 3);
     }
 
     //Todo
@@ -252,47 +260,69 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     stream_args2.args = target2;
 
     std::vector<size_t> channel_nums2;
-    channel_nums2.push_back(second_chan);
+    channel_nums2.push_back(2);
     stream_args2.channels = channel_nums2;
     auto tx_stream2 = isrp->get_tx_stream(stream_args2);
+
+    uhd::stream_args_t stream_args3("u32", "u32");
+    uhd::device_addr_t target3;
+    target3["block_id"] = blockid_jammer3.to_string();
+    stream_args3.args = target3;
+
+    std::vector<size_t> channel_nums3;
+    channel_nums3.push_back(3);
+    stream_args3.channels = channel_nums3;
+    auto tx_stream3 = isrp->get_tx_stream(stream_args3);
 
 
 
     // Pass the TX stream over to the jammer
     ctrl_jammer->set_streamer(tx_stream);
     ctrl_jammer2->set_streamer(tx_stream2);
+    ctrl_jammer3->set_streamer(tx_stream3);
 
 
     ihd::jammer_config_t zeroize;
     ihd::jammer_config_t a;
     ihd::jammer_config_t b;
-#if ZEROIZE
+
     zeroize.bank = ihd::BANK_A;
     zeroize.dwell = 1;
     zeroize.fm_max_dev = 0.0f;
     zeroize.fm_ddang = 0.0f;
     zeroize.phasors = init;
     zeroize.centers = centers;
-#define DEBUG_DELAY 0
+
+     if ( dozero == 1) {
+        printf("Zeroizing Jammer Banks");
+        zeroize.bank = ihd::BANK_A;
+        ctrl_jammer->send_config(zeroize);
+        if ( drone2 != -1 ) {
+            ctrl_jammer2->send_config(zeroize);
+        }
+        if ( drone3 != -1 ) {
+            ctrl_jammer3->send_config(zeroize);
+        }
+        zeroize.bank = ihd::BANK_B;
+        ctrl_jammer->send_config(zeroize);
+        if ( drone2 != -1 ) {
+            ctrl_jammer2->send_config(zeroize);
+        }
+        if ( drone3 != -1 ) {
+            ctrl_jammer3->send_config(zeroize);
+        }
+
+    }
+
+
     // Initialize A and B
+   
+    /*
     ctrl_jammer->send_config(zeroize);
-#if DEBUG_DELAY
-    sleep(DEBUG_DELAY);
-#endif
     ctrl_jammer2->send_config(zeroize);
-#if DEBUG_DELAY
-    sleep(DEBUG_DELAY);
-#endif
     zeroize.bank = ihd::BANK_B;
     ctrl_jammer->send_config(zeroize);
-#if DEBUG_DELAY
-    sleep(DEBUG_DELAY);
-#endif
-    ctrl_jammer2->send_config(zeroize);
-#if DEBUG_DELAY
-    sleep(DEBUG_DELAY);
-#endif
-#endif
+    ctrl_jammer2->send_config(zeroize);*/
 
     // Bank A - Titan example
     std::vector<int>  indices = {
@@ -337,16 +367,23 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     };*/
     get_engage_command__(drone,a, rescale, config, pgain);
     ctrl_jammer->send_config(a);
-#if DEBUG_DELAY
-    sleep(DEBUG_DELAY);
-#endif
+    a.bank = ihd::BANK_B;
+    ctrl_jammer->send_config(a);
 
     if ( drone2 != -1 ) {
         get_engage_command__(drone2,b,rescale,config,pgain);
+        b.bank = ihd::BANK_A;
         ctrl_jammer2->send_config(b);
-#if DEBUG_DELAY
-        sleep(DEBUG_DELAY);
-#endif
+        b.bank = ihd::BANK_B;
+        ctrl_jammer2->send_config(b);
+    }
+
+    if ( drone3 != -1 ) {
+        get_engage_command__(drone3,b,rescale,config,pgain);
+        b.bank = ihd::BANK_A;
+        ctrl_jammer3->send_config(b);
+        b.bank = ihd::BANK_B;
+        ctrl_jammer3->send_config(b);
     }
 
     /*
@@ -366,25 +403,34 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
 
     // Iterate back and forth
     auto radio_time = isrp->get_time_now();
-    auto time = radio_time + uhd::time_spec_t(1.0);
+    auto time = radio_time + uhd::time_spec_t(.10);
 
-    for (uint32_t i = 0; i < 10; i++) {
+    for (uint32_t i = 0; i < duration; i++) {
         printf("Jamming from bank A\n");
         ctrl_jammer->start(ihd::BANK_A, time);
         if ( drone2 != -1 ) {
             ctrl_jammer2->start(ihd::BANK_B, time);
         }
-        time += uhd::time_spec_t(4096.0 * a.dwell / 245.76e6 + 0.1e-6); // 20 usecs
-        usleep(2000000);
+
+        if ( drone3 != -1 ) {
+            ctrl_jammer3->start(ihd::BANK_B, time);
+        }
+
+        //time += uhd::time_spec_t(4096.0 * a.dwell / 245.76e6 + 0.1e-6); // 20 usecs
+        usleep(1000000);
         /*printf("Jamming from bank B\n");
         ctrl_jammer->start(ihd::BANK_B, time);
         usleep(2000000);
         time += uhd::time_spec_t(4096.0 * b.dwell / 200.0e6 + 0.1e-6); // 204 usecs*/
     }
 
+   
     ctrl_jammer->stop();
     if ( drone2 != -1 ) {
         ctrl_jammer2->stop();
+    }
+    if ( drone3 != -1 ) {
+        ctrl_jammer3->stop();
     }
 
     auto total_time = (time - isrp->get_time_now()).get_full_secs();
@@ -394,6 +440,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     ctrl_jammer->clear_overflow();
     if ( drone2 != -1 ) {
         ctrl_jammer2->clear_overflow();
+    }
+    if ( drone3 != -1 ) {
+        ctrl_jammer3->clear_overflow();
     }
 
     return EXIT_SUCCESS;
