@@ -29,7 +29,7 @@ function exec_packet_check() {
    GREEN='\033[0;32m'
    WHITE='\033[0;37m'
    echo -e "${GREEN} Running test with chan_mask ${chan_mask} ${WHITE}\n"
-   ./packet_check --stream_type="${stream_type}" --dest_ip="${dest_ip}" --dest_port="${dest_port}" --args=addr="${cham_ip}"  --chan_mask="${chan_mask}"
+   ./pipeline_packet_check --stream_type="${stream_type}" --dest_ip="${dest_ip}" --dest_port="${dest_port}" --args=addr="${cham_ip}"  --chan_mask="${chan_mask}"
    ret_code=$?
    if [ $ret_code != 0 ]; then  let "errors=errors+1";  echo -e "***ERROR: fft: ${fft_size} channel: ${channel}\n"; fi
 
@@ -50,13 +50,6 @@ exec_packet_check "${dest_ip}" "${cham_ip}" 1 iq
 sleep ${delay}
 exec_packet_check "${dest_ip}" "${cham_ip}" 2 iq
 sleep ${delay}
-#exec_packet_check "${dest_ip}" "${cham_ip}" 4 iq
-#sleep ${delay}
-#exec_packet_check "${dest_ip}" "${cham_ip}" 8 iq
-#sleep ${delay}
-
-#exec_packet_check "${dest_ip}" "${cham_ip}" 3 iq
-#exec_packet_check "${dest_ip}" "${cham_ip}" 3 psd
 
 echo "ERRORS = ${errors}"
 
