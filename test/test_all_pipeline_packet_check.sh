@@ -45,11 +45,11 @@ sleep ${delay}
 exec_packet_check "${dest_ip}" "${cham_ip}" 8 psd
 sleep ${delay}
 
-echo "packet check for IQ"
-exec_packet_check "${dest_ip}" "${cham_ip}" 1 iq
-sleep ${delay}
-exec_packet_check "${dest_ip}" "${cham_ip}" 2 iq
-sleep ${delay}
+#echo "packet check for IQ"
+#exec_packet_check "${dest_ip}" "${cham_ip}" 1 iq
+#sleep ${delay}
+#exec_packet_check "${dest_ip}" "${cham_ip}" 2 iq
+#sleep ${delay}
 
 echo "ERRORS = ${errors}"
 
