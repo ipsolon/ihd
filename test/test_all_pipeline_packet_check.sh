@@ -11,7 +11,7 @@ cham_ip=$3
 
 if [[ $# -ne 4 ]]
 then
-   delay=0
+   delay=1
 else
    delay=$4
 fi
@@ -37,20 +37,18 @@ function exec_packet_check() {
 
 echo "packet check for PSD"
 exec_packet_check "${dest_ip}" "${cham_ip}" 1 psd
-sleep ${delay}
-exec_packet_check "${dest_ip}" "${cham_ip}" 2 psd
-sleep ${delay}
-exec_packet_check "${dest_ip}" "${cham_ip}" 4 psd
-sleep ${delay}
-exec_packet_check "${dest_ip}" "${cham_ip}" 8 psd
-sleep ${delay}
-
-#echo "packet check for IQ"
-#exec_packet_check "${dest_ip}" "${cham_ip}" 1 iq
+echo " exec_packet_check rtn $?"
 #sleep ${delay}
-#exec_packet_check "${dest_ip}" "${cham_ip}" 2 iq
+#exec_packet_check "${dest_ip}" "${cham_ip}" 2 psd
+#sleep ${delay}
+#exec_packet_check "${dest_ip}" "${cham_ip}" 4 psd
+#sleep ${delay}
+#exec_packet_check "${dest_ip}" "${cham_ip}" 8 psd
 #sleep ${delay}
 
-echo "ERRORS = ${errors}"
+
+echo "ERRORS = ${errors}\n"
+echo "${errors}"
+exit $errors
 
 
