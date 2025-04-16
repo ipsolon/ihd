@@ -155,7 +155,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     float pgain;
     int dozero;
     int duration;
-
+    int rtn_code = EXIT_SUCCESS;
     po::options_description desc("Allowed options");
     desc.add_options()
             ("help", "Help message")
