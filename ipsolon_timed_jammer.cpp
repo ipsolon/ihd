@@ -155,6 +155,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     float pgain;
     int dozero;
     int duration;
+    int exit_code = EXIT_SUCCESS;
 
     po::options_description desc("Allowed options");
     desc.add_options()
@@ -407,13 +408,19 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
 
     for (uint32_t i = 0; i < duration; i++) {
         printf("Jamming from bank A\n");
-        ctrl_jammer->start(ihd::BANK_A, time);
+        if (ctrl_jammer->start(ihd::BANK_A, time)) {
+            exit_code = EXIT_FAILURE;
+        }
         if ( drone2 != -1 ) {
-            ctrl_jammer2->start(ihd::BANK_B, time);
+            if (ctrl_jammer2->start(ihd::BANK_B, time)) {
+                exit_code = EXIT_FAILURE;
+            }
         }
 
         if ( drone3 != -1 ) {
-            ctrl_jammer3->start(ihd::BANK_B, time);
+            if (ctrl_jammer3->start(ihd::BANK_B, time)) {
+                exit_code = EXIT_FAILURE;
+            }
         }
 
         //time += uhd::time_spec_t(4096.0 * a.dwell / 245.76e6 + 0.1e-6); // 20 usecs
@@ -445,5 +452,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
         ctrl_jammer3->clear_overflow();
     }
 
-    return EXIT_SUCCESS;
+    if (exit_code == EXIT_FAILURE) print ("***** EXIT_ERROR!!! ");
+    return exit_code;
 }
