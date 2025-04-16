@@ -16,7 +16,7 @@ namespace ihd {
 class chameleon_fw_commander {
 public:
     explicit chameleon_fw_commander(uhd::device_addr_t  dev_addr);
-    int send_request(chameleon_fw_comms &request, int timeout_ms = 5000) const;
+    int send_request(chameleon_fw_comms &request, size_t timeout_ms = 5000) const;
     const char *getIP();
 private:
     uhd::transport::udp_simple::sptr _udp_cmd_port{};

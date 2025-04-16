@@ -18,7 +18,7 @@ namespace ihd {
                                                                    std::to_string(CHAMELEON_FW_COMMS_UDP_PORT));
     }
 
-    int chameleon_fw_commander::send_request(chameleon_fw_comms &request, int timeout_ms) const {
+    int chameleon_fw_commander::send_request(chameleon_fw_comms &request, size_t timeout_ms) const {
         int err = 0;
         size_t ret = 0;
 
