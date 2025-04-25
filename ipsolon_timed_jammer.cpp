@@ -221,7 +221,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
         tune_request2.rf_freq = freq2;
         isrp->set_tx_freq(tune_request2, 2);
         isrp->uhd::usrp::multi_usrp::set_tx_gain(gain2, 2);
-        printf("freq=%f, gain=%f , channel=%zu\n",freq2,gain2, 2);
+        printf("freq=%f, gain=%f , channel=%d\n",freq2,gain2, 2);
     }
 
     if ( drone3 != -1 ) {
@@ -229,7 +229,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
         tune_request3.rf_freq = freq3;
         isrp->set_tx_freq(tune_request3, 3);
         isrp->uhd::usrp::multi_usrp::set_tx_gain(gain3, 3);
-        printf("freq=%f, gain=%f , channel=%zu\n",freq3,gain3, 3);
+        printf("freq=%f, gain=%f , channel=%d\n",freq3,gain3, 3);
     }
 
     //Todo
@@ -452,6 +452,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
         ctrl_jammer3->clear_overflow();
     }
 
-    if (exit_code == EXIT_FAILURE) print ("***** EXIT_ERROR!!! ");
+    if (exit_code == EXIT_FAILURE) {
+        printf ("***** EXIT_ERROR!!! ");
+    }
     return exit_code;
 }
