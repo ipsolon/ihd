@@ -59,7 +59,7 @@ namespace ihd {
 
         void send_config(jammer_config_t config);
 
-        void start(jammer_bank_t bank, uhd::time_spec_t time);
+        int start(jammer_bank_t bank, uhd::time_spec_t time);
 
         void stop();
 

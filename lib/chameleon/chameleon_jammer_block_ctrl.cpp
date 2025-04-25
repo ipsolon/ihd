@@ -60,11 +60,14 @@ void chameleon_jammer_block_ctrl::send_config(jammer_config_t config) {
     stream->send(&payload.front(), payload.size(), md, 5.0);
 }
 
-void chameleon_jammer_block_ctrl::start(jammer_bank_t bank, uhd::time_spec_t time) {
+int chameleon_jammer_block_ctrl::start(jammer_bank_t bank, uhd::time_spec_t time) {
+    int err = 0;
     convert_start(bank, payload);
     md.has_time_spec = true;
     md.time_spec = time;
-    stream->send(&payload.front(), payload.size(), md, 5.0);
+    size_t size_sent = stream->send(&payload.front(), payload.size(), md, 5.0);
+    err = (size_sent != payload.size());
+    return err;
 }
 
 void chameleon_jammer_block_ctrl::stop() {
