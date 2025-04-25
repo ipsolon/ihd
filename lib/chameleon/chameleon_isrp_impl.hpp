@@ -33,6 +33,8 @@ public:
     double                 get_tx_gain(const std::string& name,size_t chan) override;
     uhd::time_spec_t       get_time_now() override;
 
+    int get_temperatures(temperature_t &temperatures, size_t timeout) override;
+
 private:
     uhd::tune_result_t     set_freq(const uhd::tune_request_t& tune_request, size_t chan) const;
     double                 get_freq( size_t chan)const;

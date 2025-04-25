@@ -308,6 +308,14 @@ namespace ihd
         std::size_t m_chan;
     };
 
+    // fpga=64.7719, trx1=63.0000, trx2=63.0000, top=52.5000, bottom=53.0000
+    class chameleon_fw_get_temps_all : public chameleon_fw_cmd {
+    public:
+        explicit chameleon_fw_get_temps_all() : chameleon_fw_cmd("get_temps_all") {}
+
+        const char *to_command_string() override { return _cmd; }
+    };
+
     class chameleon_fw_cmd_stream : public chameleon_fw_cmd
     {
     public:
