@@ -55,6 +55,12 @@ public:
      */
     virtual uhd::time_spec_t get_time_now() = 0;
 
+    /*!
+     * Ipsolon custom/specific functionality not in UHD by default
+     */
+     using temperature_t = std::map<std::string, double>;
+     virtual int get_temperatures(temperature_t &temperatures, size_t timeout) = 0;
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
     uhd::device::sptr      get_device() override { THROW_NOT_IMPLEMENTED_ERROR(); }

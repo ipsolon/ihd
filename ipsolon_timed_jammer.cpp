@@ -188,6 +188,16 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
 
     printf("Creating USRP with: %s\n", isrp_args.c_str());
     auto isrp = ihd::ipsolon_isrp::make(isrp_args);
+    ihd::ipsolon_isrp::temperature_t temps;
+
+    int err = isrp->get_temperatures(temps, 1000);
+    if (!err) {
+        for (const auto &pair: temps) {
+            std::cout << "Component Temp: " << pair.first << "=" << pair.second << std::endl;
+        }
+    } else {
+        std::cout << "Unable to get temperatures" << std::endl;
+    }
 
     auto ctrl_jammer = isrp->get_block_ctrl<ihd::chameleon_jammer_block_ctrl>(ihd::block_id_t(0));
     ihd::block_id_t blockid_jammer = ctrl_jammer->get_block_id();
