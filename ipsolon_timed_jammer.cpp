@@ -4,6 +4,9 @@
 #include <iostream>
 #include <cstdint>
 #include <arpa/inet.h>
+#include <chrono>
+#include <ctime>
+#include <iostream>
 
 #include <uhd/types/metadata.hpp>
 #include <uhd/types/time_spec.hpp>
@@ -189,8 +192,19 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
         return EXIT_SUCCESS;
     }
 
+    auto t = std::chrono::system_clock::now();
+    int64_t const ti = std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch()).count();
+    printf("The time is:%ld\n", ti);
+
     printf("Creating USRP with: %s\n", isrp_args.c_str());
     auto isrp = ihd::ipsolon_isrp::make(isrp_args);
+    printf("Chameleon time was:%ld setting to:%ld\n",
+           isrp->get_time_now(0).get_full_secs(), ti);
+
+    isrp->set_time_now(ti, 0);
+    printf("Chameleon time is now:%ld\n",
+           isrp->get_time_now(0).get_full_secs());
+
     ihd::ipsolon_isrp::temperature_t temps;
 
     int err = isrp->get_temperatures(temps, 1000);
@@ -419,7 +433,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     // Write configurations
 
     // Iterate back and forth
-    auto radio_time = isrp->get_time_now();
+    auto radio_time = isrp->get_time_now(0);
     auto time = radio_time + uhd::time_spec_t(.10);
 
     for (uint32_t i = 0; i < duration; i++) {
@@ -456,7 +470,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
         ctrl_jammer3->stop();
     }
 
-    auto total_time = (time - isrp->get_time_now()).get_full_secs();
+    auto total_time = (time - isrp->get_time_now(0)).get_full_secs();
     uint32_t sleeptime = static_cast<uint32_t>(total_time) + 2;
     printf("Sleeping for %d seconds\n", sleeptime);
     printf("Jammer overflow: %d\n", ctrl_jammer->overflow());

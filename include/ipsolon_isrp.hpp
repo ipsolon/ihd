@@ -46,15 +46,6 @@ public:
         return std::make_shared<ihd::chameleon_jammer_block_ctrl>();
     }
 
-    /*! Get the current time in the timekeeper registers.
-     *
-     * Note that there is a non-deterministic delay between the time the
-     * register is read and the time the function value is returned.
-     * To get the time with respect to a tick edge, use get_time_last_pps().
-     * \return A timespec representing current radio time
-     */
-    virtual uhd::time_spec_t get_time_now() = 0;
-
     /*!
      * Ipsolon custom/specific functionality not in UHD by default
      */
@@ -70,7 +61,8 @@ public:
     uhd::tune_result_t     set_tx_freq(const uhd::tune_request_t& tune_request, size_t chan) override { THROW_NOT_IMPLEMENTED_ERROR(); }
     void                   set_rx_gain(double gain, const std::string& name, size_t chan) override { THROW_NOT_IMPLEMENTED_ERROR(); }
     void                   set_tx_gain(double gain, const std::string& name, size_t chan) override { THROW_NOT_IMPLEMENTED_ERROR(); }
-
+    void                   set_time_now(const uhd::time_spec_t& time_spec, size_t mboard) override { THROW_NOT_IMPLEMENTED_ERROR(); }
+    uhd::time_spec_t       get_time_now(size_t mboard) override { THROW_NOT_IMPLEMENTED_ERROR(); }
 
     uhd::property_tree::sptr get_tree() const override { THROW_NOT_IMPLEMENTED_ERROR(); }
     uhd::dict<std::string, std::string> get_usrp_rx_info(size_t chan) override { THROW_NOT_IMPLEMENTED_ERROR(); }
@@ -80,9 +72,7 @@ public:
     uhd::meta_range_t get_master_clock_rate_range(const size_t mboard) override { THROW_NOT_IMPLEMENTED_ERROR(); }
     std::string get_pp_string() override { THROW_NOT_IMPLEMENTED_ERROR(); }
     std::string get_mboard_name(size_t mboard) override { THROW_NOT_IMPLEMENTED_ERROR(); }
-    uhd::time_spec_t get_time_now(size_t mboard) override { THROW_NOT_IMPLEMENTED_ERROR(); }
     uhd::time_spec_t get_time_last_pps(size_t mboard) override { THROW_NOT_IMPLEMENTED_ERROR(); }
-    void set_time_now(const uhd::time_spec_t& time_spec, size_t mboard) override { THROW_NOT_IMPLEMENTED_ERROR(); }
     void set_time_next_pps(const uhd::time_spec_t& time_spec, size_t mboard) override { THROW_NOT_IMPLEMENTED_ERROR(); }
     void set_time_unknown_pps(const uhd::time_spec_t& time_spec) override { THROW_NOT_IMPLEMENTED_ERROR(); }
     bool get_time_synchronized() override { THROW_NOT_IMPLEMENTED_ERROR(); }
