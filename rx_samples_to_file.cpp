@@ -95,6 +95,8 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
     try {
         isrp = ihd::ipsolon_isrp::make(args);
 
+        isrp->stream_stop_all();
+
         // set the frequency
         uhd::tune_request_t tune_request{};
         tune_request.rf_freq = freq;

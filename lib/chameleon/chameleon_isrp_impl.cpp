@@ -222,3 +222,10 @@ int chameleon_isrp_impl::get_temperatures(temperature_t &temperatures, size_t ti
     }
     return err;
 }
+
+int chameleon_isrp_impl::stream_stop_all() {
+    constexpr int timeout = 5000;
+    std::unique_ptr<chameleon_fw_cmd> stop_all(new chameleon_fw_stream_stop_all);
+    chameleon_fw_comms request(std::move(stop_all));
+    return _commander.send_request(request, timeout);
+}

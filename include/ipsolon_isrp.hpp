@@ -51,6 +51,7 @@ public:
      */
      using temperature_t = std::map<std::string, double>;
      virtual int get_temperatures(temperature_t &temperatures, size_t timeout) = 0;
+     virtual int stream_stop_all() = 0;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
