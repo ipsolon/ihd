@@ -5,14 +5,17 @@
 #include <cstdint>
 #include <arpa/inet.h>
 
-#include <boost/program_options.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/thread.hpp>
-#include <uhd/convert.hpp>
+
+#define BOOST_BIND_GLOBAL_PLACEHOLDERS
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/program_options/options_description.hpp>
+#include <boost/program_options/variables_map.hpp>
+#include <boost/program_options/parsers.hpp>
 
 
 #include "ihd.h"
@@ -139,9 +142,9 @@ void get_engage_command__(int drone, ihd::jammer_config_t &command, int rescale,
 int UHD_SAFE_MAIN(int argc, char *argv[]) {
     uhd::set_thread_priority_safe();
     // Options
-    float freq;
-    float freq2;
-    float freq3;
+    double freq;
+    double freq2;
+    double freq3;
     float gain;
     float gain2;
     float gain3;
@@ -166,9 +169,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
             ("drone3", po::value<int>(&drone3)->default_value(-1),"Drone code, ie. 6 - ocusync 2.4 for third channel")
             ("rescale", po::value<int>(&rescale)->default_value(0),"Rescale waveforms for 245.76MHz samplerate, default=0")
             ("pgain", po::value<float>(&pgain)->default_value(1),"Adjust phasors for software gain, default=1 (no gain)")
-            ("freq", po::value<float>(&freq)->default_value(2.45e9), "RF Center Frequency")
-            ("freq2", po::value<float>(&freq2)->default_value(2.45e9), "RF Center Frequency on second channel")
-            ("freq3", po::value<float>(&freq3)->default_value(2.45e9), "RF Center Frequency on third channel")
+            ("freq", po::value<double>(&freq)->default_value(2.45e9), "RF Center Frequency")
+            ("freq2", po::value<double>(&freq2)->default_value(2.45e9), "RF Center Frequency on second channel")
+            ("freq3", po::value<double>(&freq3)->default_value(2.45e9), "RF Center Frequency on third channel")
             ("gain", po::value<float>(&gain)->default_value(10.0), "TX Gain")
             ("gain2", po::value<float>(&gain2)->default_value(10.0), "TX Gain on second channel")
             ("gain3", po::value<float>(&gain3)->default_value(10.0), "TX Gain on second channel")
@@ -222,6 +225,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     // Setting TX Frequency and Gain setting
     uhd::tune_request_t tune_request{};
     tune_request.rf_freq = freq;
+    tune_request.args["qec_cal"] = "false";
     isrp->set_tx_freq(tune_request, channel);
     isrp->uhd::usrp::multi_usrp::set_tx_gain(gain, channel);
     printf("freq=%f, gain=%f , channel=%zu\n",freq,gain, channel);
@@ -229,6 +233,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     if ( drone2 != -1 ) {
         uhd::tune_request_t tune_request2{};
         tune_request2.rf_freq = freq2;
+        tune_request2.args["calmask"] = "0x2200";
         isrp->set_tx_freq(tune_request2, 2);
         isrp->uhd::usrp::multi_usrp::set_tx_gain(gain2, 2);
         printf("freq=%f, gain=%f , channel=%d\n",freq2,gain2, 2);
@@ -237,6 +242,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     if ( drone3 != -1 ) {
         uhd::tune_request_t tune_request3{};
         tune_request3.rf_freq = freq3;
+        tune_request3.args["qec_cal"] = "false";
         isrp->set_tx_freq(tune_request3, 3);
         isrp->uhd::usrp::multi_usrp::set_tx_gain(gain3, 3);
         printf("freq=%f, gain=%f , channel=%d\n",freq3,gain3, 3);

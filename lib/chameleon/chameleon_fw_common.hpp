@@ -41,15 +41,15 @@ namespace ihd
     class chameleon_fw_cmd_tune : public chameleon_fw_cmd
     {
     public:
-        chameleon_fw_cmd_tune(std::size_t c, uint64_t f) : chameleon_fw_cmd("freq_set"),
-                                                           chan(c), freq(f)
+        chameleon_fw_cmd_tune(size_t c, uint64_t f, uint32_t cal) : chameleon_fw_cmd("freq_set"),
+                                                                  chan(c), freq(f), cal_mask(cal)
         {
         }
 
         const char* to_command_string() override
         {
             std::stringstream ss;
-            ss << _cmd << " chan=" << chan << "," " freq=" << freq;
+            ss << _cmd << " chan=" << chan << "," " freq=" << freq << ", calmask=" << std::hex << cal_mask;
             _command_string = ss.str();
             return _command_string.c_str();
         }
@@ -57,6 +57,7 @@ namespace ihd
     private:
         std::size_t chan{};
         uint64_t freq{};
+        uint32_t cal_mask{};
     };
 
     class chameleon_fw_cmd_tune_get : public chameleon_fw_cmd

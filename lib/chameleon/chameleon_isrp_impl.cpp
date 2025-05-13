@@ -35,9 +35,26 @@ uhd::tx_streamer::sptr chameleon_isrp_impl::get_tx_stream(const uhd::stream_args
 uhd::tune_result_t chameleon_isrp_impl::set_freq(const uhd::tune_request_t& tune_request, size_t chan) const
 {
     constexpr size_t rx_set_freq_timeout_ms = 5000;
+    constexpr uint32_t internal_path_delay_cal = 0x200;
+    constexpr uint32_t loopback_lo_delay_cal = 0x2000;
+    constexpr uint32_t qec_cal = 0x10000;
+    constexpr uint32_t default_cal = qec_cal | loopback_lo_delay_cal | internal_path_delay_cal;
+    uint32_t cal_mask = default_cal;
+
+    if (tune_request.args.has_key("calmask")) {
+        cal_mask = stoi(tune_request.args["calmask"], nullptr, 16);
+    }
+    if (tune_request.args.has_key("qec_cal")) {
+        auto do_qec = tune_request.args["qec_cal"];
+        if (do_qec == "true") {
+            cal_mask |= qec_cal;
+        } else if (do_qec == "false") {
+            cal_mask &= ~qec_cal;
+        }
+    }
     uhd::tune_result_t tr{};
     std::unique_ptr<chameleon_fw_cmd> tune_cmd(
-        new chameleon_fw_cmd_tune(chan, static_cast<uint64_t>(tune_request.rf_freq)));
+            new chameleon_fw_cmd_tune(chan, static_cast<uint64_t>(tune_request.rf_freq), cal_mask));
 
     chameleon_fw_comms request(std::move(tune_cmd));
 
