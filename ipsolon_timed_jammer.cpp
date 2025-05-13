@@ -192,18 +192,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
         return EXIT_SUCCESS;
     }
 
-    auto t = std::chrono::system_clock::now();
-    int64_t const ti = std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch()).count();
-    printf("The time is:%ld\n", ti);
-
     printf("Creating USRP with: %s\n", isrp_args.c_str());
     auto isrp = ihd::ipsolon_isrp::make(isrp_args);
-    printf("Chameleon time was:%ld setting to:%ld\n",
-           isrp->get_time_now(0).get_full_secs(), ti);
 
+    // Set chameleon time
+    auto t = std::chrono::system_clock::now();
+    int64_t const ti = std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch()).count();
     isrp->set_time_now(ti, 0);
-    printf("Chameleon time is now:%ld\n",
-           isrp->get_time_now(0).get_full_secs());
 
     ihd::ipsolon_isrp::temperature_t temps;
 
