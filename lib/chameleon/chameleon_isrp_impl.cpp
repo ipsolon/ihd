@@ -32,7 +32,7 @@ uhd::tune_result_t chameleon_isrp_impl::set_freq(const uhd::tune_request_t &tune
     constexpr size_t rx_set_freq_timeout_ms = 5000;
     constexpr uint32_t internal_path_delay_cal = 0x200;
     constexpr uint32_t loopback_lo_delay_cal = 0x2000;
-    constexpr uint32_t qec_cal = 0x10000;
+    constexpr uint32_t qec_cal = 0x1000;
     constexpr uint32_t default_cal = qec_cal | loopback_lo_delay_cal | internal_path_delay_cal;
     uint32_t cal_mask = default_cal;
 

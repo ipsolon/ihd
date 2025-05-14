@@ -242,7 +242,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
     if ( drone2 != -1 ) {
         uhd::tune_request_t tune_request2{};
         tune_request2.rf_freq = freq2;
-        tune_request2.args["calmask"] = "0x2200";
+        tune_request.args["qec_cal"] = "false";
         isrp->set_tx_freq(tune_request2, 2);
         isrp->uhd::usrp::multi_usrp::set_tx_gain(gain2, 2);
         printf("freq=%f, gain=%f , channel=%d\n",freq2,gain2, 2);
