@@ -29,14 +29,21 @@ link_directories(${Boost_LIBRARY_DIRS})
 
 add_executable(rx_samples_to_file rx_samples_to_file.cpp ${LIB_FILES})
 add_executable(packet_check packet_check.cpp ${LIB_FILES})
+add_executable(pipeline_packet_check pipeline_packet_check.cpp ${LIB_FILES})
+add_executable(test_start_stop test_start_stop.cpp ${LIB_FILES})
 add_executable(ipsolon_timed_jammer ipsolon_timed_jammer.cpp ${LIB_FILES})
 
 target_link_libraries(rx_samples_to_file -luhd ${Boost_LIBRARIES})
 target_link_libraries(packet_check -luhd ${Boost_LIBRARIES})
+target_link_libraries(pipeline_packet_check -luhd ${Boost_LIBRARIES})
+target_link_libraries(test_start_stop -luhd ${Boost_LIBRARIES})
 target_link_libraries(ipsolon_timed_jammer -luhd ${Boost_LIBRARIES})
 
 add_library(ihd SHARED ${LIB_FILES}
         include/debug.hpp)
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/drones.json
+        DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 install(TARGETS ihd
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

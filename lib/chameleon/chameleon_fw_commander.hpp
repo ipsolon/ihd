@@ -6,7 +6,6 @@
 
 #ifndef CHAMELEON_FW_CMD_HPP
 #define CHAMELEON_FW_CMD_HPP
-#include <atomic>
 #include <uhd/device.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include "chameleon_fw_common.hpp"

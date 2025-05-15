@@ -13,6 +13,7 @@
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <thread>
+#include <future>
 
 #include "safe_main.hpp"
 #include "ihd.h"
@@ -33,9 +34,10 @@ public:
     virtual ~RxStream() = default;
 
     // Start a threads to receive iq/psd data - one for each channel enabled in the chan_mask
-    virtual void run_loop() = 0;
+    virtual int run_loop() = 0;
 
-    void stream_run() {
+    int stream_run() {
+        int err = 0;
         std::cout << "RxStream stream_run for channel:" << channel << std::endl;
 
         /************************************************************************
@@ -47,9 +49,10 @@ public:
         /************************************************************************
          * Receive Data
          ***********************************************************************/
-        run_loop();
+        err = run_loop();
         stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
         rx_stream->issue_stream_cmd(stream_cmd);
+        return (err);
     }
 
 private:
@@ -70,7 +73,7 @@ public:
     virtual ~RxStreamPsd() = default;
 
 private:
-    void run_loop() override {
+    int run_loop() override {
         uhd::rx_metadata_t md;
         /************************************************************************
          * Allocate buffers
@@ -106,6 +109,7 @@ private:
         double megabits_per_second = (((double) bytes / total_time) / (1024 * 1024)) * 8;
         printf("RESULT chan:%zu duration ms:%ld packets:%lu bytes:%lu Mb/s:%f errors:%lu\n",
                channel, finishTime.count(), packets, bytes, megabits_per_second, errors);
+        return (errors == 0) ? 0 : -1;
     }
 };
 
@@ -118,7 +122,7 @@ public:
     virtual ~RxStreamIq() = default;
 
 private:
-    void run_loop() override {
+    int run_loop() override {
         uhd::rx_metadata_t md;
         /************************************************************************
          * Allocate buffers
@@ -155,6 +159,7 @@ private:
         double megabits_per_second = (((double) bytes / total_time) / (1024 * 1024)) * 8;
         printf("RESULT chan:%zu duration ms:%ld packets:%lu bytes:%lu Mb/s:%f errors:%lu\n",
                channel, finishTime.count(), packets, bytes, megabits_per_second, errors);
+        return (errors == 0) ? 0 : -1;
     }
 };
 
@@ -240,7 +245,7 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
         exit(1);
     }
 
-    std::vector<std::thread *> thread_vector;
+    std::vector<int> async_results;
     std::vector<RxStream *> stream_vector;
     int chan = 1;
 
@@ -252,12 +257,13 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
             RxStream *rxStream;
             if (stream_type == ihd::ipsolon_rx_stream::stream_type::PSD_STREAM) {
                 rxStream = new RxStreamPsd(chan, isrp, total_time, stream_args);
-                thread_obj = new std::thread(&RxStream::stream_run, rxStream);
+                auto future = std::async(&RxStream::stream_run, rxStream);
+                async_results.push_back(future.get());
             } else {
                 rxStream = new RxStreamIq(chan, isrp, total_time, stream_args);
-                thread_obj = new std::thread(&RxStream::stream_run, rxStream);
+                auto future = std::async(&RxStream::stream_run, rxStream);
+                async_results.push_back(future.get());
             }
-            thread_vector.push_back(thread_obj);
             stream_vector.push_back(rxStream);
             chan_mask &= ~(current_mask);
             dest_port++;
@@ -267,13 +273,12 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
             chan_mask = 0;
         }
     }
-
-    for (auto t: thread_vector) {
-        t->join();
-        free(t);
-    }
     for (auto s: stream_vector) {
-        free(s);
+        delete s;
     }
-    return (0);
+    int err = 0;
+    for (auto s: async_results) {
+        if (s < 0) err = -1;
+    }
+    return (err);
 }

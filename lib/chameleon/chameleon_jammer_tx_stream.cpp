@@ -12,25 +12,25 @@ ihd::chameleon_jammer_tx_stream::chameleon_jammer_tx_stream(const uhd::stream_ar
         case 2:
             port = std::to_string(JAMMER_PORT_TX2);
             break;
-	case 3:
-            port = std::to_string(JAMMER_PORT_TX2+1);
+        case 3:
+            port = std::to_string(JAMMER_PORT_TX2 + 1);
             break;
         case 4:
-            port = std::to_string(JAMMER_PORT_TX3+1);
-            break;    
+            port = std::to_string(JAMMER_PORT_TX3 + 1);
+            break;
         case 1:
         default:
-             port = std::to_string(JAMMER_PORT_TX1);
-             break;
+            port = std::to_string(JAMMER_PORT_TX1);
+            break;
     }
     _udp_cmd_port = uhd::transport::udp_simple::make_connected(device_addr["addr"], port);
 }
 
-size_t ihd::chameleon_jammer_tx_stream::get_num_channels(void) const {
+size_t ihd::chameleon_jammer_tx_stream::get_num_channels() const {
     return 1; // We only control one jammer channel at a time
 }
 
-size_t ihd::chameleon_jammer_tx_stream::get_max_num_samps(void) const {
+size_t ihd::chameleon_jammer_tx_stream::get_max_num_samps() const {
     return 0;
 }
 

@@ -59,16 +59,16 @@ namespace ihd {
 
         void send_config(jammer_config_t config);
 
-        void start(jammer_bank_t bank, uhd::time_spec_t time);
+        int start(jammer_bank_t bank, uhd::time_spec_t time);
 
         void stop();
 
     private:
-        void convert_start(jammer_bank_t bank, std::vector<uint32_t> &y);
+        static void convert_start(jammer_bank_t bank, std::vector<uint32_t> &y);
 
-        void convert_stop(std::vector<uint32_t> &y);
+        static void convert_stop(std::vector<uint32_t> &y);
 
-        void convert_config(jammer_config_t &config, std::vector<uint32_t> &y);
+        static void convert_config(jammer_config_t &config, std::vector<uint32_t> &y);
 
         uhd::tx_streamer::sptr stream;
         std::vector<uint32_t> payload;

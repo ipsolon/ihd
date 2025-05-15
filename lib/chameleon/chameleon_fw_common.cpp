@@ -90,7 +90,7 @@ void chameleon_fw_comms::setResponse(const char *response) {
                         }
                     } catch(...) {
                         err = -1;
-                        std::exception_ptr p = std::current_exception();
+                        std::exception_ptr const p = std::current_exception();
                         dbfprintf(stderr, "%s\n",(p ? p.__cxa_exception_type()->name() : "null"));
                     }
                 }
