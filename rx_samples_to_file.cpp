@@ -38,6 +38,8 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
     uint32_t packet_size;
     std::string stream_type;
 
+    bool do_qec_cal;
+
     po::options_description desc("Allowed options");
     desc.add_options()
             ("help", "help message")
@@ -54,7 +56,8 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
              "FFT size (256, 512, 1024, 2048 or 4096")
             ("fft_avg", po::value<uint32_t>(&fft_avg)->default_value(DEFAULT_FFT_AVG), "FFT averaging count")
             ("args", po::value<std::string>(&args)->default_value(""), "ISRP device address args")
-            ("stream_type", po::value<std::string>(&stream_type)->default_value("psd"), "Stream type - (psd or iq)");
+            ("stream_type", po::value<std::string>(&stream_type)->default_value("psd"), "Stream type - (psd or iq)")
+            ("qec_cal", po::value<bool>(&do_qec_cal)->default_value(true), "Do QEC calibration when changing frequency");
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
@@ -95,9 +98,12 @@ int IHD_SAFE_MAIN(int argc, char *argv[]) {
     try {
         isrp = ihd::ipsolon_isrp::make(args);
 
+        isrp->stream_stop_all();
+
         // set the frequency
         uhd::tune_request_t tune_request{};
         tune_request.rf_freq = freq;
+        tune_request.args["qec_cal"] = do_qec_cal ? "true":"false";
         isrp->set_rx_freq(tune_request, channel);
 
         // set the gain

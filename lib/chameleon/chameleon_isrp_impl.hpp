@@ -31,9 +31,12 @@ public:
     void                   set_tx_gain(double gain, const std::string& name,size_t chan) override;
     double                 get_rx_gain(const std::string& name,size_t chan) override;
     double                 get_tx_gain(const std::string& name,size_t chan) override;
-    uhd::time_spec_t       get_time_now() override;
+    void                   set_time_now(const uhd::time_spec_t& time_spec, size_t mboard) override;
+    uhd::time_spec_t       get_time_now(size_t mboard) override;
 
     int get_temperatures(temperature_t &temperatures, size_t timeout) override;
+
+    int stream_stop_all() override;
 
 private:
     uhd::tune_result_t     set_freq(const uhd::tune_request_t& tune_request, size_t chan) const;
