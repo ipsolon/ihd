@@ -280,6 +280,7 @@ void chameleon_rx_stream::stop_stream() {
         _commander.send_request(request, 30000);
 
         _recv_thread.join();
+        _current_packet = nullptr;
 
         std::lock_guard<std::mutex> free_lock(mtx_free_queue);
         std::lock_guard<std::mutex> sample_lock(mtx_sample_queue);
