@@ -8,6 +8,8 @@
 #define CHAMELEON_FW_CMD_HPP
 #include <uhd/device.hpp>
 #include <uhd/transport/udp_simple.hpp>
+#include <mutex>
+
 #include "chameleon_fw_common.hpp"
 
 namespace ihd {
@@ -20,6 +22,7 @@ public:
 private:
     uhd::transport::udp_simple::sptr _udp_cmd_port{};
     uhd::device_addr_t _dev_addr;
+    mutable std::mutex _mutex;
 };
 
 } // ihd

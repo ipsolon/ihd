@@ -26,8 +26,10 @@ namespace ihd
         int err = 0;
         size_t ret = 0;
 
+        std::lock_guard<std::mutex> const lock(_mutex);
+
         request.setSequence(_seq++);
-        std::string str = request.getCommandString();
+        std::string const str = request.getCommandString();
         ret = _udp_cmd_port->send(boost::asio::buffer(str.c_str(), str.length()));
         if (ret != str.length())
         {
