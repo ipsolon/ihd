@@ -27,7 +27,8 @@ namespace ihd {
         }
 
     private:
-        static constexpr uint32_t DEFAULT_PACKET_SIZE = 8192;
+        static constexpr uint32_t PACKET_HEADER_SIZE = 16;
+        static constexpr uint32_t DEFAULT_PACKET_SIZE = 8192 + PACKET_HEADER_SIZE;
         static constexpr uint32_t DEFAULT_IQ_BUFFER_MEM_SIZE = 0x28C58000;
         size_t _packet_size;
         size_t _bytes_per_packet = DEFAULT_PACKET_SIZE;
