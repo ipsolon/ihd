@@ -331,6 +331,13 @@ int chameleon_rx_stream::open_socket() const {
             perror("Socket timeout set error");
         }
     }
+    if (!err) {
+        int optval = (48*1024*1024);
+        err = setsockopt(sock_fd, SOL_SOCKET, SO_RCVBUF, &optval, sizeof(optval));
+        if (err < 0) {
+            perror("Socket rx buffer set error");
+        }
+    }
     if (err) {
         if (sock_fd > -1) {
             close(sock_fd);
