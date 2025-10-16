@@ -71,12 +71,12 @@ chameleon_rx_stream::~chameleon_rx_stream() {
     while (!q_free_packets.empty()) {
         chameleon_packet *pk = q_free_packets.front();
         q_free_packets.pop();
-        free(pk);
+        delete pk;
     }
     while (!q_sample_packets.empty()) {
         chameleon_packet *pk = q_sample_packets.front();
         q_sample_packets.pop();
-        free(pk);
+        delete pk;
     }
     dbprintf("Destructor send stream_rm for stream_id = %d\n",_stream_id);
     std::unique_ptr<chameleon_fw_cmd> stream_remove(new chameleon_fw_stream_remove(_stream_id));
